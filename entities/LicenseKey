@@ -1,0 +1,27 @@
+{
+  "name": "LicenseKey",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "The license key string"
+    },
+    "used": {
+      "type": "boolean",
+      "default": false
+    },
+    "used_by_username": {
+      "type": "string"
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "key"
+  ]
+}

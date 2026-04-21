@@ -1,0 +1,19 @@
+{
+  "name": "CloudConfig",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "owner_username": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "owner_username"
+  ]
+}

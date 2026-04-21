@@ -1,0 +1,45 @@
+{
+  "name": "Account",
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string",
+      "description": "Unique username for login"
+    },
+    "password_hash": {
+      "type": "string",
+      "description": "SHA-256 hashed password"
+    },
+    "license_key": {
+      "type": "string",
+      "description": "The license key used to register"
+    },
+    "internal_license": {
+      "type": "string",
+      "description": "Internal license identifier"
+    },
+    "script_license": {
+      "type": "string",
+      "description": "Script license identifier"
+    },
+    "unique_identifier": {
+      "type": "number",
+      "description": "Sequential unique user ID"
+    },
+    "accent_color": {
+      "type": "string",
+      "default": "#ef4444"
+    },
+    "is_admin": {
+      "type": "boolean",
+      "default": false
+    },
+    "last_login": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "username",
+    "password_hash"
+  ]
