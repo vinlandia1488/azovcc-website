@@ -1,16 +1,6 @@
-const db = globalThis.__B44_DB__ || globalThis.db || {
-  entities: new Proxy(
-    {},
-    {
-      get: () => ({
-        filter: async () => [],
-        create: async () => ({}),
-        update: async () => ({}),
-        delete: async () => ({}),
-      }),
-    }
-  ),
-};
+import { getBackendDb } from "@/lib/backend";
+
+const db = getBackendDb();
 
 const STORAGE_KEY = "azov_download_items";
 const ENTITY_NAME = "DownloadItem";
@@ -90,7 +80,9 @@ async function tryEntityCreate(payload) {
   if (!entity || typeof entity.create !== "function") {
     throw new Error(`${ENTITY_NAME} entity is unavailable`);
   }
-  return entity.create(payload);
+  const created = await entity.create(payload);
+  if (!created?.id) throw new Error(`Failed to persist ${ENTITY_NAME}`);
+  return created;
 }
 
 async function tryEntityUpdate(id, payload) {

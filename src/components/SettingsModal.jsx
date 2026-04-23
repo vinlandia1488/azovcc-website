@@ -1,9 +1,10 @@
-const db = globalThis.__B44_DB__ || globalThis.db || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
 import { useState } from 'react';
 import { X, Check, LogOut } from 'lucide-react';
 
 import { sha256, setSession, clearSession } from '@/lib/auth';
+import { getBackendDb } from '@/lib/backend';
+
+const db = getBackendDb();
 
 const ACCENT_COLORS = [
   { label: 'Red', value: '#ef4444' },

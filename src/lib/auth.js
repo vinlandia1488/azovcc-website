@@ -1,6 +1,7 @@
-const db = globalThis.__B44_DB__ || globalThis.db || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
 import { consumeLicenseForRegistration } from "@/lib/license-keys";
+import { getBackendDb } from "@/lib/backend";
+
+const db = getBackendDb();
 
 const ACCOUNTS_CACHE_KEY = "azov_accounts_cache";
 

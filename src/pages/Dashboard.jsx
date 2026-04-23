@@ -1,8 +1,7 @@
-const db = globalThis.__B44_DB__ || globalThis.db || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSession, clearSession, setSession, getCachedAccounts } from '@/lib/auth';
+import { getBackendDb } from '@/lib/backend';
 import NavTabs from '@/components/NavTabs';
 import DashboardTab from '@/components/DashboardTab';
 import DownloadsTab from '@/components/DownloadsTab';
@@ -10,6 +9,8 @@ import CloudConfigsTab from '@/components/CloudConfigsTab';
 import PanelTab from '@/components/PanelTab';
 import SettingsModal from '@/components/SettingsModal';
 import { getAnnouncement } from '@/lib/app-settings';
+
+const db = getBackendDb();
 
 export default function Dashboard() {
   const navigate = useNavigate();

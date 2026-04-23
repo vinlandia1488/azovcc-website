@@ -1,6 +1,6 @@
-const db = globalThis.__B44_DB__ || globalThis.db || {
-  entities: new Proxy({}, { get: () => ({ filter: async () => [], create: async () => ({}), update: async () => ({}) }) }),
-};
+import { getBackendDb } from "@/lib/backend";
+
+const db = getBackendDb();
 
 const ANNOUNCEMENT_NAME = "__announcement__";
 const SYSTEM_OWNER = "__system__";
@@ -23,11 +23,19 @@ export async function setAnnouncement(announcement) {
   const existing = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
   if (existing?.id) {
     await db.entities.CloudConfig.update(existing.id, { content: nextAnnouncement });
-    return;
+  } else {
+    await db.entities.CloudConfig.create({
+      name: ANNOUNCEMENT_NAME,
+      owner_username: SYSTEM_OWNER,
+      content: nextAnnouncement,
+    });
   }
-  await db.entities.CloudConfig.create({
+  const checkRows = await db.entities.CloudConfig.filter({
     name: ANNOUNCEMENT_NAME,
     owner_username: SYSTEM_OWNER,
-    content: nextAnnouncement,
   });
+  const check = Array.isArray(checkRows) && checkRows.length > 0 ? checkRows[0] : null;
+  if (String(check?.content || "") !== nextAnnouncement) {
+    throw new Error("Failed to persist announcement to backend");
+  }
 }

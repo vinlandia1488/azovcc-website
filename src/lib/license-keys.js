@@ -1,15 +1,6 @@
-const db = globalThis.__B44_DB__ || globalThis.db || {
-  entities: new Proxy(
-    {},
-    {
-      get: () => ({
-        filter: async () => [],
-        create: async () => ({}),
-        update: async () => ({}),
-      }),
-    }
-  ),
-};
+import { getBackendDb } from "@/lib/backend";
+
+const db = getBackendDb();
 
 const STORAGE_KEY = "azov_license_keys_v2";
 
@@ -61,7 +52,8 @@ async function tryDbCreate(payload) {
   if (!entity || typeof entity.create !== "function") {
     throw new Error("LicenseKey entity is unavailable");
   }
-  await entity.create(payload);
+  const created = await entity.create(payload);
+  if (!created?.id) throw new Error("Failed to persist license key");
 }
 
 async function tryDbUpdate(id, payload) {

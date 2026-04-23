@@ -1,9 +1,10 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
 import { useState, useEffect } from 'react';
+import { getBackendDb } from '@/lib/backend';
 
 import { Plus, Play, RotateCcw, Trash2 } from 'lucide-react';
 import { getDefaultCloudConfig } from '@/lib/config-templates';
+
+const db = getBackendDb();
 
 export default function CloudConfigsTab({ session, accent }) {
   const [defaultConfig, setDefaultConfig] = useState(getDefaultCloudConfig());

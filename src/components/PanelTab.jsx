@@ -1,7 +1,6 @@
-const db = globalThis.__B44_DB__ || globalThis.db || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
 import { useState, useEffect } from 'react';
 import { deleteUserAccount, generateInternalLicense, generateScriptLicense } from '@/lib/auth';
+import { getBackendDb } from '@/lib/backend';
 import { getAnnouncement, setAnnouncement } from '@/lib/app-settings';
 import {
   getDefaultCloudConfig,
@@ -18,6 +17,8 @@ import {
   updateDownloadItem,
 } from '@/lib/downloads';
 import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText } from 'lucide-react';
+
+const db = getBackendDb();
 
 function hashDisplay(str) {
   if (!str) return '—';
