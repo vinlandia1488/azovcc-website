@@ -7,6 +7,8 @@ import {
   getPreviewConfig,
   setDefaultCloudConfig,
   setPreviewConfig,
+  getConfigTemplatesShared,
+  saveConfigTemplatesShared,
 } from '@/lib/config-templates';
 import { createLicenseKeyRecord, deleteLicenseKeyRecord, getLicenseKeys } from '@/lib/license-keys';
 import {
@@ -104,8 +106,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     setAccounts(accountsResult.status === 'fulfilled' && Array.isArray(accountsResult.value) ? accountsResult.value : []);
     setDownloads(downloadsResult.status === 'fulfilled' ? (downloadsResult.value || []) : []);
     setAnnouncementState(announcementResult.status === 'fulfilled' ? announcementResult.value : '');
-    setDefaultCloudConfigState(getDefaultCloudConfig());
-    setPreviewConfigState(getPreviewConfig());
+    const templates = await getConfigTemplatesShared();
+    setDefaultCloudConfigState(String(templates.defaultCloudConfig || getDefaultCloudConfig()));
+    setPreviewConfigState(String(templates.previewConfig || getPreviewConfig()));
 
     const failures = [keysResult, accountsResult, downloadsResult, announcementResult].filter((r) => r.status === 'rejected');
     if (failures.length > 0) {
@@ -197,8 +200,17 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   }
 
   function saveConfigTemplates() {
-    setDefaultCloudConfig(defaultCloudConfig);
-    setPreviewConfig(previewConfig);
+    (async () => {
+      try {
+        await saveConfigTemplatesShared({
+          defaultCloudConfig,
+          previewConfig,
+        });
+        setPanelError('');
+      } catch (error) {
+        setPanelError(error?.message || 'Failed to save config templates.');
+      }
+    })();
   }
 
   async function removeUser(account) {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getBackendDb } from '@/lib/backend';
 
 import { Plus, Play, RotateCcw, Trash2 } from 'lucide-react';
-import { getDefaultCloudConfig } from '@/lib/config-templates';
+import { getDefaultCloudConfig, getConfigTemplatesShared } from '@/lib/config-templates';
 
 const db = getBackendDb();
 
@@ -16,10 +16,13 @@ export default function CloudConfigsTab({ session, accent }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const template = getDefaultCloudConfig();
-    setDefaultConfig(template);
-    setEditorContent((prev) => (prev ? prev : template));
-    loadConfigs();
+    (async () => {
+      const shared = await getConfigTemplatesShared();
+      const template = String(shared?.defaultCloudConfig || getDefaultCloudConfig());
+      setDefaultConfig(template);
+      setEditorContent((prev) => (prev ? prev : template));
+      loadConfigs();
+    })();
   }, []);
 
   async function loadConfigs() {

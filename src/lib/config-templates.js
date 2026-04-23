@@ -1,4 +1,8 @@
 const STORAGE_KEY = "azov_config_templates";
+const SYSTEM_OWNER = "__system__";
+const TEMPLATES_NAME = "__config_templates__";
+
+import { getBackendDb } from "@/lib/backend";
 
 export const DEFAULT_CLOUD_CONFIG = `shared.azov = {
     ["Main"] = {
@@ -161,4 +165,54 @@ export function setPreviewConfig(value) {
     ...data,
     previewConfig: String(value || ""),
   });
+}
+
+async function getTemplatesRow() {
+  const db = getBackendDb();
+  const rows = await db.entities.CloudConfig.filter({
+    name: TEMPLATES_NAME,
+    owner_username: SYSTEM_OWNER,
+  });
+  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+}
+
+function coerceTemplatesPayload(input) {
+  const fallback = readTemplates();
+  return {
+    defaultCloudConfig: String(input?.defaultCloudConfig ?? fallback.defaultCloudConfig ?? DEFAULT_CLOUD_CONFIG),
+    previewConfig: String(input?.previewConfig ?? fallback.previewConfig ?? DEFAULT_PREVIEW_CONFIG),
+  };
+}
+
+export async function getConfigTemplatesShared() {
+  const db = getBackendDb();
+  try {
+    const row = await getTemplatesRow();
+    if (row?.content) {
+      const parsed = JSON.parse(row.content);
+      const payload = coerceTemplatesPayload(parsed);
+      writeTemplates(payload);
+      return payload;
+    }
+  } catch {}
+  // If backend missing/unavailable, fall back to local templates.
+  return coerceTemplatesPayload(readTemplates());
+}
+
+export async function saveConfigTemplatesShared({ defaultCloudConfig, previewConfig }) {
+  const db = getBackendDb();
+  const payload = coerceTemplatesPayload({ defaultCloudConfig, previewConfig });
+  const row = await getTemplatesRow();
+  const content = JSON.stringify(payload);
+  if (row?.id) {
+    await db.entities.CloudConfig.update(row.id, { content });
+  } else {
+    await db.entities.CloudConfig.create({
+      name: TEMPLATES_NAME,
+      owner_username: SYSTEM_OWNER,
+      content,
+    });
+  }
+  writeTemplates(payload);
+  return payload;
 }
