@@ -45,6 +45,19 @@ function normalizeItem(item, index = 0) {
   };
 }
 
+function toMutablePayload(item, index = 0) {
+  const normalized = normalizeItem(item, index);
+  return {
+    name: normalized.name,
+    version: normalized.version,
+    status: normalized.status,
+    action_label: normalized.action_label,
+    file_url: normalized.file_url,
+    open_url: normalized.open_url,
+    sort_order: normalized.sort_order,
+  };
+}
+
 function fromLocalStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -133,7 +146,7 @@ export async function getDownloadItems() {
 export async function createDownloadItem(payload) {
   const current = await getDownloadItems();
   const base = normalizeItem(payload, current.length);
-  const created = await tryEntityCreate(base);
+  const created = await tryEntityCreate(toMutablePayload(base, current.length));
   const createdLocal = normalizeItem(created, current.length);
   const next = [...current, createdLocal];
   saveLocalStorage(next);
@@ -147,15 +160,18 @@ export async function updateDownloadItem(id, payload) {
     throw new Error("Download item not found");
   }
   const merged = normalizeItem({ ...existing, ...payload }, existing.sort_order);
+  const mutablePayload = toMutablePayload(merged, existing.sort_order);
   let persisted = null;
   if (String(id).startsWith("default-") || String(id).startsWith("local-")) {
-    persisted = normalizeItem(await tryEntityCreate({ ...merged, id: undefined }), merged.sort_order);
+    const created = await tryEntityCreate(mutablePayload);
+    persisted = normalizeItem(created || merged, merged.sort_order);
   } else {
-    persisted = normalizeItem(await tryEntityUpdate(id, payload), merged.sort_order);
+    const updated = await tryEntityUpdate(id, mutablePayload);
+    persisted = normalizeItem(updated || merged, merged.sort_order);
   }
   const next = current.map((item) => (item.id === id ? persisted : item));
   saveLocalStorage(next);
-  const updatedLocal = next.find((item) => item.id === persisted.id) || persisted;
+  const updatedLocal = next.find((item) => item.id === persisted.id) || persisted || merged;
   return updatedLocal;
 }
 
