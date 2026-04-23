@@ -70,6 +70,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     file_url: '',
     open_url: '',
   });
+  const [panelError, setPanelError] = useState('');
   const accentText = isLightColor(accent) ? '#000' : '#fff';
   const accentBorder = isLightColor(accent) ? '1px solid #444' : 'none';
 
@@ -92,17 +93,26 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   }
 
   async function loadData() {
-    const [k, a, d] = await Promise.all([
+    const [keysResult, accountsResult, downloadsResult, announcementResult] = await Promise.allSettled([
       getLicenseKeys(),
       getEntityRows('Account'),
       getDownloadItems(),
+      getAnnouncement(),
     ]);
-    setKeys(k || []);
-    setAccounts(Array.isArray(a) ? a : []);
-    setDownloads(d || []);
-    setAnnouncementState(await getAnnouncement());
+
+    setKeys(keysResult.status === 'fulfilled' ? (keysResult.value || []) : []);
+    setAccounts(accountsResult.status === 'fulfilled' && Array.isArray(accountsResult.value) ? accountsResult.value : []);
+    setDownloads(downloadsResult.status === 'fulfilled' ? (downloadsResult.value || []) : []);
+    setAnnouncementState(announcementResult.status === 'fulfilled' ? announcementResult.value : '');
     setDefaultCloudConfigState(getDefaultCloudConfig());
     setPreviewConfigState(getPreviewConfig());
+
+    const failures = [keysResult, accountsResult, downloadsResult, announcementResult].filter((r) => r.status === 'rejected');
+    if (failures.length > 0) {
+      setPanelError(failures[0].reason?.message || 'Some admin data failed to load.');
+    } else {
+      setPanelError('');
+    }
   }
 
   async function generateKey() {
@@ -134,30 +144,45 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
   async function addDownload() {
     if (!newDownload.name.trim()) return;
-    await createDownloadItem({
-      ...newDownload,
-      name: newDownload.name.trim(),
-      sort_order: downloads.length,
-    });
-    setNewDownload({
-      name: '',
-      version: 'Version 1.0.0',
-      status: 'stable',
-      action_label: 'DOWNLOAD',
-      file_url: '',
-      open_url: '',
-    });
-    await loadData();
+    try {
+      await createDownloadItem({
+        ...newDownload,
+        name: newDownload.name.trim(),
+        sort_order: downloads.length,
+      });
+      setNewDownload({
+        name: '',
+        version: 'Version 1.0.0',
+        status: 'stable',
+        action_label: 'DOWNLOAD',
+        file_url: '',
+        open_url: '',
+      });
+      setPanelError('');
+      await loadData();
+    } catch (error) {
+      setPanelError(error?.message || 'Failed to create download item.');
+    }
   }
 
   async function saveDownload(item) {
-    await updateDownloadItem(item.id, item);
-    await loadData();
+    try {
+      await updateDownloadItem(item.id, item);
+      setPanelError('');
+      await loadData();
+    } catch (error) {
+      setPanelError(error?.message || 'Failed to save download item.');
+    }
   }
 
   async function removeDownload(id) {
-    await deleteDownloadItem(id);
-    await loadData();
+    try {
+      await deleteDownloadItem(id);
+      setPanelError('');
+      await loadData();
+    } catch (error) {
+      setPanelError(error?.message || 'Failed to delete download item.');
+    }
   }
 
   function updateLocalDownload(id, patch) {
@@ -188,6 +213,11 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
       <div>
         <h2 className="text-white text-2xl font-bold mb-1">Admin Panel</h2>
         <p className="text-zinc-500 text-sm">Manage license keys and users.</p>
+        {panelError && (
+          <p className="mt-2 text-xs text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+            {panelError}
+          </p>
+        )}
       </div>
 
       {/* Sub tabs */}
