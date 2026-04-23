@@ -107,8 +107,20 @@ export async function getDownloadItems() {
     const normalized = entityItems
       .map((item, i) => normalizeItem(item, i))
       .sort((a, b) => a.sort_order - b.sort_order);
-    saveLocalStorage(normalized);
-    return normalized.length > 0 ? normalized : getDefaultDownloads();
+    if (normalized.length > 0) {
+      saveLocalStorage(normalized);
+      return normalized;
+    }
+
+    // Seed defaults into backend so subsequent edits use real persisted IDs.
+    const defaults = getDefaultDownloads();
+    const createdDefaults = [];
+    for (let i = 0; i < defaults.length; i += 1) {
+      const created = await tryEntityCreate(normalizeItem(defaults[i], i));
+      createdDefaults.push(normalizeItem(created, i));
+    }
+    saveLocalStorage(createdDefaults);
+    return createdDefaults;
   } catch {
     const localItems = fromLocalStorage();
     if (localItems.length > 0) {
@@ -121,8 +133,8 @@ export async function getDownloadItems() {
 export async function createDownloadItem(payload) {
   const current = await getDownloadItems();
   const base = normalizeItem(payload, current.length);
-  const createdLocal = normalizeItem({ ...base, id: `local-${Date.now()}` }, current.length);
-  await tryEntityCreate(createdLocal);
+  const created = await tryEntityCreate(base);
+  const createdLocal = normalizeItem(created, current.length);
   const next = [...current, createdLocal];
   saveLocalStorage(next);
   return createdLocal;
@@ -130,10 +142,20 @@ export async function createDownloadItem(payload) {
 
 export async function updateDownloadItem(id, payload) {
   const current = await getDownloadItems();
-  const next = current.map((item) => (item.id === id ? normalizeItem({ ...item, ...payload }) : item));
-  await tryEntityUpdate(id, payload);
+  const existing = current.find((item) => item.id === id);
+  if (!existing) {
+    throw new Error("Download item not found");
+  }
+  const merged = normalizeItem({ ...existing, ...payload }, existing.sort_order);
+  let persisted = null;
+  if (String(id).startsWith("default-") || String(id).startsWith("local-")) {
+    persisted = normalizeItem(await tryEntityCreate({ ...merged, id: undefined }), merged.sort_order);
+  } else {
+    persisted = normalizeItem(await tryEntityUpdate(id, payload), merged.sort_order);
+  }
+  const next = current.map((item) => (item.id === id ? persisted : item));
   saveLocalStorage(next);
-  const updatedLocal = next.find((item) => item.id === id) || null;
+  const updatedLocal = next.find((item) => item.id === persisted.id) || persisted;
   return updatedLocal;
 }
 
