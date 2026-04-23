@@ -1,4 +1,3 @@
-const STORAGE_KEY = "azov_config_templates";
 const SYSTEM_OWNER = "__system__";
 const TEMPLATES_NAME = "__config_templates__";
 
@@ -126,45 +125,28 @@ export const DEFAULT_PREVIEW_CONFIG = `shared.azov = {
     },
 }`;
 
-function readTemplates() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeTemplates(next) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-}
+let memoryCache = null;
 
 export function getDefaultCloudConfig() {
-  const data = readTemplates();
-  return String(data.defaultCloudConfig || DEFAULT_CLOUD_CONFIG);
+  return String(memoryCache?.defaultCloudConfig || DEFAULT_CLOUD_CONFIG);
 }
 
 export function setDefaultCloudConfig(value) {
-  const data = readTemplates();
-  writeTemplates({
-    ...data,
+  memoryCache = {
+    ...(memoryCache || {}),
     defaultCloudConfig: String(value || ""),
-  });
+  };
 }
 
 export function getPreviewConfig() {
-  const data = readTemplates();
-  return String(data.previewConfig || DEFAULT_PREVIEW_CONFIG);
+  return String(memoryCache?.previewConfig || DEFAULT_PREVIEW_CONFIG);
 }
 
 export function setPreviewConfig(value) {
-  const data = readTemplates();
-  writeTemplates({
-    ...data,
+  memoryCache = {
+    ...(memoryCache || {}),
     previewConfig: String(value || ""),
-  });
+  };
 }
 
 async function getTemplatesRow() {
@@ -177,10 +159,14 @@ async function getTemplatesRow() {
 }
 
 function coerceTemplatesPayload(input) {
-  const fallback = readTemplates();
+  const fallback = memoryCache || {};
   return {
-    defaultCloudConfig: String(input?.defaultCloudConfig ?? fallback.defaultCloudConfig ?? DEFAULT_CLOUD_CONFIG),
-    previewConfig: String(input?.previewConfig ?? fallback.previewConfig ?? DEFAULT_PREVIEW_CONFIG),
+    defaultCloudConfig: String(
+      input?.defaultCloudConfig ?? fallback.defaultCloudConfig ?? DEFAULT_CLOUD_CONFIG
+    ),
+    previewConfig: String(
+      input?.previewConfig ?? fallback.previewConfig ?? DEFAULT_PREVIEW_CONFIG
+    ),
   };
 }
 
@@ -191,12 +177,12 @@ export async function getConfigTemplatesShared() {
     if (row?.content) {
       const parsed = JSON.parse(row.content);
       const payload = coerceTemplatesPayload(parsed);
-      writeTemplates(payload);
+      memoryCache = payload;
       return payload;
     }
   } catch {}
-  // If backend missing/unavailable, fall back to local templates.
-  return coerceTemplatesPayload(readTemplates());
+  // If backend missing/unavailable, fall back to in-memory templates/defaults.
+  return coerceTemplatesPayload(memoryCache);
 }
 
 export async function saveConfigTemplatesShared({ defaultCloudConfig, previewConfig }) {
@@ -213,6 +199,6 @@ export async function saveConfigTemplatesShared({ defaultCloudConfig, previewCon
       content,
     });
   }
-  writeTemplates(payload);
+  memoryCache = payload;
   return payload;
 }
