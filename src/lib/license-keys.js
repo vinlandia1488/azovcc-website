@@ -3,6 +3,8 @@ import { getBackendDb } from "@/lib/backend";
 const db = getBackendDb();
 
 const STORAGE_KEY = "azov_license_keys_v2";
+const FALLBACK_NAME = "__license_keys__";
+const FALLBACK_OWNER = "admin";
 
 function readLocal() {
   try {
@@ -72,19 +74,69 @@ async function tryDbDelete(id) {
   await entity.delete(id);
 }
 
+function isMissingSchemaError(error) {
+  return String(error?.message || "").toLowerCase().includes("schema");
+}
+
+async function getFallbackRow() {
+  const rows = await db.entities.CloudConfig.filter({
+    name: FALLBACK_NAME,
+    owner_username: FALLBACK_OWNER,
+  });
+  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+}
+
+async function listFromFallbackStore() {
+  const row = await getFallbackRow();
+  if (!row?.content) return [];
+  try {
+    const parsed = JSON.parse(row.content);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(normalize);
+  } catch {
+    return [];
+  }
+}
+
+async function writeFallbackStore(rows) {
+  const content = JSON.stringify(rows.map(normalize));
+  const existing = await getFallbackRow();
+  if (existing?.id) {
+    await db.entities.CloudConfig.update(existing.id, { content });
+    return;
+  }
+  await db.entities.CloudConfig.create({
+    name: FALLBACK_NAME,
+    owner_username: FALLBACK_OWNER,
+    content,
+  });
+}
+
 export async function getLicenseKeys() {
   try {
     const dbRows = (await tryDbList()).map(normalize);
     writeLocal(dbRows);
     return dbRows;
-  } catch {
+  } catch (error) {
+    if (isMissingSchemaError(error)) {
+      const fallback = await listFromFallbackStore();
+      writeLocal(fallback);
+      return fallback;
+    }
     return readLocal().map(normalize);
   }
 }
 
 export async function createLicenseKeyRecord(payload) {
   const nextRecord = normalize(payload);
-  await tryDbCreate(nextRecord);
+  try {
+    await tryDbCreate(nextRecord);
+  } catch (error) {
+    if (!isMissingSchemaError(error)) throw error;
+    const current = await getLicenseKeys();
+    const next = [nextRecord, ...current.filter((row) => row.id !== nextRecord.id)];
+    await writeFallbackStore(next);
+  }
   const current = await getLicenseKeys();
   writeLocal([nextRecord, ...current.filter((row) => row.id !== nextRecord.id)]);
   return nextRecord;
@@ -99,17 +151,27 @@ export async function markLicenseKeyUsed(id, username) {
       : row
   );
   writeLocal(next);
-  await tryDbUpdate(id, {
-    used: true,
-    used_by_username: username,
-    used_at: usedAt,
-  });
+  try {
+    await tryDbUpdate(id, {
+      used: true,
+      used_by_username: username,
+      used_at: usedAt,
+    });
+  } catch (error) {
+    if (!isMissingSchemaError(error)) throw error;
+    await writeFallbackStore(next);
+  }
 }
 
 export async function deleteLicenseKeyRecord(id) {
   const current = await getLicenseKeys();
   const next = current.filter((row) => row.id !== id);
-  await tryDbDelete(id);
+  try {
+    await tryDbDelete(id);
+  } catch (error) {
+    if (!isMissingSchemaError(error)) throw error;
+    await writeFallbackStore(next);
+  }
   writeLocal(next);
 }
 

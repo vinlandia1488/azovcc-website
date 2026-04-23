@@ -1,4 +1,5 @@
 const SYSTEM_OWNER = "__system__";
+const SHARED_OWNER = "admin";
 const TEMPLATES_NAME = "__config_templates__";
 
 import { getBackendDb } from "@/lib/backend";
@@ -151,11 +152,17 @@ export function setPreviewConfig(value) {
 
 async function getTemplatesRow() {
   const db = getBackendDb();
-  const rows = await db.entities.CloudConfig.filter({
+  const rowsAdmin = await db.entities.CloudConfig.filter({
+    name: TEMPLATES_NAME,
+    owner_username: SHARED_OWNER,
+  });
+  if (Array.isArray(rowsAdmin) && rowsAdmin.length > 0) return rowsAdmin[0];
+
+  const rowsSystem = await db.entities.CloudConfig.filter({
     name: TEMPLATES_NAME,
     owner_username: SYSTEM_OWNER,
   });
-  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+  return Array.isArray(rowsSystem) && rowsSystem.length > 0 ? rowsSystem[0] : null;
 }
 
 function coerceTemplatesPayload(input) {
@@ -188,14 +195,18 @@ export async function getConfigTemplatesShared() {
 export async function saveConfigTemplatesShared({ defaultCloudConfig, previewConfig }) {
   const db = getBackendDb();
   const payload = coerceTemplatesPayload({ defaultCloudConfig, previewConfig });
-  const row = await getTemplatesRow();
   const content = JSON.stringify(payload);
-  if (row?.id) {
-    await db.entities.CloudConfig.update(row.id, { content });
+  const rowsAdmin = await db.entities.CloudConfig.filter({
+    name: TEMPLATES_NAME,
+    owner_username: SHARED_OWNER,
+  });
+  const adminRow = Array.isArray(rowsAdmin) && rowsAdmin.length > 0 ? rowsAdmin[0] : null;
+  if (adminRow?.id) {
+    await db.entities.CloudConfig.update(adminRow.id, { content });
   } else {
     await db.entities.CloudConfig.create({
       name: TEMPLATES_NAME,
-      owner_username: SYSTEM_OWNER,
+      owner_username: SHARED_OWNER,
       content,
     });
   }
