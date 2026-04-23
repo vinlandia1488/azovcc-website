@@ -1,5 +1,9 @@
+import { createClient } from "@base44/sdk";
+
+let sdkClient = null;
+
 function backendUnavailableError() {
-  return new Error("Backend is not configured. Set Base44 runtime/env and redeploy.");
+  return new Error("Backend is not configured. Set Base44 env vars and redeploy.");
 }
 
 function unavailableEntity() {
@@ -16,6 +20,21 @@ function unavailableEntity() {
 export function getBackendDb() {
   const client = globalThis.__B44_DB__ || globalThis.db;
   if (client && client.entities) return client;
+
+  if (!sdkClient) {
+    const appId = import.meta.env.VITE_BASE44_APP_ID;
+    const apiKey = import.meta.env.VITE_BASE44_API_KEY;
+    if (appId && apiKey) {
+      sdkClient = createClient({
+        appId,
+        headers: {
+          api_key: apiKey,
+        },
+      });
+    }
+  }
+  if (sdkClient && sdkClient.entities) return sdkClient;
+
   return {
     entities: new Proxy({}, { get: () => unavailableEntity() }),
     auth: {
