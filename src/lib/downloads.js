@@ -1,4 +1,4 @@
-const db = globalThis.__B44_DB__ || {
+const db = globalThis.__B44_DB__ || globalThis.db || {
   entities: new Proxy(
     {},
     {
@@ -87,77 +87,67 @@ async function tryEntityList() {
 
 async function tryEntityCreate(payload) {
   const entity = db.entities?.[ENTITY_NAME];
-  if (!entity || typeof entity.create !== "function") return null;
+  if (!entity || typeof entity.create !== "function") {
+    throw new Error(`${ENTITY_NAME} entity is unavailable`);
+  }
   return entity.create(payload);
 }
 
 async function tryEntityUpdate(id, payload) {
   const entity = db.entities?.[ENTITY_NAME];
-  if (!entity || typeof entity.update !== "function") return null;
+  if (!entity || typeof entity.update !== "function") {
+    throw new Error(`${ENTITY_NAME} entity is unavailable`);
+  }
   return entity.update(id, payload);
 }
 
 async function tryEntityDelete(id) {
   const entity = db.entities?.[ENTITY_NAME];
-  if (!entity || typeof entity.delete !== "function") return null;
+  if (!entity || typeof entity.delete !== "function") {
+    throw new Error(`${ENTITY_NAME} entity is unavailable`);
+  }
   return entity.delete(id);
 }
 
 export async function getDownloadItems() {
-  const localItems = fromLocalStorage();
-  if (localItems.length > 0) {
-    return localItems.sort((a, b) => a.sort_order - b.sort_order);
-  }
-
   try {
     const entityItems = await tryEntityList();
-    if (entityItems.length > 0) {
-      const normalized = entityItems
-        .map((item, i) => normalizeItem(item, i))
-        .sort((a, b) => a.sort_order - b.sort_order);
-      saveLocalStorage(normalized);
-      return normalized;
+    const normalized = entityItems
+      .map((item, i) => normalizeItem(item, i))
+      .sort((a, b) => a.sort_order - b.sort_order);
+    saveLocalStorage(normalized);
+    return normalized.length > 0 ? normalized : getDefaultDownloads();
+  } catch {
+    const localItems = fromLocalStorage();
+    if (localItems.length > 0) {
+      return localItems.sort((a, b) => a.sort_order - b.sort_order);
     }
-  } catch {}
-
-  const defaults = getDefaultDownloads();
-  saveLocalStorage(defaults);
-  return defaults;
+    return getDefaultDownloads();
+  }
 }
 
 export async function createDownloadItem(payload) {
   const current = await getDownloadItems();
   const base = normalizeItem(payload, current.length);
   const createdLocal = normalizeItem({ ...base, id: `local-${Date.now()}` }, current.length);
+  await tryEntityCreate(createdLocal);
   const next = [...current, createdLocal];
   saveLocalStorage(next);
-
-  try {
-    await tryEntityCreate(createdLocal);
-  } catch {}
-
   return createdLocal;
 }
 
 export async function updateDownloadItem(id, payload) {
   const current = await getDownloadItems();
   const next = current.map((item) => (item.id === id ? normalizeItem({ ...item, ...payload }) : item));
+  await tryEntityUpdate(id, payload);
   saveLocalStorage(next);
   const updatedLocal = next.find((item) => item.id === id) || null;
-
-  try {
-    await tryEntityUpdate(id, payload);
-  } catch {}
-
   return updatedLocal;
 }
 
 export async function deleteDownloadItem(id) {
   const current = await getDownloadItems();
   const next = current.filter((item) => item.id !== id);
+  await tryEntityDelete(id);
   saveLocalStorage(next);
-
-  try {
-    await tryEntityDelete(id);
-  } catch {}
 }

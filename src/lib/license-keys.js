@@ -1,4 +1,4 @@
-const db = globalThis.__B44_DB__ || {
+const db = globalThis.__B44_DB__ || globalThis.db || {
   entities: new Proxy(
     {},
     {
@@ -58,43 +58,43 @@ async function tryDbList() {
 
 async function tryDbCreate(payload) {
   const entity = db.entities?.LicenseKey;
-  if (!entity || typeof entity.create !== "function") return;
+  if (!entity || typeof entity.create !== "function") {
+    throw new Error("LicenseKey entity is unavailable");
+  }
   await entity.create(payload);
 }
 
 async function tryDbUpdate(id, payload) {
   const entity = db.entities?.LicenseKey;
-  if (!entity || typeof entity.update !== "function") return;
+  if (!entity || typeof entity.update !== "function") {
+    throw new Error("LicenseKey entity is unavailable");
+  }
   await entity.update(id, payload);
 }
 
 async function tryDbDelete(id) {
   const entity = db.entities?.LicenseKey;
-  if (!entity || typeof entity.delete !== "function") return;
+  if (!entity || typeof entity.delete !== "function") {
+    throw new Error("LicenseKey entity is unavailable");
+  }
   await entity.delete(id);
 }
 
 export async function getLicenseKeys() {
-  const local = readLocal().map(normalize);
-  if (local.length > 0) return local;
   try {
     const dbRows = (await tryDbList()).map(normalize);
-    if (dbRows.length > 0) {
-      writeLocal(dbRows);
-      return dbRows;
-    }
-  } catch {}
-  return [];
+    writeLocal(dbRows);
+    return dbRows;
+  } catch {
+    return readLocal().map(normalize);
+  }
 }
 
 export async function createLicenseKeyRecord(payload) {
-  const current = await getLicenseKeys();
   const nextRecord = normalize(payload);
-  const next = [nextRecord, ...current];
-  writeLocal(next);
-  try {
-    await tryDbCreate(nextRecord);
-  } catch {}
+  await tryDbCreate(nextRecord);
+  const current = await getLicenseKeys();
+  writeLocal([nextRecord, ...current.filter((row) => row.id !== nextRecord.id)]);
   return nextRecord;
 }
 
@@ -107,22 +107,18 @@ export async function markLicenseKeyUsed(id, username) {
       : row
   );
   writeLocal(next);
-  try {
-    await tryDbUpdate(id, {
-      used: true,
-      used_by_username: username,
-      used_at: usedAt,
-    });
-  } catch {}
+  await tryDbUpdate(id, {
+    used: true,
+    used_by_username: username,
+    used_at: usedAt,
+  });
 }
 
 export async function deleteLicenseKeyRecord(id) {
   const current = await getLicenseKeys();
   const next = current.filter((row) => row.id !== id);
+  await tryDbDelete(id);
   writeLocal(next);
-  try {
-    await tryDbDelete(id);
-  } catch {}
 }
 
 export async function consumeLicenseForRegistration({

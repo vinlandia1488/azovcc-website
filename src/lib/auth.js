@@ -1,4 +1,4 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+const db = globalThis.__B44_DB__ || globalThis.db || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
 import { consumeLicenseForRegistration } from "@/lib/license-keys";
 
@@ -101,7 +101,6 @@ export async function deleteUserAccount(account) {
 }
 
 async function getAllAccounts() {
-  const cached = readAccountsCache();
   let rows = [];
   if (typeof db.entities.Account.list === "function") {
     rows = await db.entities.Account.list();
@@ -109,14 +108,8 @@ async function getAllAccounts() {
     rows = await db.entities.Account.filter({});
   }
   const dbRows = Array.isArray(rows) ? rows : [];
-  const merged = [...dbRows];
-  cached.forEach((c) => {
-    if (!merged.some((m) => (m.id && c.id && m.id === c.id) || (m.username && m.username === c.username))) {
-      merged.push(c);
-    }
-  });
-  if (merged.length > 0) writeAccountsCache(merged);
-  return merged;
+  if (dbRows.length > 0) writeAccountsCache(dbRows);
+  return dbRows;
 }
 
 function normalizeSessionAccount(account, fallbackUsername = "") {
@@ -131,6 +124,12 @@ function normalizeSessionAccount(account, fallbackUsername = "") {
     is_admin: Boolean(account?.is_admin),
     last_login: account?.last_login || new Date().toISOString(),
   };
+}
+
+function assertPersistedAccount(account, context) {
+  if (!account || !account.id || !account.username) {
+    throw new Error(`${context}: account was not saved to the backend`);
+  }
 }
 
 export async function loginUser(username, password) {
@@ -163,6 +162,7 @@ export async function loginUser(username, password) {
       is_admin: true,
       last_login: new Date().toISOString()
     });
+    assertPersistedAccount(createdAdmin, "Admin bootstrap failed");
     accounts = [createdAdmin];
   }
   if (!accounts || accounts.length === 0) throw new Error('User not found');
@@ -232,15 +232,10 @@ export async function registerUser(username, password, licenseKey) {
     last_login: new Date().toISOString()
   };
 
-  let created = null;
-  try {
-    created = await db.entities.Account.create(payload);
-  } catch {}
+  const created = await db.entities.Account.create(payload);
+  assertPersistedAccount(created, "Registration failed");
 
-  const createdAccount = normalizeSessionAccount(
-    created && created.username ? created : { ...payload, id: created?.id || `local-account-${Date.now()}` },
-    normalizedUsername
-  );
+  const createdAccount = normalizeSessionAccount(created, normalizedUsername);
   upsertAccountCache(createdAccount);
   setSession(createdAccount);
   return createdAccount;
@@ -253,12 +248,10 @@ export async function ensureAdminExists() {
   const existingAdminUser = await db.entities.Account.filter({ username: 'admin' });
   if (existingAdminUser && existingAdminUser.length > 0) {
     const adminAccount = existingAdminUser[0];
-    try {
-      await db.entities.Account.update(adminAccount.id, {
-        password_hash: adminHash,
-        is_admin: true
-      });
-    } catch {}
+    await db.entities.Account.update(adminAccount.id, {
+      password_hash: adminHash,
+      is_admin: true
+    });
     upsertAccountCache(normalizeSessionAccount({ ...adminAccount, username: 'admin', is_admin: true }, 'admin'));
     return;
   }
@@ -266,46 +259,25 @@ export async function ensureAdminExists() {
   const admins = await db.entities.Account.filter({ is_admin: true });
   if (admins && admins.length > 0) {
     const adminAccount = admins[0];
-    try {
-      await db.entities.Account.update(adminAccount.id, {
-        username: 'admin',
-        password_hash: adminHash,
-        is_admin: true
-      });
-    } catch {}
+    await db.entities.Account.update(adminAccount.id, {
+      username: 'admin',
+      password_hash: adminHash,
+      is_admin: true
+    });
     upsertAccountCache(normalizeSessionAccount({ ...adminAccount, username: 'admin', is_admin: true }, 'admin'));
     return;
   }
 
-  let createdAdmin = null;
-  try {
-    createdAdmin = await db.entities.Account.create({
-      username: 'admin',
-      password_hash: adminHash,
-      internal_license: generateInternalLicense(),
-      script_license: generateScriptLicense(),
-      unique_identifier: 0,
-      accent_color: '#ef4444',
-      is_admin: true,
-      last_login: now
-    });
-  } catch {}
-  upsertAccountCache(
-    normalizeSessionAccount(
-      createdAdmin && createdAdmin.username
-        ? createdAdmin
-        : {
-            id: `local-admin-${Date.now()}`,
-            username: 'admin',
-            password_hash: adminHash,
-            internal_license: generateInternalLicense(),
-            script_license: generateScriptLicense(),
-            unique_identifier: 0,
-            accent_color: '#ef4444',
-            is_admin: true,
-            last_login: now,
-          },
-      'admin'
-    )
-  );
+  const createdAdmin = await db.entities.Account.create({
+    username: 'admin',
+    password_hash: adminHash,
+    internal_license: generateInternalLicense(),
+    script_license: generateScriptLicense(),
+    unique_identifier: 0,
+    accent_color: '#ef4444',
+    is_admin: true,
+    last_login: now
+  });
+  assertPersistedAccount(createdAdmin, "Admin bootstrap failed");
+  upsertAccountCache(normalizeSessionAccount(createdAdmin, 'admin'));
 }

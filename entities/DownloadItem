@@ -1,0 +1,30 @@
+{
+  "name": "DownloadItem",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "action_label": {
+      "type": "string"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "open_url": {
+      "type": "string"
+    },
+    "sort_order": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

@@ -1,4 +1,4 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+const db = globalThis.__B44_DB__ || globalThis.db || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -19,14 +19,17 @@ export default function Dashboard() {
   const [announcement, setAnnouncement] = useState('');
 
   useEffect(() => {
-    const s = getSession();
-    if (!s) { navigate('/'); return; }
-    const cached = getCachedAccounts();
-    const cacheMatch = cached.find((row) =>
-      (s.id && row.id && row.id === s.id) || (s.username && row.username === s.username)
-    );
-    setSessionState({ ...cacheMatch, ...s });
-    setAnnouncement(getAnnouncement());
+    async function init() {
+      const s = getSession();
+      if (!s) { navigate('/'); return; }
+      const cached = getCachedAccounts();
+      const cacheMatch = cached.find((row) =>
+        (s.id && row.id && row.id === s.id) || (s.username && row.username === s.username)
+      );
+      setSessionState({ ...cacheMatch, ...s });
+      setAnnouncement(await getAnnouncement());
+    }
+    init();
   }, []);
 
   function handleLogout() {
@@ -86,7 +89,7 @@ export default function Dashboard() {
           <PanelTab
             accent={accent}
             session={session}
-            onAnnouncementSaved={() => setAnnouncement(getAnnouncement())}
+            onAnnouncementSaved={async () => setAnnouncement(await getAnnouncement())}
           />
         )}
       </div>

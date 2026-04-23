@@ -1,7 +1,7 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
+const db = globalThis.__B44_DB__ || globalThis.db || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
 import { useState, useEffect } from 'react';
-import { deleteUserAccount, generateInternalLicense, generateScriptLicense, getCachedAccounts } from '@/lib/auth';
+import { deleteUserAccount, generateInternalLicense, generateScriptLicense } from '@/lib/auth';
 import { getAnnouncement, setAnnouncement } from '@/lib/app-settings';
 import {
   getDefaultCloudConfig,
@@ -96,34 +96,10 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
       getEntityRows('Account'),
       getDownloadItems(),
     ]);
-    const safeAccounts = Array.isArray(a) ? a : [];
-    const localSession = (() => {
-      try {
-        const raw = localStorage.getItem('azov_session');
-        return raw ? JSON.parse(raw) : null;
-      } catch {
-        return null;
-      }
-    })();
-    const fallbackAccount = session || localSession;
-    const hasFallbackInList = fallbackAccount?.username
-      ? safeAccounts.some((row) => row.username === fallbackAccount.username)
-      : false;
-    const cachedAccounts = getCachedAccounts();
-    const mergedFromCache = [...safeAccounts];
-    cachedAccounts.forEach((row) => {
-      if (!mergedFromCache.some((m) => (m.id && row.id && m.id === row.id) || (m.username && m.username === row.username))) {
-        mergedFromCache.push(row);
-      }
-    });
-    const mergedAccounts = hasFallbackInList
-      ? mergedFromCache
-      : (fallbackAccount ? [fallbackAccount, ...mergedFromCache] : mergedFromCache);
-
     setKeys(k || []);
-    setAccounts(mergedAccounts);
+    setAccounts(Array.isArray(a) ? a : []);
     setDownloads(d || []);
-    setAnnouncementState(getAnnouncement());
+    setAnnouncementState(await getAnnouncement());
     setDefaultCloudConfigState(getDefaultCloudConfig());
     setPreviewConfigState(getPreviewConfig());
   }
@@ -187,10 +163,10 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     setDownloads((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   }
 
-  function saveAnnouncementValue() {
-    setAnnouncement(announcement);
+  async function saveAnnouncementValue() {
+    await setAnnouncement(announcement);
     if (typeof onAnnouncementSaved === 'function') {
-      onAnnouncementSaved();
+      await onAnnouncementSaved();
     }
   }
 
