@@ -4,6 +4,8 @@ const db = getBackendDb();
 
 const STORAGE_KEY = "azov_download_items";
 const ENTITY_NAME = "DownloadItem";
+const FALLBACK_NAME = "__downloads__";
+const FALLBACK_OWNER = "__system__";
 
 export const DOWNLOAD_STATUSES = ["stable", "maintenance", "down"];
 
@@ -88,6 +90,44 @@ async function tryEntityList() {
   return [];
 }
 
+function isMissingSchemaError(error) {
+  return String(error?.message || "").toLowerCase().includes("schema");
+}
+
+async function getFallbackRow() {
+  const rows = await db.entities.CloudConfig.filter({
+    name: FALLBACK_NAME,
+    owner_username: FALLBACK_OWNER,
+  });
+  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+}
+
+async function listFromFallbackStore() {
+  const row = await getFallbackRow();
+  if (!row?.content) return [];
+  try {
+    const parsed = JSON.parse(row.content);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item, i) => normalizeItem(item, i));
+  } catch {
+    return [];
+  }
+}
+
+async function writeFallbackStore(items) {
+  const serialized = JSON.stringify(items.map((item, i) => normalizeItem(item, i)));
+  const existing = await getFallbackRow();
+  if (existing?.id) {
+    await db.entities.CloudConfig.update(existing.id, { content: serialized });
+    return;
+  }
+  await db.entities.CloudConfig.create({
+    name: FALLBACK_NAME,
+    owner_username: FALLBACK_OWNER,
+    content: serialized,
+  });
+}
+
 async function tryEntityCreate(payload) {
   const entity = db.entities?.[ENTITY_NAME];
   if (!entity || typeof entity.create !== "function") {
@@ -134,7 +174,18 @@ export async function getDownloadItems() {
     }
     saveLocalStorage(createdDefaults);
     return createdDefaults;
-  } catch {
+  } catch (error) {
+    if (isMissingSchemaError(error)) {
+      const fallbackRows = await listFromFallbackStore();
+      if (fallbackRows.length > 0) {
+        saveLocalStorage(fallbackRows);
+        return fallbackRows;
+      }
+      const defaults = getDefaultDownloads().map((item, i) => normalizeItem(item, i));
+      await writeFallbackStore(defaults);
+      saveLocalStorage(defaults);
+      return defaults;
+    }
     const localItems = fromLocalStorage();
     if (localItems.length > 0) {
       return localItems.sort((a, b) => a.sort_order - b.sort_order);
@@ -146,9 +197,18 @@ export async function getDownloadItems() {
 export async function createDownloadItem(payload) {
   const current = await getDownloadItems();
   const base = normalizeItem(payload, current.length);
-  const created = await tryEntityCreate(toMutablePayload(base, current.length));
-  const createdLocal = normalizeItem(created, current.length);
+  let createdLocal = null;
+  try {
+    const created = await tryEntityCreate(toMutablePayload(base, current.length));
+    createdLocal = normalizeItem(created, current.length);
+  } catch (error) {
+    if (!isMissingSchemaError(error)) throw error;
+    createdLocal = normalizeItem({ ...base, id: `cfg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` }, current.length);
+  }
   const next = [...current, createdLocal];
+  if (createdLocal.id.startsWith("cfg-")) {
+    await writeFallbackStore(next);
+  }
   saveLocalStorage(next);
   return createdLocal;
 }
@@ -162,14 +222,30 @@ export async function updateDownloadItem(id, payload) {
   const merged = normalizeItem({ ...existing, ...payload }, existing.sort_order);
   const mutablePayload = toMutablePayload(merged, existing.sort_order);
   let persisted = null;
-  if (String(id).startsWith("default-") || String(id).startsWith("local-")) {
-    const created = await tryEntityCreate(mutablePayload);
-    persisted = normalizeItem(created || merged, merged.sort_order);
+  const isFallbackId = String(id).startsWith("cfg-");
+  if (isFallbackId) {
+    persisted = merged;
+  } else if (String(id).startsWith("default-") || String(id).startsWith("local-")) {
+    try {
+      const created = await tryEntityCreate(mutablePayload);
+      persisted = normalizeItem(created || merged, merged.sort_order);
+    } catch (error) {
+      if (!isMissingSchemaError(error)) throw error;
+      persisted = normalizeItem({ ...merged, id: `cfg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` }, merged.sort_order);
+    }
   } else {
-    const updated = await tryEntityUpdate(id, mutablePayload);
-    persisted = normalizeItem(updated || merged, merged.sort_order);
+    try {
+      const updated = await tryEntityUpdate(id, mutablePayload);
+      persisted = normalizeItem(updated || merged, merged.sort_order);
+    } catch (error) {
+      if (!isMissingSchemaError(error)) throw error;
+      persisted = merged;
+    }
   }
   const next = current.map((item) => (item.id === id ? persisted : item));
+  if (persisted.id.startsWith("cfg-") || isFallbackId) {
+    await writeFallbackStore(next);
+  }
   saveLocalStorage(next);
   const updatedLocal = next.find((item) => item.id === persisted.id) || persisted || merged;
   return updatedLocal;
@@ -178,6 +254,16 @@ export async function updateDownloadItem(id, payload) {
 export async function deleteDownloadItem(id) {
   const current = await getDownloadItems();
   const next = current.filter((item) => item.id !== id);
-  await tryEntityDelete(id);
+  if (String(id).startsWith("cfg-")) {
+    await writeFallbackStore(next);
+    saveLocalStorage(next);
+    return;
+  }
+  try {
+    await tryEntityDelete(id);
+  } catch (error) {
+    if (!isMissingSchemaError(error)) throw error;
+    await writeFallbackStore(next);
+  }
   saveLocalStorage(next);
 }
