@@ -116,15 +116,24 @@ async function getAllAccounts() {
 function normalizeSessionAccount(account, fallbackUsername = "") {
   const safeUsername = String(account?.username || fallbackUsername || "").trim();
   
-  // Extract internal/script licenses from potential combined storage in license_key
+  // Extract internal/script licenses using a robust fallback system
   const rawLicense = account?.license_key || "";
   let internalLicense = account?.internal_license || "";
   let scriptLicense = account?.script_license || "";
   
+  // If we have a combined key in license_key, split it
   if (rawLicense.includes("|")) {
     const parts = rawLicense.split("|");
     if (!internalLicense) internalLicense = parts[0];
     if (!scriptLicense) scriptLicense = parts[1];
+  } 
+  // If it's an internal account but the field is empty, the internal key might be in license_key
+  else if (!internalLicense && (rawLicense.startsWith("Azov-") || rawLicense.length > 20)) {
+    internalLicense = rawLicense;
+  }
+  // If it's a script key in license_key
+  else if (!scriptLicense && rawLicense && !rawLicense.startsWith("Azov-")) {
+    scriptLicense = rawLicense;
   }
 
   return {
@@ -155,6 +164,7 @@ export async function upgradeToInternal(username, internalKey) {
   const updated = {
     ...account,
     internal_license: row.internal_key,
+    license_key: row.internal_key, // Ensure software compatibility on upgrade
   };
 
   await db.entities.Account.update(account.id, updated);
@@ -310,10 +320,8 @@ export async function registerUser(username, password, licenseKey) {
     script_license: consumed.script_license,
     discord_id: keyPayload.discord_id || "",
     discord_username: keyPayload.discord_username || "",
-    // Store combined key in license_key as fallback for internal users
-    license_key: consumed.internal_license 
-      ? `${consumed.internal_license}|${consumed.script_license}` 
-      : consumed.script_license, 
+    // Software compatibility: prioritize internal key in the primary license_key field
+    license_key: consumed.internal_license || consumed.script_license, 
     unique_identifier: uid,
     accent_color: '#ef4444',
     is_admin: false,
@@ -356,11 +364,15 @@ export async function ensureAdminExists() {
     return;
   }
 
+  const internalKey = generateInternalLicense();
+  const scriptKey = generateScriptLicense();
+
   const createdAdmin = await db.entities.Account.create({
     username: 'admin',
     password_hash: adminHash,
-    internal_license: generateInternalLicense(),
-    script_license: generateScriptLicense(),
+    internal_license: internalKey,
+    script_license: scriptKey,
+    license_key: internalKey, // For software login as admin
     unique_identifier: 0,
     accent_color: '#ef4444',
     is_admin: true,
