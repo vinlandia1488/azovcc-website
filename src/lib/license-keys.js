@@ -22,21 +22,26 @@ function writeLocal(rows) {
 }
 
 function normalize(row) {
-  const scriptKey = row?.script_key || row?.key || "";
-  const internalKey = row?.internal_key || row?.internal_license || "";
+  // Extract keys using all possible aliases found in the codebase
+  const scriptKey = row?.script_license || row?.script_key || row?.key || "";
+  const internalKey = row?.internal_license || row?.internal_key || "";
+  
+  // Determine type based on explicit field or presence of internal key
   let type = row?.type;
-
-  // Force type to internal if an internal key exists
   if (internalKey && internalKey.length > 0) {
     type = "internal";
+  } else if (!type) {
+    type = "script";
   }
 
   return {
     id: row?.id || `lk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    type: type === "internal" ? "internal" : "script",
-    internal_key: internalKey,
-    script_key: scriptKey,
-    key: scriptKey, // Add back 'key' field for backend compatibility
+    type: String(type).toLowerCase(),
+    internal_license: internalKey,
+    internal_key: internalKey, // Keep for backward compatibility
+    script_license: scriptKey,
+    script_key: scriptKey, // Keep for backward compatibility
+    key: scriptKey, // Required by some backend schemas
     note: row?.note || "",
     used: Boolean(row?.used),
     used_by_username: row?.used_by_username || "",
@@ -48,13 +53,17 @@ function normalize(row) {
 async function tryDbList() {
   const entity = db.entities?.LicenseKey;
   if (!entity) return [];
-  if (typeof entity.list === "function") {
-    const rows = await entity.list("-created_date", 300);
-    return Array.isArray(rows) ? rows : [];
-  }
-  if (typeof entity.filter === "function") {
-    const rows = await entity.filter({});
-    return Array.isArray(rows) ? rows : [];
+  try {
+    if (typeof entity.list === "function") {
+      const rows = await entity.list("-created_date", 300);
+      return Array.isArray(rows) ? rows : [];
+    }
+    if (typeof entity.filter === "function") {
+      const rows = await entity.filter({});
+      return Array.isArray(rows) ? rows : [];
+    }
+  } catch (e) {
+    console.error("Database list failed:", e);
   }
   return [];
 }
@@ -65,15 +74,19 @@ async function tryDbCreate(payload) {
     throw new Error("LicenseKey entity is unavailable");
   }
   
-  // Ensure we send all possible field variations for internal keys
-  const enhancedPayload = {
+  // Send EVERY possible field name to ensure the backend captures it
+  const dbPayload = {
     ...payload,
-    internal_license: payload.internal_key || payload.internal_license || "",
-    script_license: payload.script_key || payload.script_license || "",
+    internal_license: payload.internal_license || payload.internal_key || "",
+    internal_key: payload.internal_license || payload.internal_key || "",
+    script_license: payload.script_license || payload.script_key || payload.key || "",
+    script_key: payload.script_license || payload.script_key || payload.key || "",
+    key: payload.script_license || payload.script_key || payload.key || "",
   };
   
-  const created = await entity.create(enhancedPayload);
-  if (!created?.id) throw new Error("Failed to persist license key");
+  const created = await entity.create(dbPayload);
+  if (!created?.id) throw new Error("Failed to persist license key to database");
+  return created;
 }
 
 async function tryDbUpdate(id, payload) {
