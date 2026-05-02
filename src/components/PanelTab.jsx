@@ -120,20 +120,26 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
   async function generateKey() {
     setGenerating(true);
-    const internalKey = newKeyType === 'internal' ? (manualInternalKey || generateInternalLicense()).trim() : '';
-    const scriptKey = (manualScriptKey || generateScriptLicense()).trim();
-    await createLicenseKeyRecord({
-      type: newKeyType,
-      internal_key: internalKey,
-      script_key: scriptKey,
-      note: note.trim(),
-      used: false,
-    });
-    setManualInternalKey('');
-    setManualScriptKey('');
-    setNote('');
-    await loadData();
-    setGenerating(false);
+    setPanelError('');
+    try {
+      const internalKey = newKeyType === 'internal' ? (manualInternalKey || generateInternalLicense()).trim() : '';
+      const scriptKey = (manualScriptKey || generateScriptLicense()).trim();
+      await createLicenseKeyRecord({
+        type: newKeyType,
+        internal_key: internalKey,
+        script_key: scriptKey,
+        note: note.trim(),
+        used: false,
+      });
+      setManualInternalKey('');
+      setManualScriptKey('');
+      setNote('');
+      await loadData();
+    } catch (err) {
+      setPanelError(err?.message || 'Failed to generate key.');
+    } finally {
+      setGenerating(false);
+    }
   }
 
   async function removeLicenseKey(id) {
@@ -376,11 +382,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
       {tab === 'users' && (
         <div className="bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden">
-          <div className="grid grid-cols-6 px-4 py-2 border-b border-zinc-800/60 text-[10px] uppercase tracking-widest text-zinc-600">
+          <div className="grid grid-cols-8 px-4 py-2 border-b border-zinc-800/60 text-[10px] uppercase tracking-widest text-zinc-600">
             <span>UID</span>
             <span>Username</span>
-            <span>Password Hash</span>
-            <span>Internal License</span>
+            <span>Pass Hash</span>
+            <span>Int License</span>
+            <span>Scr License</span>
+            <span>Reg Key</span>
             <span>Last Login</span>
             <span>Action</span>
           </div>
@@ -388,11 +396,45 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
             <p className="text-zinc-600 text-xs p-4">No accounts found.</p>
           )}
           {accounts.map(a => (
-            <div key={a.id || a.username} className="grid grid-cols-6 px-4 py-3 border-b border-zinc-800/30 items-center hover:bg-zinc-800/10 transition">
+            <div key={a.id || a.username} className="grid grid-cols-8 px-4 py-3 border-b border-zinc-800/30 items-center hover:bg-zinc-800/10 transition">
               <span className="text-zinc-300 text-xs font-mono">{a.unique_identifier ?? '—'}</span>
               <span className="text-zinc-200 text-xs font-medium">{a.username}</span>
-              <span className="text-zinc-500 text-[10px] font-mono truncate">{hashDisplay(a.password_hash)}</span>
-              <span className="text-zinc-500 text-[10px] font-mono truncate">{hashDisplay(a.internal_license)}</span>
+              <div className="flex items-center gap-1 font-mono text-[10px]">
+                <span className="text-zinc-500 truncate max-w-[80px]">
+                  {revealedKeys[`u-${a.username}-pass`] ? a.password_hash : hashDisplay(a.password_hash)}
+                </span>
+                <button onClick={() => toggleReveal(`u-${a.username}-pass`)} className="text-zinc-600 hover:text-zinc-400 transition">
+                  {revealedKeys[`u-${a.username}-pass`] ? <EyeOff size={11} /> : <Eye size={11} />}
+                </button>
+                {revealedKeys[`u-${a.username}-pass`] && <CopyBtn value={a.password_hash} />}
+              </div>
+              <div className="flex items-center gap-1 font-mono text-[10px]">
+                <span className="text-zinc-500 truncate max-w-[80px]">
+                  {revealedKeys[`u-${a.username}-int`] ? a.internal_license : hashDisplay(a.internal_license)}
+                </span>
+                <button onClick={() => toggleReveal(`u-${a.username}-int`)} className="text-zinc-600 hover:text-zinc-400 transition">
+                  {revealedKeys[`u-${a.username}-int`] ? <EyeOff size={11} /> : <Eye size={11} />}
+                </button>
+                {revealedKeys[`u-${a.username}-int`] && <CopyBtn value={a.internal_license} />}
+              </div>
+              <div className="flex items-center gap-1 font-mono text-[10px]">
+                <span className="text-zinc-500 truncate max-w-[80px]">
+                  {revealedKeys[`u-${a.username}-scr`] ? a.script_license : hashDisplay(a.script_license)}
+                </span>
+                <button onClick={() => toggleReveal(`u-${a.username}-scr`)} className="text-zinc-600 hover:text-zinc-400 transition">
+                  {revealedKeys[`u-${a.username}-scr`] ? <EyeOff size={11} /> : <Eye size={11} />}
+                </button>
+                {revealedKeys[`u-${a.username}-scr`] && <CopyBtn value={a.script_license} />}
+              </div>
+              <div className="flex items-center gap-1 font-mono text-[10px]">
+                <span className="text-zinc-500 truncate max-w-[80px]">
+                  {revealedKeys[`u-${a.username}-reg`] ? a.license_key : hashDisplay(a.license_key)}
+                </span>
+                <button onClick={() => toggleReveal(`u-${a.username}-reg`)} className="text-zinc-600 hover:text-zinc-400 transition">
+                  {revealedKeys[`u-${a.username}-reg`] ? <EyeOff size={11} /> : <Eye size={11} />}
+                </button>
+                {revealedKeys[`u-${a.username}-reg`] && <CopyBtn value={a.license_key} />}
+              </div>
               <span className="text-zinc-500 text-xs">
                 {a.last_login ? new Date(a.last_login).toLocaleDateString() : '—'}
               </span>

@@ -29,3 +29,6 @@ dist-ssr
 
 .env
 .vite
+
+# Software binaries and source
+software/

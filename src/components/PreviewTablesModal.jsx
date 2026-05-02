@@ -1,9 +1,23 @@
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { X, FileText } from 'lucide-react';
-import { getPreviewConfig } from '@/lib/config-templates';
+import { getPreviewConfig, getConfigTemplatesShared } from '@/lib/config-templates';
 
 export default function PreviewTablesModal({ onClose }) {
-  const previewConfig = useMemo(() => getPreviewConfig(), []);
+  const [previewConfig, setPreviewConfig] = useState(getPreviewConfig());
+
+  useEffect(() => {
+    async function fetchTemplates() {
+      try {
+        const templates = await getConfigTemplatesShared();
+        if (templates.previewConfig) {
+          setPreviewConfig(templates.previewConfig);
+        }
+      } catch (err) {
+        console.error('Failed to fetch preview config:', err);
+      }
+    }
+    fetchTemplates();
+  }, []);
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">

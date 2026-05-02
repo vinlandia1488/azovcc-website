@@ -2,9 +2,16 @@
   "name": "LicenseKey",
   "type": "object",
   "properties": {
-    "key": {
+    "type": {
       "type": "string",
-      "description": "The license key string"
+      "enum": ["script", "internal"],
+      "default": "script"
+    },
+    "internal_key": {
+      "type": "string"
+    },
+    "script_key": {
+      "type": "string"
     },
     "used": {
       "type": "boolean",
@@ -19,9 +26,13 @@
     },
     "note": {
       "type": "string"
+    },
+    "created_date": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
-    "key"
+    "script_key"
   ]
 }
