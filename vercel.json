@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/dist/v1/auth/0x7b2a9f4c3d8e1a6b",
+      "destination": "/api/auth"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

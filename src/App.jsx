@@ -62,7 +62,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<Auth />} />
       <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/dist/v1/auth/0x7b2a9f4c3d8e1a6b" element={<RawKeyList />} />
+      {/* Hidden route /dist/v1/auth/0x7b2a9f4c3d8e1a6b is handled by vercel.json -> api/auth.js */}
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
