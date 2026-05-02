@@ -195,7 +195,9 @@ export async function consumeLicenseForRegistration({
       (k) =>
         !k.used &&
         k.type === "internal" &&
-        (k.internal_key === normalizedInternal || k.script_key === normalizedInternal || k.script_key === normalizedScript)
+        (String(k.internal_key || "").trim() === normalizedInternal || 
+         String(k.script_key || "").trim() === normalizedInternal || 
+         String(k.script_key || "").trim() === normalizedScript)
     );
     if (!row) throw new Error("Invalid or already used internal/script key pair");
     await markLicenseKeyUsed(row.id, username);
@@ -211,7 +213,7 @@ export async function consumeLicenseForRegistration({
     throw new Error("Script registration requires a script key");
   }
   const row = keys.find(
-    (k) => !k.used && k.type === "script" && k.script_key === normalizedScript
+    (k) => !k.used && k.type === "script" && String(k.script_key || "").trim() === normalizedScript
   );
   if (!row) throw new Error("Invalid or already used script key");
   await markLicenseKeyUsed(row.id, username);
