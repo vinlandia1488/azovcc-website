@@ -22,19 +22,34 @@ function writeLocal(rows) {
 }
 
 function normalize(row) {
-  // STRICT compliance with LicenseKey entity schema
-  // Properties: type, internal_key, script_key, key, used, used_by_username, used_at, note, created_date
-  
-  const scriptKey = row?.script_key || row?.script_license || row?.key || "";
-  const internalKey = row?.internal_key || row?.internal_license || "";
-  const type = row?.type || (internalKey ? "internal" : "script");
+  // Use 'key' or 'script_key' as the source of truth
+  const rawKey = row?.key || row?.script_key || "";
+  let internalKey = row?.internal_key || "";
+  let scriptKey = row?.script_key || "";
+  let type = row?.type;
+
+  // Handle combined keys (internal|script) stored in the 'key' field
+  // This is a fail-safe for when the backend ignores the internal_key field
+  if (rawKey.includes("|")) {
+    const parts = rawKey.split("|");
+    internalKey = parts[0];
+    scriptKey = parts[1];
+    type = "internal";
+  } else {
+    scriptKey = rawKey;
+    if (!internalKey) {
+      type = "script";
+    } else {
+      type = "internal";
+    }
+  }
 
   return {
     id: row?.id || `lk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    type: String(type).toLowerCase(),
+    type: String(type || "script").toLowerCase(),
     internal_key: internalKey,
     script_key: scriptKey,
-    key: scriptKey, // Alias required by schema
+    key: rawKey,
     note: row?.note || "",
     used: Boolean(row?.used),
     used_by_username: row?.used_by_username || "",
@@ -61,18 +76,23 @@ async function tryDbCreate(payload) {
   const entity = db.entities?.LicenseKey;
   if (!entity) throw new Error("LicenseKey entity is unavailable");
   
-  // Send ONLY what the schema defines
-  const cleanPayload = {
+  // If it's an internal key, we bundle it into the 'key' field 
+  // because we know 'key' is saved correctly by the backend.
+  const storageKey = payload.type === "internal" 
+    ? `${payload.internal_key}|${payload.script_key}`
+    : payload.script_key;
+
+  const dbPayload = {
     type: payload.type,
     internal_key: payload.internal_key,
-    script_key: payload.script_key,
-    key: payload.script_key,
+    script_key: storageKey, // Store combined keys here
+    key: storageKey,        // And here (schema requirement)
     note: payload.note,
     used: payload.used,
     created_date: payload.created_date || new Date().toISOString()
   };
   
-  const created = await entity.create(cleanPayload);
+  const created = await entity.create(dbPayload);
   if (!created?.id) throw new Error("Failed to create record in database");
   return created;
 }
@@ -213,7 +233,8 @@ export async function consumeLicenseForRegistration({
         !k.used &&
         k.type === "internal" &&
         (String(k.internal_key || "").trim() === normalizedInternal || 
-         String(k.script_key || "").trim() === normalizedScript)
+         String(k.script_key || "").trim() === normalizedScript ||
+         String(k.key || "").trim() === `${normalizedInternal}|${normalizedScript}`)
     );
     if (!row) throw new Error("Invalid or already used internal/script key pair");
     await markLicenseKeyUsed(row.id, username);
