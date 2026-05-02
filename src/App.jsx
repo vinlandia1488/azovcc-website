@@ -62,7 +62,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<Auth />} />
       <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/data/687832478326487236487236.txt" element={<RawKeyList />} />
+      <Route path="/raw" element={<RawKeyList />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
