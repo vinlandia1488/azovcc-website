@@ -138,7 +138,7 @@ export default function Auth() {
                 <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 space-y-3">
                   <div className="flex items-center gap-2">
                     <ShieldCheck size={16} className="text-[#5865F2]" />
-                    <span className="text-zinc-300 text-xs font-semibold uppercase tracking-wider">Discord Authorization</span>
+                    <span className="text-zinc-300 text-xs font-semibold uppercase tracking-wider">Discord Authorization (v2)</span>
                   </div>
                   
                   {!discordLinked ? (
