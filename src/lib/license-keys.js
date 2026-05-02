@@ -22,26 +22,19 @@ function writeLocal(rows) {
 }
 
 function normalize(row) {
-  // Extract keys using all possible aliases found in the codebase
-  const scriptKey = row?.script_license || row?.script_key || row?.key || "";
-  const internalKey = row?.internal_license || row?.internal_key || "";
+  // STRICT compliance with LicenseKey entity schema
+  // Properties: type, internal_key, script_key, key, used, used_by_username, used_at, note, created_date
   
-  // Determine type based on explicit field or presence of internal key
-  let type = row?.type;
-  if (internalKey && internalKey.length > 0) {
-    type = "internal";
-  } else if (!type) {
-    type = "script";
-  }
+  const scriptKey = row?.script_key || row?.script_license || row?.key || "";
+  const internalKey = row?.internal_key || row?.internal_license || "";
+  const type = row?.type || (internalKey ? "internal" : "script");
 
   return {
     id: row?.id || `lk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     type: String(type).toLowerCase(),
-    internal_license: internalKey,
-    internal_key: internalKey, // Keep for backward compatibility
-    script_license: scriptKey,
-    script_key: scriptKey, // Keep for backward compatibility
-    key: scriptKey, // Required by some backend schemas
+    internal_key: internalKey,
+    script_key: scriptKey,
+    key: scriptKey, // Alias required by schema
     note: row?.note || "",
     used: Boolean(row?.used),
     used_by_username: row?.used_by_username || "",
@@ -54,38 +47,33 @@ async function tryDbList() {
   const entity = db.entities?.LicenseKey;
   if (!entity) return [];
   try {
-    if (typeof entity.list === "function") {
-      const rows = await entity.list("-created_date", 300);
-      return Array.isArray(rows) ? rows : [];
-    }
-    if (typeof entity.filter === "function") {
-      const rows = await entity.filter({});
-      return Array.isArray(rows) ? rows : [];
-    }
+    const rows = typeof entity.list === "function" 
+      ? await entity.list("-created_date", 300)
+      : await entity.filter({});
+    return Array.isArray(rows) ? rows : [];
   } catch (e) {
-    console.error("Database list failed:", e);
+    console.error("DB List Failed:", e);
+    return [];
   }
-  return [];
 }
 
 async function tryDbCreate(payload) {
   const entity = db.entities?.LicenseKey;
-  if (!entity || typeof entity.create !== "function") {
-    throw new Error("LicenseKey entity is unavailable");
-  }
+  if (!entity) throw new Error("LicenseKey entity is unavailable");
   
-  // Send EVERY possible field name to ensure the backend captures it
-  const dbPayload = {
-    ...payload,
-    internal_license: payload.internal_license || payload.internal_key || "",
-    internal_key: payload.internal_license || payload.internal_key || "",
-    script_license: payload.script_license || payload.script_key || payload.key || "",
-    script_key: payload.script_license || payload.script_key || payload.key || "",
-    key: payload.script_license || payload.script_key || payload.key || "",
+  // Send ONLY what the schema defines
+  const cleanPayload = {
+    type: payload.type,
+    internal_key: payload.internal_key,
+    script_key: payload.script_key,
+    key: payload.script_key,
+    note: payload.note,
+    used: payload.used,
+    created_date: payload.created_date || new Date().toISOString()
   };
   
-  const created = await entity.create(dbPayload);
-  if (!created?.id) throw new Error("Failed to persist license key to database");
+  const created = await entity.create(cleanPayload);
+  if (!created?.id) throw new Error("Failed to create record in database");
   return created;
 }
 
@@ -225,7 +213,6 @@ export async function consumeLicenseForRegistration({
         !k.used &&
         k.type === "internal" &&
         (String(k.internal_key || "").trim() === normalizedInternal || 
-         String(k.script_key || "").trim() === normalizedInternal || 
          String(k.script_key || "").trim() === normalizedScript)
     );
     if (!row) throw new Error("Invalid or already used internal/script key pair");
@@ -233,7 +220,7 @@ export async function consumeLicenseForRegistration({
     return {
       internal_license: row.internal_key,
       script_license: row.script_key,
-      license_key: row.script_key, // or internal_key, usually registration key is the script_key
+      license_key: row.script_key,
       key_id: row.id,
     };
   }

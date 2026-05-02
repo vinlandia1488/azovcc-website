@@ -129,9 +129,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
       
       const payload = {
         type: newKeyType,
-        internal_license: internalKey,
         internal_key: internalKey,
-        script_license: scriptKey,
         script_key: scriptKey,
         key: scriptKey,
         note: note.trim(),
@@ -349,28 +347,28 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
             )}
             {keys.map(k => (
               <div key={k.id} className="grid grid-cols-7 px-4 py-3 border-b border-zinc-800/30 items-center hover:bg-zinc-800/10 transition">
-                <span className="text-zinc-400 text-xs uppercase">{k.type || (k.internal_license ? 'internal' : 'script')}</span>
+                <span className="text-zinc-400 text-xs uppercase">{k.type}</span>
                 <div className="flex items-center gap-1 font-mono text-xs">
                   <span className="text-zinc-300">
-                    {k.internal_license ? (revealedKeys[`${k.id}-int`] ? k.internal_license : hashDisplay(k.internal_license)) : '—'}
+                    {k.internal_key ? (revealedKeys[`${k.id}-int`] ? k.internal_key : hashDisplay(k.internal_key)) : '—'}
                   </span>
-                  {k.internal_license && (
+                  {k.internal_key && (
                     <>
                       <button onClick={() => toggleReveal(`${k.id}-int`)} className="text-zinc-600 hover:text-zinc-400 transition">
                         {revealedKeys[`${k.id}-int`] ? <EyeOff size={11} /> : <Eye size={11} />}
                       </button>
-                      {revealedKeys[`${k.id}-int`] && <CopyBtn value={k.internal_license} />}
+                      {revealedKeys[`${k.id}-int`] && <CopyBtn value={k.internal_key} />}
                     </>
                   )}
                 </div>
                 <div className="flex items-center gap-1 font-mono text-xs">
                   <span className="text-zinc-300">
-                    {revealedKeys[`${k.id}-scr`] ? k.script_license : hashDisplay(k.script_license)}
+                    {revealedKeys[`${k.id}-scr`] ? k.script_key : hashDisplay(k.script_key)}
                   </span>
                   <button onClick={() => toggleReveal(`${k.id}-scr`)} className="text-zinc-600 hover:text-zinc-400 transition">
                     {revealedKeys[`${k.id}-scr`] ? <EyeOff size={11} /> : <Eye size={11} />}
                   </button>
-                  {revealedKeys[`${k.id}-scr`] && <CopyBtn value={k.script_license} />}
+                  {revealedKeys[`${k.id}-scr`] && <CopyBtn value={k.script_key} />}
                 </div>
                 <span className={`text-xs font-medium ${k.used ? 'text-red-400' : 'text-green-400'}`}>
                   {k.used ? 'Used' : 'Available'}
