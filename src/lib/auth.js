@@ -115,12 +115,24 @@ async function getAllAccounts() {
 
 function normalizeSessionAccount(account, fallbackUsername = "") {
   const safeUsername = String(account?.username || fallbackUsername || "").trim();
+  
+  // Extract internal/script licenses from potential combined storage in license_key
+  const rawLicense = account?.license_key || "";
+  let internalLicense = account?.internal_license || "";
+  let scriptLicense = account?.script_license || "";
+  
+  if (rawLicense.includes("|")) {
+    const parts = rawLicense.split("|");
+    if (!internalLicense) internalLicense = parts[0];
+    if (!scriptLicense) scriptLicense = parts[1];
+  }
+
   return {
     ...account,
     username: safeUsername,
     unique_identifier: account?.unique_identifier ?? 0,
-    internal_license: account?.internal_license || "",
-    script_license: account?.script_license || "",
+    internal_license: internalLicense,
+    script_license: scriptLicense,
     accent_color: account?.accent_color || "#ef4444",
     is_admin: Boolean(account?.is_admin),
     discord_id: account?.discord_id || "",
@@ -298,7 +310,10 @@ export async function registerUser(username, password, licenseKey) {
     script_license: consumed.script_license,
     discord_id: keyPayload.discord_id || "",
     discord_username: keyPayload.discord_username || "",
-    license_key: consumed.license_key || "", 
+    // Store combined key in license_key as fallback for internal users
+    license_key: consumed.internal_license 
+      ? `${consumed.internal_license}|${consumed.script_license}` 
+      : consumed.script_license, 
     unique_identifier: uid,
     accent_color: '#ef4444',
     is_admin: false,

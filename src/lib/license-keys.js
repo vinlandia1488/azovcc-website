@@ -24,18 +24,28 @@ function writeLocal(rows) {
 function normalize(row) {
   // Use 'key' or 'script_key' as the source of truth
   const rawKey = row?.key || row?.script_key || "";
-  let internalKey = row?.internal_key || "";
-  let scriptKey = row?.script_key || "";
+  let internalKey = row?.internal_key || row?.internal_license || "";
+  let scriptKey = row?.script_key || row?.script_license || "";
   let type = row?.type;
 
-  // Handle combined keys (internal|script) stored in the 'key' field
-  // This is a fail-safe for when the backend ignores the internal_key field
+  // 1. Handle combined keys (internal|script) stored in the 'key' field
   if (rawKey.includes("|")) {
     const parts = rawKey.split("|");
     internalKey = parts[0];
     scriptKey = parts[1];
     type = "internal";
-  } else {
+  } 
+  // 2. Fallback: check note for hidden internal key [IK:xxx]
+  else if (row?.note && row.note.includes("[IK:")) {
+    const match = row.note.match(/\[IK:([^\]]+)\]/);
+    if (match) {
+      internalKey = match[1];
+      scriptKey = rawKey;
+      type = "internal";
+    }
+  }
+  // 3. Regular script key
+  else {
     scriptKey = rawKey;
     if (!internalKey) {
       type = "script";
@@ -76,18 +86,21 @@ async function tryDbCreate(payload) {
   const entity = db.entities?.LicenseKey;
   if (!entity) throw new Error("LicenseKey entity is unavailable");
   
-  // If it's an internal key, we bundle it into the 'key' field 
-  // because we know 'key' is saved correctly by the backend.
-  const storageKey = payload.type === "internal" 
+  const isInternal = payload.type === "internal";
+  const storageKey = isInternal 
     ? `${payload.internal_key}|${payload.script_key}`
     : payload.script_key;
 
+  // We store the internal key in multiple places to ensure at least one sticks
   const dbPayload = {
     type: payload.type,
     internal_key: payload.internal_key,
-    script_key: storageKey, // Store combined keys here
-    key: storageKey,        // And here (schema requirement)
-    note: payload.note,
+    script_key: storageKey,
+    key: storageKey,
+    // Add internal key to note as a hidden tag for absolute recovery
+    note: isInternal 
+      ? `${payload.note || ""} [IK:${payload.internal_key}]`.trim() 
+      : payload.note,
     used: payload.used,
     created_date: payload.created_date || new Date().toISOString()
   };
