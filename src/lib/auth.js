@@ -156,10 +156,11 @@ export async function verifyDiscordCode(code) {
 }
 
 export function getDiscordAuthUrl() {
-  const clientId = "1495669650883739678"; // Updated client ID from user
+  const clientId = "1495669650883739678"; 
   const redirectUri = encodeURIComponent(window.location.origin + "/");
   const scope = encodeURIComponent("identify");
-  return `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
+  // Use the standard oauth2 authorize endpoint (no /api/ prefix for browser redirects)
+  return `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
 }
 
 export async function fetchDiscordUser(accessToken) {

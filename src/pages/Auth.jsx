@@ -146,16 +146,14 @@ export default function Auth() {
                       <p className="text-zinc-500 text-[10px] leading-tight">
                         To hardlock your license, you must authorize our Discord application.
                       </p>
-                      <button
-                        type="button"
-                        onClick={handleConnectDiscord}
-                        disabled={loading}
+                      <a
+                        href={getDiscordAuthUrl()}
                         className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-lg px-4 py-2.5 text-sm font-medium transition flex items-center justify-center gap-2 shadow-lg shadow-[#5865F2]/20"
                       >
                         <MessageSquare size={18} />
-                        {loading ? 'Redirecting...' : 'Connect Discord Account'}
+                        Connect Discord Account
                         <ExternalLink size={14} className="opacity-50" />
-                      </button>
+                      </a>
                     </div>
                   ) : (
                     <div className="w-full bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5 flex items-center justify-between">
