@@ -10,7 +10,6 @@ import { getBackendDb } from '@/lib/backend';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
-import RawKeyList from './pages/RawKeyList';
 // Add page imports here
 
 const AuthenticatedApp = () => {

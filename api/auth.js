@@ -18,14 +18,23 @@ function normalize(row) {
 }
 
 export default async function handler(req, res) {
-  // Add CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Content-Type', 'text/plain');
+  // CORS (allow browser + software fetches)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  res.setHeader("Content-Type", "text/plain; charset=utf-8");
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
 
   try {
-    const appId = process.env.VITE_BASE44_APP_ID;
-    const apiKey = process.env.VITE_BASE44_API_KEY;
+    // IMPORTANT:
+    // - `VITE_*` env vars are intended for the client build.
+    // - Serverless functions on Vercel should use non-VITE env vars.
+    // We support both names for backwards-compat with existing deployments.
+    const appId = process.env.BASE44_APP_ID || process.env.VITE_BASE44_APP_ID;
+    const apiKey = process.env.BASE44_API_KEY || process.env.VITE_BASE44_API_KEY;
 
     if (!appId || !apiKey) {
       return res.status(500).send("W0VSUk9SXSBNaXNzaW5nIEJBNEU0IEVudiBWYXJz"); // Base64 for [ERROR] Missing env vars
