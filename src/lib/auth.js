@@ -157,9 +157,8 @@ export async function verifyDiscordCode(code) {
 
 export function getDiscordAuthUrl() {
   const clientId = "1495669650883739678"; 
-  const redirectUri = encodeURIComponent(window.location.origin + "/");
+  const redirectUri = encodeURIComponent("http://localhost:5173/");
   const scope = encodeURIComponent("identify");
-  // Use the standard oauth2 authorize endpoint (no /api/ prefix for browser redirects)
   return `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
 }
 
