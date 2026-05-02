@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginUser, registerUser, getSession, ensureAdminExists } from '@/lib/auth';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, MessageSquare, CheckCircle2 } from 'lucide-react';
 import PreviewTablesModal from '@/components/PreviewTablesModal';
 
 export default function Auth() {
@@ -16,6 +16,8 @@ export default function Auth() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [discordLinked, setDiscordLinked] = useState(false);
+  const [discordInfo, setDiscordInfo] = useState(null);
 
   useEffect(() => {
     const session = getSession();
@@ -26,6 +28,12 @@ export default function Auth() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+
+    if (mode === 'register' && !discordLinked) {
+      setError('You must connect your Discord account to register.');
+      return;
+    }
+
     setLoading(true);
     try {
       if (mode === 'login') {
@@ -35,6 +43,8 @@ export default function Auth() {
           licenseType,
           scriptLicenseKey,
           internalLicenseKey,
+          discord_id: discordInfo.id,
+          discord_username: discordInfo.username,
         });
       }
       navigate('/dashboard');
@@ -43,6 +53,19 @@ export default function Auth() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleConnectDiscord() {
+    setLoading(true);
+    // Mocking Discord OAuth flow
+    setTimeout(() => {
+      setDiscordLinked(true);
+      setDiscordInfo({
+        id: Math.random().toString().substring(2, 20),
+        username: `${username || 'User'}#${Math.floor(1000 + Math.random() * 9000)}`
+      });
+      setLoading(false);
+    }, 1000);
   }
 
   return (
@@ -98,6 +121,40 @@ export default function Auth() {
 
             {mode === 'register' && (
               <div className="space-y-3">
+                <div className="h-px bg-zinc-800/60 my-4" />
+                
+                <label className="text-zinc-400 text-xs mb-1.5 block">Discord Connection (Required)</label>
+                {!discordLinked ? (
+                  <button
+                    type="button"
+                    onClick={handleConnectDiscord}
+                    disabled={loading}
+                    className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-lg px-4 py-2.5 text-sm font-medium transition flex items-center justify-center gap-2"
+                  >
+                    <MessageSquare size={18} />
+                    {loading ? 'Connecting...' : 'Connect Discord Account'}
+                  </button>
+                ) : (
+                  <div className="w-full bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 size={18} className="text-green-500" />
+                      <div className="flex flex-col">
+                        <span className="text-green-500 text-xs font-bold uppercase tracking-wider">Discord Linked</span>
+                        <span className="text-zinc-300 text-[10px] font-mono">{discordInfo?.username}</span>
+                      </div>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => setDiscordLinked(false)}
+                      className="text-zinc-500 hover:text-zinc-300 text-[10px] underline"
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
+                
+                <div className="h-px bg-zinc-800/60 my-4" />
+
                 <div>
                   <label className="text-zinc-400 text-xs mb-1.5 block">License Type</label>
                   <select

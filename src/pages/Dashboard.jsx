@@ -81,7 +81,7 @@ export default function Dashboard() {
           <DashboardTab session={session} onSettings={() => setShowSettings(true)} accent={accent} announcement={announcement} />
         )}
         {activeTab === 'downloads' && (
-          <DownloadsTab accent={accent} />
+          <DownloadsTab accent={accent} session={session} />
         )}
         {activeTab === 'cloud-configs' && (
           <CloudConfigsTab session={session} accent={accent} />

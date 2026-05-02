@@ -123,8 +123,31 @@ function normalizeSessionAccount(account, fallbackUsername = "") {
     script_license: account?.script_license || generateScriptLicense(),
     accent_color: account?.accent_color || "#ef4444",
     is_admin: Boolean(account?.is_admin),
+    discord_id: account?.discord_id || "",
+    discord_username: account?.discord_username || "",
     last_login: account?.last_login || new Date().toISOString(),
   };
+}
+
+export async function upgradeToInternal(username, internalKey) {
+  const accounts = await db.entities.Account.filter({ username });
+  if (!accounts || accounts.length === 0) throw new Error("User not found");
+  const account = accounts[0];
+
+  const keys = await getLicenseKeys();
+  const row = keys.find(k => !k.used && k.type === "internal" && k.internal_key === internalKey);
+  if (!row) throw new Error("Invalid or already used internal key");
+
+  await markLicenseKeyUsed(row.id, username);
+
+  const updated = {
+    ...account,
+    internal_license: row.internal_key,
+  };
+
+  await db.entities.Account.update(account.id, updated);
+  setSession(normalizeSessionAccount(updated));
+  return updated;
 }
 
 function assertPersistedAccount(account, context) {
@@ -227,6 +250,8 @@ export async function registerUser(username, password, licenseKey) {
     license_key_id: consumed.key_id,
     internal_license: consumed.internal_license,
     script_license: consumed.script_license,
+    discord_id: licenseKey.discord_id || "",
+    discord_username: licenseKey.discord_username || "",
     unique_identifier: uid,
     accent_color: '#ef4444',
     is_admin: false,

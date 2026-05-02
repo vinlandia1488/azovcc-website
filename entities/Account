@@ -34,6 +34,14 @@
       "type": "boolean",
       "default": false
     },
+    "discord_id": {
+      "type": "string",
+      "description": "Linked Discord account ID"
+    },
+    "discord_username": {
+      "type": "string",
+      "description": "Linked Discord username"
+    },
     "last_login": {
       "type": "string",
       "format": "date-time"

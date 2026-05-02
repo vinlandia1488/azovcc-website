@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { X, Check, LogOut } from 'lucide-react';
+import { X, Check, LogOut, ShieldCheck, ArrowUpCircle } from 'lucide-react';
 
-import { sha256, setSession, clearSession } from '@/lib/auth';
+import { sha256, setSession, clearSession, upgradeToInternal } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 
 const db = getBackendDb();
@@ -32,9 +32,12 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [currentPass, setCurrentPass] = useState('');
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
+  const [internalKey, setInternalKey] = useState('');
   const [saving, setSaving] = useState(false);
   const [passError, setPassError] = useState('');
   const [passSuccess, setPassSuccess] = useState('');
+  const [upgradeError, setUpgradeError] = useState('');
+  const [upgradeSuccess, setUpgradeSuccess] = useState('');
 
   async function saveColor() {
     setSaving(true);
@@ -72,6 +75,24 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
     setConfirmPass('');
     setPassSuccess('Password changed successfully!');
     setSaving(false);
+  }
+
+  async function handleUpgrade() {
+    setUpgradeError('');
+    setUpgradeSuccess('');
+    if (!internalKey.trim()) return;
+
+    setSaving(true);
+    try {
+      await upgradeToInternal(session.username, internalKey.trim());
+      setUpgradeSuccess('Successfully upgraded to Internal License!');
+      setInternalKey('');
+      await onSaved();
+    } catch (err) {
+      setUpgradeError(err.message || 'Upgrade failed');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -128,6 +149,53 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
               {saving ? 'Saving...' : 'Save Color'}
             </button>
           </div>
+
+          {/* Divider */}
+          <div className="h-px bg-zinc-800/60" />
+
+          {/* Upgrade License */}
+          {!session.internal_license && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="text-zinc-300 text-sm font-semibold">Upgrade License</h3>
+                <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[9px] font-bold uppercase tracking-wider">
+                  Script Only
+                </span>
+              </div>
+              <div className="space-y-2">
+                <p className="text-zinc-500 text-[10px] leading-relaxed mb-2">
+                  Enter an Internal License key to unlock the internal build and features.
+                </p>
+                <input
+                  type="text"
+                  value={internalKey}
+                  onChange={e => setInternalKey(e.target.value)}
+                  placeholder="Azov-internal-key-here"
+                  className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+                />
+              </div>
+              {upgradeError && <p className="text-red-400 text-[10px] mt-2">{upgradeError}</p>}
+              {upgradeSuccess && <p className="text-green-400 text-[10px] mt-2">{upgradeSuccess}</p>}
+              <button
+                onClick={handleUpgrade}
+                disabled={saving || !internalKey.trim()}
+                className="w-full mt-3 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white transition disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                <ArrowUpCircle size={14} />
+                Upgrade to Internal
+              </button>
+            </div>
+          )}
+
+          {session.internal_license && (
+            <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
+              <div className="flex items-center gap-2 text-blue-400 mb-1">
+                <ShieldCheck size={16} />
+                <span className="text-sm font-bold">Internal License Active</span>
+              </div>
+              <p className="text-zinc-500 text-[10px]">You have full access to internal builds and resources.</p>
+            </div>
+          )}
 
           {/* Divider */}
           <div className="h-px bg-zinc-800/60" />

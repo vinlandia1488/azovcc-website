@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Copy, Check, Eye, EyeOff, User, Shield, Key, Calendar, Fingerprint } from 'lucide-react';
+import { X, Copy, Check, Eye, EyeOff, User, Shield, Key, Calendar, Fingerprint, MessageSquare } from 'lucide-react';
 
 function InfoRow({ label, value, icon: Icon, isSensitive = false, onCopy }) {
   const [revealed, setRevealed] = useState(false);
@@ -108,6 +108,11 @@ export default function UserDetailModal({ user, onClose, accent }) {
               value={user.license_key} 
               icon={Key} 
               isSensitive={true} 
+            />
+            <InfoRow 
+              label="Discord Connection" 
+              value={user.discord_username ? `${user.discord_username} (${user.discord_id})` : 'Not Connected'} 
+              icon={MessageSquare} 
             />
             <div className="grid grid-cols-2 gap-4">
               <InfoRow 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download, ExternalLink } from "lucide-react";
+import { Download, ExternalLink, Lock, ShieldAlert } from "lucide-react";
 import { getDownloadItems } from "@/lib/downloads";
 
 function isLightColor(hex) {
@@ -36,7 +36,7 @@ function badgeStyle(status, accent) {
   };
 }
 
-export default function DownloadsTab({ accent }) {
+export default function DownloadsTab({ accent, session }) {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
@@ -57,11 +57,21 @@ export default function DownloadsTab({ accent }) {
 
   function handlePrimary(item) {
     if (!item.file_url || item.status !== "stable") return;
+    const isInternal = (item.name || "").toLowerCase().includes("internal");
+    if (isInternal && !session?.internal_license) {
+      alert("Internal downloads are restricted to Internal License holders.");
+      return;
+    }
     window.open(item.file_url, "_blank", "noopener,noreferrer");
   }
 
   function handleOpen(item) {
     if (!item.open_url) return;
+    const isInternal = (item.name || "").toLowerCase().includes("internal");
+    if (isInternal && !session?.internal_license) {
+      alert("Internal resources are restricted to Internal License holders.");
+      return;
+    }
     window.open(item.open_url, "_blank", "noopener,noreferrer");
   }
 
@@ -73,53 +83,77 @@ export default function DownloadsTab({ accent }) {
         </div>
       )}
       {sortedItems.map((item) => {
+        const isInternal = (item.name || "").toLowerCase().includes("internal");
+        const hasInternalLicense = !!session?.internal_license;
+        const isRestricted = isInternal && !hasInternalLicense;
+
         const badge = badgeStyle(item.status, accent);
-        const disabledPrimary = item.status !== "stable" || !item.file_url;
+        const disabledPrimary = item.status !== "stable" || !item.file_url || isRestricted;
         const accentText = isLightColor(accent) ? "#000" : "#fff";
         const accentBorder = isLightColor(accent) ? "1px solid #444" : "none";
         return (
           <div
             key={item.id}
-            className="bg-[#111114] border border-zinc-800/60 rounded-xl px-6 py-4 flex items-center justify-between"
+            className={`bg-[#111114] border border-zinc-800/60 rounded-xl px-6 py-4 flex items-center justify-between transition-opacity ${isRestricted ? 'opacity-75' : ''}`}
           >
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <span className="text-white font-semibold text-2xl">{item.name}</span>
-                <span
-                  className="text-[10px] font-bold px-2 py-0.5 rounded border"
-                  style={{
-                    color: badge.color,
-                    borderColor: badge.borderColor,
-                    background: badge.background,
-                  }}
-                >
-                  {badge.label}
+                <span className={`text-white font-semibold text-2xl ${isRestricted ? 'text-zinc-500' : ''}`}>
+                  {item.name}
                 </span>
+                {isRestricted ? (
+                  <span className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-500">
+                    <Lock size={10} />
+                    INTERNAL ONLY
+                  </span>
+                ) : (
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 rounded border"
+                    style={{
+                      color: badge.color,
+                      borderColor: badge.borderColor,
+                      background: badge.background,
+                    }}
+                  >
+                    {badge.label}
+                  </span>
+                )}
               </div>
               <p className="text-zinc-600 text-xs">{item.version}</p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => handlePrimary(item)}
-                disabled={disabledPrimary}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold tracking-wider transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{
-                  background: disabledPrimary ? "#1a1a1e" : accent,
-                  color: disabledPrimary ? "#71717a" : accentText,
-                  border: disabledPrimary ? "1px solid rgb(63 63 70 / 0.6)" : accentBorder,
-                }}
-              >
-                <Download size={12} />
-                {item.action_label || "DOWNLOAD"}
-              </button>
-              {!!item.open_url && (
-                <button
-                  onClick={() => handleOpen(item)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold tracking-wider transition-all duration-200 bg-[#1a1a1e] border border-zinc-700/50 text-zinc-300 hover:text-white hover:border-zinc-500"
-                >
-                  <ExternalLink size={12} />
-                  OPEN
-                </button>
+              {isRestricted ? (
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-[10px] text-zinc-500 flex items-center gap-1 uppercase tracking-wider font-bold">
+                    <ShieldAlert size={10} /> License Required
+                  </span>
+                  <p className="text-[9px] text-zinc-600 max-w-[150px] text-right">Upgrade to internal to unlock this download.</p>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={() => handlePrimary(item)}
+                    disabled={disabledPrimary}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold tracking-wider transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{
+                      background: disabledPrimary ? "#1a1a1e" : accent,
+                      color: disabledPrimary ? "#71717a" : accentText,
+                      border: disabledPrimary ? "1px solid rgb(63 63 70 / 0.6)" : accentBorder,
+                    }}
+                  >
+                    <Download size={12} />
+                    {item.action_label || "DOWNLOAD"}
+                  </button>
+                  {!!item.open_url && (
+                    <button
+                      onClick={() => handleOpen(item)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold tracking-wider transition-all duration-200 bg-[#1a1a1e] border border-zinc-700/50 text-zinc-300 hover:text-white hover:border-zinc-500"
+                    >
+                      <ExternalLink size={12} />
+                      OPEN
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
