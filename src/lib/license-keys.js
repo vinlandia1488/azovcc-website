@@ -203,6 +203,7 @@ export async function consumeLicenseForRegistration({
     return {
       internal_license: row.internal_key,
       script_license: row.script_key,
+      license_key: row.script_key, // or internal_key, usually registration key is the script_key
       key_id: row.id,
     };
   }
@@ -218,6 +219,7 @@ export async function consumeLicenseForRegistration({
   return {
     internal_license: "",
     script_license: row.script_key,
+    license_key: row.script_key,
     key_id: row.id,
   };
 }
