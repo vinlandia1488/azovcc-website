@@ -153,7 +153,7 @@ export default function Auth() {
                         className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-lg px-4 py-2.5 text-sm font-medium transition flex items-center justify-center gap-2 shadow-lg shadow-[#5865F2]/20"
                       >
                         <MessageSquare size={18} />
-                        {loading ? 'Redirecting...' : 'Authorize Discord App'}
+                        {loading ? 'Redirecting...' : 'Connect Discord Account'}
                         <ExternalLink size={14} className="opacity-50" />
                       </button>
                     </div>
