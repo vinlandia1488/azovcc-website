@@ -110,9 +110,14 @@ export default function UserDetailModal({ user, onClose, accent }) {
               isSensitive={true} 
             />
             <InfoRow 
-              label="Discord Connection" 
-              value={user.discord_username ? `${user.discord_username} (${user.discord_id})` : 'Not Connected'} 
+              label="Discord Username" 
+              value={user.discord_username || 'Not Connected'} 
               icon={MessageSquare} 
+            />
+            <InfoRow 
+              label="Discord ID" 
+              value={user.discord_id || 'Not Connected'} 
+              icon={Shield} 
             />
             <div className="grid grid-cols-2 gap-4">
               <InfoRow 
