@@ -23,10 +23,18 @@ function writeLocal(rows) {
 
 function normalize(row) {
   const scriptKey = row?.script_key || row?.key || "";
+  const internalKey = row?.internal_key || row?.internal_license || "";
+  let type = row?.type;
+
+  // Force type to internal if an internal key exists
+  if (internalKey && internalKey.length > 0) {
+    type = "internal";
+  }
+
   return {
     id: row?.id || `lk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    type: row?.type === "internal" ? "internal" : "script",
-    internal_key: row?.internal_key || "",
+    type: type === "internal" ? "internal" : "script",
+    internal_key: internalKey,
     script_key: scriptKey,
     key: scriptKey, // Add back 'key' field for backend compatibility
     note: row?.note || "",
@@ -56,7 +64,15 @@ async function tryDbCreate(payload) {
   if (!entity || typeof entity.create !== "function") {
     throw new Error("LicenseKey entity is unavailable");
   }
-  const created = await entity.create(payload);
+  
+  // Ensure we send all possible field variations for internal keys
+  const enhancedPayload = {
+    ...payload,
+    internal_license: payload.internal_key || payload.internal_license || "",
+    script_license: payload.script_key || payload.script_license || "",
+  };
+  
+  const created = await entity.create(enhancedPayload);
   if (!created?.id) throw new Error("Failed to persist license key");
 }
 

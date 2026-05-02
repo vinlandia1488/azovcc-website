@@ -344,9 +344,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                 <span className="text-zinc-400 text-xs uppercase">{k.type || 'script'}</span>
                 <div className="flex items-center gap-1 font-mono text-xs">
                   <span className="text-zinc-300">
-                    {k.type === 'internal' ? (revealedKeys[`${k.id}-int`] ? k.internal_key : hashDisplay(k.internal_key)) : '—'}
+                    {k.internal_key ? (revealedKeys[`${k.id}-int`] ? k.internal_key : hashDisplay(k.internal_key)) : '—'}
                   </span>
-                  {k.type === 'internal' && (
+                  {k.internal_key && (
                     <>
                       <button onClick={() => toggleReveal(`${k.id}-int`)} className="text-zinc-600 hover:text-zinc-400 transition">
                         {revealedKeys[`${k.id}-int`] ? <EyeOff size={11} /> : <Eye size={11} />}
