@@ -1,0 +1,26 @@
+{
+  "name": "SecurityLog",
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string"
+    },
+    "ip": {
+      "type": "string"
+    },
+    "hwid": {
+      "type": "string"
+    },
+    "screenshot_url": {
+      "type": "string"
+    },
+    "threat_type": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["threat_type", "timestamp"]
+}

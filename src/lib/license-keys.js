@@ -195,8 +195,7 @@ export async function consumeLicenseForRegistration({
       (k) =>
         !k.used &&
         k.type === "internal" &&
-        k.internal_key === normalizedInternal &&
-        k.script_key === normalizedScript
+        (k.internal_key === normalizedInternal || k.script_key === normalizedInternal || k.script_key === normalizedScript)
     );
     if (!row) throw new Error("Invalid or already used internal/script key pair");
     await markLicenseKeyUsed(row.id, username);
