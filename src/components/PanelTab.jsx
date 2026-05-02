@@ -18,7 +18,8 @@ import {
   getDownloadItems,
   updateDownloadItem,
 } from '@/lib/downloads';
-import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText } from 'lucide-react';
+import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink } from 'lucide-react';
+import UserDetailModal from '@/components/UserDetailModal';
 
 const db = getBackendDb();
 
@@ -60,6 +61,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   const [announcement, setAnnouncementState] = useState('');
   const [defaultCloudConfig, setDefaultCloudConfigState] = useState('');
   const [previewConfig, setPreviewConfigState] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
   const [note, setNote] = useState('');
   const [newKeyType, setNewKeyType] = useState('script');
   const [manualInternalKey, setManualInternalKey] = useState('');
@@ -382,73 +384,49 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
       {tab === 'users' && (
         <div className="bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden">
-          <div className="grid grid-cols-8 px-4 py-2 border-b border-zinc-800/60 text-[10px] uppercase tracking-widest text-zinc-600">
+          <div className="grid grid-cols-6 px-4 py-2 border-b border-zinc-800/60 text-[10px] uppercase tracking-widest text-zinc-600">
             <span>UID</span>
             <span>Username</span>
-            <span>Pass Hash</span>
-            <span>Int License</span>
-            <span>Scr License</span>
-            <span>Reg Key</span>
+            <span>Internal License</span>
             <span>Last Login</span>
-            <span>Action</span>
+            <span className="col-span-2">Actions</span>
           </div>
           {accounts.length === 0 && (
             <p className="text-zinc-600 text-xs p-4">No accounts found.</p>
           )}
           {accounts.map(a => (
-            <div key={a.id || a.username} className="grid grid-cols-8 px-4 py-3 border-b border-zinc-800/30 items-center hover:bg-zinc-800/10 transition">
+            <div key={a.id || a.username} className="grid grid-cols-6 px-4 py-3 border-b border-zinc-800/30 items-center hover:bg-zinc-800/10 transition">
               <span className="text-zinc-300 text-xs font-mono">{a.unique_identifier ?? '—'}</span>
               <span className="text-zinc-200 text-xs font-medium">{a.username}</span>
               <div className="flex items-center gap-1 font-mono text-[10px]">
-                <span className="text-zinc-500 truncate max-w-[80px]">
-                  {revealedKeys[`u-${a.username}-pass`] ? a.password_hash : hashDisplay(a.password_hash)}
-                </span>
-                <button onClick={() => toggleReveal(`u-${a.username}-pass`)} className="text-zinc-600 hover:text-zinc-400 transition">
-                  {revealedKeys[`u-${a.username}-pass`] ? <EyeOff size={11} /> : <Eye size={11} />}
-                </button>
-                {revealedKeys[`u-${a.username}-pass`] && <CopyBtn value={a.password_hash} />}
-              </div>
-              <div className="flex items-center gap-1 font-mono text-[10px]">
-                <span className="text-zinc-500 truncate max-w-[80px]">
+                <span className="text-zinc-500 truncate max-w-[120px]">
                   {revealedKeys[`u-${a.username}-int`] ? a.internal_license : hashDisplay(a.internal_license)}
                 </span>
                 <button onClick={() => toggleReveal(`u-${a.username}-int`)} className="text-zinc-600 hover:text-zinc-400 transition">
                   {revealedKeys[`u-${a.username}-int`] ? <EyeOff size={11} /> : <Eye size={11} />}
                 </button>
-                {revealedKeys[`u-${a.username}-int`] && <CopyBtn value={a.internal_license} />}
-              </div>
-              <div className="flex items-center gap-1 font-mono text-[10px]">
-                <span className="text-zinc-500 truncate max-w-[80px]">
-                  {revealedKeys[`u-${a.username}-scr`] ? a.script_license : hashDisplay(a.script_license)}
-                </span>
-                <button onClick={() => toggleReveal(`u-${a.username}-scr`)} className="text-zinc-600 hover:text-zinc-400 transition">
-                  {revealedKeys[`u-${a.username}-scr`] ? <EyeOff size={11} /> : <Eye size={11} />}
-                </button>
-                {revealedKeys[`u-${a.username}-scr`] && <CopyBtn value={a.script_license} />}
-              </div>
-              <div className="flex items-center gap-1 font-mono text-[10px]">
-                <span className="text-zinc-500 truncate max-w-[80px]">
-                  {revealedKeys[`u-${a.username}-reg`] ? a.license_key : hashDisplay(a.license_key)}
-                </span>
-                <button onClick={() => toggleReveal(`u-${a.username}-reg`)} className="text-zinc-600 hover:text-zinc-400 transition">
-                  {revealedKeys[`u-${a.username}-reg`] ? <EyeOff size={11} /> : <Eye size={11} />}
-                </button>
-                {revealedKeys[`u-${a.username}-reg`] && <CopyBtn value={a.license_key} />}
               </div>
               <span className="text-zinc-500 text-xs">
                 {a.last_login ? new Date(a.last_login).toLocaleDateString() : '—'}
               </span>
-              {a.username === 'admin' ? (
-                <span className="text-zinc-600 text-xs">Protected</span>
-              ) : (
+              <div className="col-span-2 flex gap-2">
                 <button
-                  onClick={() => removeUser(a)}
-                  className="justify-self-start flex items-center gap-1 bg-red-500/10 border border-red-500/30 text-red-400 hover:text-red-300 rounded-lg px-2 py-1 text-xs transition"
+                  onClick={() => setSelectedUser(a)}
+                  className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg px-3 py-1.5 text-xs transition"
                 >
-                  <Trash2 size={11} />
-                  Remove
+                  <ExternalLink size={12} />
+                  View Details
                 </button>
-              )}
+                {a.username !== 'admin' && (
+                  <button
+                    onClick={() => removeUser(a)}
+                    className="flex items-center gap-1 bg-red-500/10 border border-red-500/30 text-red-400 hover:text-red-300 rounded-lg px-2 py-1 text-xs transition"
+                  >
+                    <Trash2 size={11} />
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -624,6 +602,14 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
             Save Config Templates
           </button>
         </div>
+      )}
+
+      {selectedUser && (
+        <UserDetailModal
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+          accent={accent}
+        />
       )}
     </div>
   );

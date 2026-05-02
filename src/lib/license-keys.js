@@ -22,11 +22,13 @@ function writeLocal(rows) {
 }
 
 function normalize(row) {
+  const scriptKey = row?.script_key || row?.key || "";
   return {
     id: row?.id || `lk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     type: row?.type === "internal" ? "internal" : "script",
     internal_key: row?.internal_key || "",
-    script_key: row?.script_key || "",
+    script_key: scriptKey,
+    key: scriptKey, // Add back 'key' field for backend compatibility
     note: row?.note || "",
     used: Boolean(row?.used),
     used_by_username: row?.used_by_username || "",

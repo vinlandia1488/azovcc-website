@@ -13,6 +13,10 @@
     "script_key": {
       "type": "string"
     },
+    "key": {
+      "type": "string",
+      "description": "The license key string (alias for script_key)"
+    },
     "used": {
       "type": "boolean",
       "default": false
@@ -33,6 +37,7 @@
     }
   },
   "required": [
-    "script_key"
+    "script_key",
+    "key"
   ]
 }
