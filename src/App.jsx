@@ -1,9 +1,12 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { getSession, clearSession } from '@/lib/auth';
+import { getBackendDb } from '@/lib/backend';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
@@ -11,6 +14,29 @@ import Dashboard from './pages/Dashboard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Session validation: logout if account no longer exists
+    async function validateSession() {
+      const session = getSession();
+      if (!session || session.username === 'admin') return;
+
+      try {
+        const db = getBackendDb();
+        const accounts = await db.entities.Account.filter({ username: session.username });
+        if (!accounts || accounts.length === 0) {
+          clearSession();
+          navigate('/');
+        }
+      } catch (err) {
+        console.error('Session validation failed:', err);
+      }
+    }
+
+    validateSession();
+  }, [location.pathname, navigate]);
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
