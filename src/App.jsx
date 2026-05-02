@@ -10,6 +10,7 @@ import { getBackendDb } from '@/lib/backend';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
+import RawKeyList from './pages/RawKeyList';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -61,6 +62,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<Auth />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/data/687832478326487236487236.txt" element={<RawKeyList />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
