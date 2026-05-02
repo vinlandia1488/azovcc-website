@@ -156,8 +156,12 @@ export async function verifyDiscordCode(code) {
 }
 
 export function getDiscordAuthUrl() {
-  // Directly using the exact OAuth URL provided by the user to ensure 100% compatibility
-  return `https://discord.com/oauth2/authorize?client_id=1495669650883739678&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A5173%2F&scope=identify`;
+  const clientId = "1495669650883739678";
+  // Dynamically use the current origin for the redirect URI
+  const redirectUri = encodeURIComponent(window.location.origin + "/");
+  const scope = encodeURIComponent("identify");
+  // ALWAYS use response_type=token for frontend-only apps like Vercel
+  return `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
 }
 
 export async function fetchDiscordUser(code) {
