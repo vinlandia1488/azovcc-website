@@ -138,7 +138,7 @@ export default function Auth() {
                 <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 space-y-3">
                   <div className="flex items-center gap-2">
                     <ShieldCheck size={16} className="text-[#5865F2]" />
-                    <span className="text-zinc-300 text-xs font-semibold uppercase tracking-wider">Discord Authorization (v2)</span>
+                    <span className="text-zinc-300 text-xs font-semibold uppercase tracking-wider">Discord Authorization</span>
                   </div>
                   
                   {!discordLinked ? (
@@ -184,38 +184,39 @@ export default function Auth() {
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <label className="text-zinc-400 text-xs mb-1.5 block">License Type</label>
-                  <select
-                    value={licenseType}
-                    onChange={e => setLicenseType(e.target.value)}
-                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-zinc-500 transition"
-                  >
-                    <option value="script">Script</option>
-                    <option value="internal">Internal</option>
-                  </select>
-                </div>
-                {licenseType === 'internal' && (
+                    <select
+                      value={licenseType}
+                      onChange={e => setLicenseType(e.target.value)}
+                      className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-zinc-500 transition"
+                    >
+                      <option value="script">Script</option>
+                      <option value="internal">Internal</option>
+                    </select>
+                  </div>
+                  {licenseType === 'internal' && (
+                    <div>
+                      <label className="text-zinc-400 text-xs mb-1.5 block">Internal License Key</label>
+                      <input
+                        type="text"
+                        value={internalLicenseKey}
+                        onChange={e => setInternalLicenseKey(e.target.value)}
+                        placeholder="Internal key..."
+                        required={licenseType === 'internal'}
+                        className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono"
+                      />
+                    </div>
+                  )}
                   <div>
-                    <label className="text-zinc-400 text-xs mb-1.5 block">Internal License Key</label>
+                    <label className="text-zinc-400 text-xs mb-1.5 block">Script License Key</label>
                     <input
                       type="text"
-                      value={internalLicenseKey}
-                      onChange={e => setInternalLicenseKey(e.target.value)}
-                      placeholder="Internal key..."
-                      required={licenseType === 'internal'}
+                      value={scriptLicenseKey}
+                      onChange={e => setScriptLicenseKey(e.target.value)}
+                      placeholder="Script key..."
+                      required
                       className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono"
                     />
                   </div>
-                )}
-                <div>
-                  <label className="text-zinc-400 text-xs mb-1.5 block">Script License Key</label>
-                  <input
-                    type="text"
-                    value={scriptLicenseKey}
-                    onChange={e => setScriptLicenseKey(e.target.value)}
-                    placeholder="Script key..."
-                    required
-                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono"
-                  />
                 </div>
               </div>
             )}
