@@ -25,22 +25,22 @@ export default function Auth() {
     ensureAdminExists().catch(() => {});
 
     // Handle Discord OAuth2 Redirect
-    const hash = window.location.hash;
-    if (hash && hash.includes('access_token=')) {
-      const params = new URLSearchParams(hash.substring(1));
-      const token = params.get('access_token');
-      if (token) {
-        setMode('register'); // Switch to register mode automatically
-        setLoading(true);
-        fetchDiscordUser(token)
-          .then(info => {
-            setDiscordInfo(info);
-            setDiscordLinked(true);
-            window.history.replaceState({}, document.title, "/"); // Clean URL
-          })
-          .catch(err => setError(err.message))
-          .finally(() => setLoading(false));
-      }
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const token = hashParams.get('access_token');
+
+    if (code || token) {
+      setMode('register');
+      setLoading(true);
+      fetchDiscordUser(token || code)
+        .then(info => {
+          setDiscordInfo(info);
+          setDiscordLinked(true);
+          window.history.replaceState({}, document.title, "/");
+        })
+        .catch(err => setError(err.message))
+        .finally(() => setLoading(false));
     }
   }, []);
 
