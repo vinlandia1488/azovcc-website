@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginUser, registerUser, getSession, ensureAdminExists } from '@/lib/auth';
-import { Eye, EyeOff, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { loginUser, registerUser, getSession, ensureAdminExists, getDiscordAuthUrl, fetchDiscordUser } from '@/lib/auth';
+import { Eye, EyeOff, MessageSquare, CheckCircle2, ShieldCheck, ExternalLink } from 'lucide-react';
 import PreviewTablesModal from '@/components/PreviewTablesModal';
 
 export default function Auth() {
@@ -23,6 +23,25 @@ export default function Auth() {
     const session = getSession();
     if (session) navigate('/dashboard');
     ensureAdminExists().catch(() => {});
+
+    // Handle Discord OAuth2 Redirect
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token=')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const token = params.get('access_token');
+      if (token) {
+        setMode('register'); // Switch to register mode automatically
+        setLoading(true);
+        fetchDiscordUser(token)
+          .then(info => {
+            setDiscordInfo(info);
+            setDiscordLinked(true);
+            window.history.replaceState({}, document.title, "/"); // Clean URL
+          })
+          .catch(err => setError(err.message))
+          .finally(() => setLoading(false));
+      }
+    }
   }, []);
 
   async function handleSubmit(e) {
@@ -55,17 +74,12 @@ export default function Auth() {
     }
   }
 
+  async function handleVerifyCode() {
+    // Legacy - redirected to Discord OAuth2
+  }
+
   function handleConnectDiscord() {
-    setLoading(true);
-    // Mocking Discord OAuth flow
-    setTimeout(() => {
-      setDiscordLinked(true);
-      setDiscordInfo({
-        id: Math.random().toString().substring(2, 20),
-        username: `${username || 'User'}#${Math.floor(1000 + Math.random() * 9000)}`
-      });
-      setLoading(false);
-    }, 1000);
+    window.location.href = getDiscordAuthUrl();
   }
 
   return (
@@ -120,43 +134,58 @@ export default function Auth() {
             </div>
 
             {mode === 'register' && (
-              <div className="space-y-3">
-                <div className="h-px bg-zinc-800/60 my-4" />
-                
-                <label className="text-zinc-400 text-xs mb-1.5 block">Discord Connection (Required)</label>
-                {!discordLinked ? (
-                  <button
-                    type="button"
-                    onClick={handleConnectDiscord}
-                    disabled={loading}
-                    className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-lg px-4 py-2.5 text-sm font-medium transition flex items-center justify-center gap-2"
-                  >
-                    <MessageSquare size={18} />
-                    {loading ? 'Connecting...' : 'Connect Discord Account'}
-                  </button>
-                ) : (
-                  <div className="w-full bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={18} className="text-green-500" />
-                      <div className="flex flex-col">
-                        <span className="text-green-500 text-xs font-bold uppercase tracking-wider">Discord Linked</span>
-                        <span className="text-zinc-300 text-[10px] font-mono">{discordInfo?.username}</span>
-                      </div>
-                    </div>
-                    <button 
-                      type="button"
-                      onClick={() => setDiscordLinked(false)}
-                      className="text-zinc-500 hover:text-zinc-300 text-[10px] underline"
-                    >
-                      Change
-                    </button>
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={16} className="text-[#5865F2]" />
+                    <span className="text-zinc-300 text-xs font-semibold uppercase tracking-wider">Discord Authorization</span>
                   </div>
-                )}
+                  
+                  {!discordLinked ? (
+                    <div className="space-y-3">
+                      <p className="text-zinc-500 text-[10px] leading-tight">
+                        To hardlock your license, you must authorize our Discord application.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleConnectDiscord}
+                        disabled={loading}
+                        className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-lg px-4 py-2.5 text-sm font-medium transition flex items-center justify-center gap-2 shadow-lg shadow-[#5865F2]/20"
+                      >
+                        <MessageSquare size={18} />
+                        {loading ? 'Redirecting...' : 'Authorize Discord App'}
+                        <ExternalLink size={14} className="opacity-50" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-full bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2.5 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 size={18} className="text-green-500" />
+                        <div className="flex flex-col">
+                          <span className="text-green-500 text-[10px] font-bold uppercase tracking-wider">App Authorized</span>
+                          <span className="text-zinc-300 text-xs font-mono">{discordInfo?.username}</span>
+                        </div>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setDiscordLinked(false);
+                          setDiscordInfo(null);
+                        }}
+                        className="text-zinc-500 hover:text-zinc-300 text-[10px] underline"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  )}
+                  <p className="text-zinc-600 text-[10px] leading-tight text-center">
+                    This will link your Azov account to your Discord identity.
+                  </p>
+                </div>
                 
-                <div className="h-px bg-zinc-800/60 my-4" />
-
-                <div>
-                  <label className="text-zinc-400 text-xs mb-1.5 block">License Type</label>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="text-zinc-400 text-xs mb-1.5 block">License Type</label>
                   <select
                     value={licenseType}
                     onChange={e => setLicenseType(e.target.value)}

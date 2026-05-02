@@ -32,3 +32,6 @@ dist-ssr
 
 # Software binaries and source
 software/
+
+# Bot
+bot/

@@ -1,0 +1,27 @@
+{
+  "name": "DiscordVerification",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "The 6-digit verification code"
+    },
+    "discord_id": {
+      "type": "string",
+      "description": "Discord User ID"
+    },
+    "discord_username": {
+      "type": "string",
+      "description": "Discord Username"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "code",
+    "discord_id",
+    "discord_username"
+  ]
+}

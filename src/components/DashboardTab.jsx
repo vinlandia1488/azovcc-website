@@ -109,8 +109,10 @@ export default function DashboardTab({ session, onSettings, accent, announcement
       </motion.div>
 
       {/* Licenses */}
-      <motion.div {...fadeUp(0.2)} className="flex gap-4">
-        <MaskedField value={internalLicense} label="Internal License" copyable={false} accent={accent} />
+      <motion.div {...fadeUp(0.2)} className="flex flex-col sm:flex-row gap-4">
+        {internalLicense && (
+          <MaskedField value={internalLicense} label="Internal License" copyable={false} accent={accent} />
+        )}
         <MaskedField value={scriptLicense} label="Script License" copyable={true} accent={accent} />
       </motion.div>
 

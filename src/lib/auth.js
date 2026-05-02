@@ -119,8 +119,8 @@ function normalizeSessionAccount(account, fallbackUsername = "") {
     ...account,
     username: safeUsername,
     unique_identifier: account?.unique_identifier ?? 0,
-    internal_license: account?.internal_license || generateInternalLicense(),
-    script_license: account?.script_license || generateScriptLicense(),
+    internal_license: account?.internal_license || "",
+    script_license: account?.script_license || "",
     accent_color: account?.accent_color || "#ef4444",
     is_admin: Boolean(account?.is_admin),
     discord_id: account?.discord_id || "",
@@ -148,6 +148,39 @@ export async function upgradeToInternal(username, internalKey) {
   await db.entities.Account.update(account.id, updated);
   setSession(normalizeSessionAccount(updated));
   return updated;
+}
+
+export async function verifyDiscordCode(code) {
+  // This is now replaced by real OAuth2 flow
+  return null;
+}
+
+export function getDiscordAuthUrl() {
+  const clientId = "1448927319497375768"; // From bot config/ID
+  const redirectUri = encodeURIComponent(window.location.origin + "/");
+  const scope = encodeURIComponent("identify");
+  return `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
+}
+
+export async function fetchDiscordUser(accessToken) {
+  const response = await fetch("https://discord.com/api/users/@me", {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  if (!response.ok) throw new Error("Failed to fetch Discord user information");
+  const data = await response.json();
+
+  // Check if this Discord ID is already linked to another account
+  const existing = await db.entities.Account.filter({ discord_id: data.id });
+  if (existing && existing.length > 0) {
+    throw new Error("This Discord account is already linked to another Azov account.");
+  }
+
+  return {
+    id: data.id,
+    username: `${data.username}${data.discriminator !== "0" ? `#${data.discriminator}` : ""}`,
+  };
 }
 
 function assertPersistedAccount(account, context) {
