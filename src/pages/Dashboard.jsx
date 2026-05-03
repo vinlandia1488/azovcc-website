@@ -7,6 +7,7 @@ import DashboardTab from '@/components/DashboardTab';
 import DownloadsTab from '@/components/DownloadsTab';
 import CloudConfigsTab from '@/components/CloudConfigsTab';
 import PanelTab from '@/components/PanelTab';
+import SupportTab from '@/components/SupportTab';
 import SettingsModal from '@/components/SettingsModal';
 import SeasonalEffects from '@/components/SeasonalEffects';
 import { getAnnouncement } from '@/lib/app-settings';
@@ -87,6 +88,9 @@ export default function Dashboard() {
         )}
         {activeTab === 'cloud-configs' && (
           <CloudConfigsTab session={session} accent={accent} />
+        )}
+        {activeTab === 'support' && (
+          <SupportTab session={session} accent={accent} />
         )}
         {activeTab === 'panel' && session.is_admin && (
           <PanelTab

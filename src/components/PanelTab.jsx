@@ -18,7 +18,7 @@ import {
   getDownloadItems,
   updateDownloadItem,
 } from '@/lib/downloads';
-import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink } from 'lucide-react';
+import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, MessageSquare, Send, Image as ImageIcon } from 'lucide-react';
 import UserDetailModal from '@/components/UserDetailModal';
 
 const db = getBackendDb();
@@ -55,9 +55,10 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   const [keys, setKeys] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [generating, setGenerating] = useState(false);
-  const [tab, setTab] = useState('keys'); // 'keys' | 'users' | 'downloads' | 'announcement'
+  const [tab, setTab] = useState('keys'); // 'keys' | 'users' | 'downloads' | 'announcement' | 'support'
   const [revealedKeys, setRevealedKeys] = useState({});
   const [downloads, setDownloads] = useState([]);
+  const [supportMessages, setSupportMessages] = useState([]);
   const [announcement, setAnnouncementState] = useState('');
   const [defaultCloudConfig, setDefaultCloudConfigState] = useState('');
   const [previewConfig, setPreviewConfigState] = useState('');
@@ -97,11 +98,12 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   }
 
   async function loadData() {
-    const [keysResult, accountsResult, downloadsResult, announcementResult] = await Promise.allSettled([
+    const [keysResult, accountsResult, downloadsResult, announcementResult, supportResult] = await Promise.allSettled([
       getLicenseKeys(),
       getEntityRows('Account'),
       getDownloadItems(),
       getAnnouncement(),
+      getEntityRows('SupportMessage')
     ]);
 
     setKeys(keysResult.status === 'fulfilled' ? (keysResult.value || []) : []);
@@ -112,6 +114,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     );
     setDownloads(downloadsResult.status === 'fulfilled' ? (downloadsResult.value || []) : []);
     setAnnouncementState(announcementResult.status === 'fulfilled' ? announcementResult.value : '');
+    setSupportMessages(supportResult.status === 'fulfilled' ? (supportResult.value || []) : []);
     const templates = await getConfigTemplatesShared();
     setDefaultCloudConfigState(String(templates.defaultCloudConfig || getDefaultCloudConfig()));
     setPreviewConfigState(String(templates.previewConfig || getPreviewConfig()));
@@ -272,9 +275,10 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
         {[
           { id: 'keys', label: 'License Keys', icon: Key },
           { id: 'users', label: 'Users', icon: Users },
-          { id: 'downloads', label: 'Downloads', icon: Download },
+          {id: 'downloads', label: 'Downloads', icon: Download },
           { id: 'announcement', label: 'Announcement', icon: Megaphone },
           { id: 'configs', label: 'Configs', icon: FileText },
+          { id: 'support', label: 'Support', icon: MessageSquare },
         ].map(t => (
           <button
             key={t.id}
@@ -634,7 +638,111 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
           </button>
         </div>
       )}
+      {tab === 'support' && (
+        <div className="flex bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden h-[500px]">
+          {/* User List */}
+          <div className="w-64 border-r border-zinc-800/60 flex flex-col">
+            <div className="p-3 border-b border-zinc-800/60 text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
+              Conversations
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              {Array.from(new Set(supportMessages.map(m => m.user_id))).map(uid => {
+                const userMsgs = supportMessages.filter(m => m.user_id === uid);
+                const lastMsg = userMsgs[userMsgs.length - 1];
+                const isActive = selectedUser?.id === uid || selectedUser?.username === uid;
+                return (
+                  <button 
+                    key={uid}
+                    onClick={() => setSelectedUser(accounts.find(a => String(a.id || a.username) === uid) || { username: uid })}
+                    className={`w-full p-4 text-left border-b border-zinc-800/30 transition hover:bg-zinc-800/20 ${isActive ? 'bg-zinc-800/40' : ''}`}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-white text-xs font-bold truncate">{lastMsg?.username || uid}</span>
+                      <span className="text-[9px] text-zinc-600">{new Date(lastMsg?.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-zinc-500 text-[10px] truncate">{lastMsg?.content || 'Image shared'}</p>
+                  </button>
+                );
+              })}
+              {supportMessages.length === 0 && (
+                <div className="p-8 text-center text-zinc-600 text-xs italic">No support tickets.</div>
+              )}
+            </div>
+          </div>
 
+          {/* Chat Window */}
+          <div className="flex-1 flex flex-col bg-[#0c0c0e]/30">
+            {selectedUser ? (
+              <>
+                <div className="p-4 border-b border-zinc-800/60 flex items-center justify-between bg-zinc-900/20">
+                  <span className="text-white text-xs font-bold">Chatting with {selectedUser.username}</span>
+                  <button onClick={() => setSelectedUser(null)} className="text-zinc-500 hover:text-white transition">
+                    <MessageSquare size={14} />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                  {supportMessages
+                    .filter(m => m.user_id === String(selectedUser.id || selectedUser.username))
+                    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+                    .map((m, idx) => (
+                      <div key={m.id || idx} className={`flex ${m.sender_type === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] px-3 py-2 rounded-xl text-xs ${
+                          m.sender_type === 'admin' 
+                            ? 'bg-blue-600 text-white rounded-tr-none' 
+                            : 'bg-zinc-800 text-zinc-300 rounded-tl-none border border-zinc-700/50'
+                        }`}>
+                          {m.content}
+                          {m.image_url && <img src={m.image_url} className="mt-2 rounded-lg max-w-full" />}
+                          <div className={`text-[8px] mt-1 opacity-50 ${m.sender_type === 'admin' ? 'text-right' : 'text-left'}`}>
+                            {new Date(m.created_at).toLocaleTimeString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+                <div className="p-4 border-t border-zinc-800/60 bg-zinc-900/40">
+                  <form 
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const msg = e.target.reply.value;
+                      if (!msg.trim()) return;
+                      await db.entities.SupportMessage.create({
+                        user_id: String(selectedUser.id || selectedUser.username),
+                        username: 'Staff',
+                        content: msg.trim(),
+                        sender_type: 'admin',
+                        created_at: new Date().toISOString(),
+                        is_read: true
+                      });
+                      e.target.reply.value = '';
+                      await loadData();
+                    }}
+                    className="flex gap-2"
+                  >
+                    <input 
+                      name="reply"
+                      placeholder="Type a reply..."
+                      className="flex-1 bg-[#111114] border border-zinc-800/60 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500"
+                    />
+                    <button 
+                      type="submit"
+                      className="px-4 py-2 rounded-lg text-xs font-bold transition"
+                      style={{ background: accent, color: isLightColor(accent) ? '#000' : '#fff' }}
+                    >
+                      <Send size={14} />
+                    </button>
+                  </form>
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center opacity-30">
+                <MessageSquare size={48} className="mb-4" />
+                <p className="text-zinc-400 text-sm">Select a user to start chatting</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {selectedUser && (
         <UserDetailModal
           user={selectedUser}

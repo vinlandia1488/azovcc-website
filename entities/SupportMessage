@@ -1,0 +1,12 @@
+{
+  "name": "SupportMessage",
+  "schema": {
+    "user_id": "String",
+    "username": "String",
+    "content": "String",
+    "image_url": "String",
+    "sender_type": "String",
+    "created_at": "String",
+    "is_read": "Boolean"
+  }
+}
