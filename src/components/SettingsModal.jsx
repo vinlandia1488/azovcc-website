@@ -1,43 +1,38 @@
-import { useState } from 'react';
-import { X, Check, LogOut, ShieldCheck, ArrowUpCircle } from 'lucide-react';
-
-import { sha256, setSession, clearSession, upgradeToInternal } from '@/lib/auth';
+import { useState, useEffect } from 'react';
+import { X, LogOut, Check, Lock, ZapOff, Ban, Snowflake, Ghost, Leaf, CreditCard, Palette } from 'lucide-react';
+import { setSession, upgradeToInternal } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 
 const db = getBackendDb();
 
-const ACCENT_COLORS = [
-  { label: 'Red', value: '#ef4444' },
-  { label: 'Orange', value: '#f97316' },
-  { label: 'Amber', value: '#f59e0b' },
-  { label: 'Green', value: '#22c55e' },
-  { label: 'Cyan', value: '#06b6d4' },
-  { label: 'Blue', value: '#3b82f6' },
-  { label: 'Violet', value: '#8b5cf6' },
-  { label: 'Pink', value: '#ec4899' },
-  { label: 'White', value: '#ffffff' },
+const PALETTE = [
+  '#4db8ff', '#8b5cf6', '#4ade80', '#e11d48', '#f59e0b', 
+  '#3b82f6', '#d946ef', '#ec4899', '#2dd4bf', '#f97316'
 ];
 
-function isLightColor(hex) {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.substring(0, 2), 16);
-  const g = parseInt(h.substring(2, 4), 16);
-  const b = parseInt(h.substring(4, 6), 16);
-  return (r * 299 + g * 587 + b * 114) / 1000 > 180;
-}
-
 export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
-  const [accent, setAccent] = useState(session.accent_color || '#ef4444');
-  const [customColor, setCustomColor] = useState(session.accent_color || '#ef4444');
-  const [currentPass, setCurrentPass] = useState('');
-  const [newPass, setNewPass] = useState('');
-  const [confirmPass, setConfirmPass] = useState('');
-  const [internalKey, setInternalKey] = useState('');
+  const [activeTab, setActiveTab] = useState('redeem');
+  
+  // Theme state
+  const [accent, setAccent] = useState(session.accent_color || '#6366f1');
+  const [customColor, setCustomColor] = useState(session.accent_color || '#6366f1');
+  const [saveFps, setSaveFps] = useState(() => localStorage.getItem('azov_saveFps') === 'true');
+  const [currentPreset, setPreset] = useState(() => localStorage.getItem('azov_preset') || 'NONE');
   const [saving, setSaving] = useState(false);
-  const [passError, setPassError] = useState('');
-  const [passSuccess, setPassSuccess] = useState('');
+  
+  // Redeem state
+  const [internalKey, setInternalKey] = useState('');
   const [upgradeError, setUpgradeError] = useState('');
   const [upgradeSuccess, setUpgradeSuccess] = useState('');
+
+  // Update local storage when they change
+  useEffect(() => {
+    localStorage.setItem('azov_saveFps', saveFps);
+  }, [saveFps]);
+
+  useEffect(() => {
+    localStorage.setItem('azov_preset', currentPreset);
+  }, [currentPreset]);
 
   async function saveColor() {
     setSaving(true);
@@ -53,27 +48,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
     } catch {}
     setSession({ ...session, accent_color: accent });
     await onSaved();
-    setSaving(false);
-  }
-
-  async function changePassword() {
-    setPassError('');
-    setPassSuccess('');
-    if (newPass !== confirmPass) return setPassError('Passwords do not match');
-    if (newPass.length < 6) return setPassError('Password must be at least 6 characters');
-
-    const currentHash = await sha256(currentPass);
-    if (currentHash !== session.password_hash) return setPassError('Current password is incorrect');
-
-    setSaving(true);
-    const newHash = await sha256(newPass);
-    await db.entities.Account.update(session.id, { password_hash: newHash });
-    setSession({ ...session, password_hash: newHash });
-    await onSaved();
-    setCurrentPass('');
-    setNewPass('');
-    setConfirmPass('');
-    setPassSuccess('Password changed successfully!');
     setSaving(false);
   }
 
@@ -96,161 +70,206 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl w-full max-w-md shadow-2xl">
-        <div className="flex items-center justify-between p-5 border-b border-zinc-800/60">
-          <h2 className="text-white font-bold text-lg">Settings</h2>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white transition">
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="p-5 space-y-6">
-          {/* Accent Color */}
-          <div>
-            <h3 className="text-zinc-300 text-sm font-semibold mb-3">Accent Color</h3>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {ACCENT_COLORS.map(c => (
-                <button
-                  key={c.value}
-                  onClick={() => { setAccent(c.value); setCustomColor(c.value); }}
-                  className="w-8 h-8 rounded-full border-2 transition flex items-center justify-center"
-                  style={{
-                    background: c.value,
-                    borderColor: accent === c.value ? '#fff' : 'transparent',
-                  }}
-                  title={c.label}
-                >
-                  {accent === c.value && <Check size={12} className="text-black" />}
-                </button>
-              ))}
-              <input
-                type="color"
-                value={customColor}
-                onChange={e => { setCustomColor(e.target.value); setAccent(e.target.value); }}
-                className="w-8 h-8 rounded-full cursor-pointer border-2 border-zinc-600"
-                title="Custom color"
-              />
-            </div>
-            <div className="flex items-center gap-2 text-xs text-zinc-400 mb-3">
-              <div className="w-4 h-4 rounded-full" style={{ background: accent }} />
-              <span>Selected: {accent}</span>
-            </div>
-            <button
-              onClick={saveColor}
-              disabled={saving}
-              className="w-full py-2 rounded-lg text-sm font-medium transition disabled:opacity-50"
-              style={{
-                background: accent,
-                color: isLightColor(accent) ? '#000' : '#fff',
-                border: isLightColor(accent) ? '1px solid #444' : 'none',
-              }}
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      <div className="bg-[#111114] border border-zinc-800/60 rounded-3xl w-full max-w-3xl flex shadow-2xl min-h-[500px] overflow-hidden animate-in fade-in zoom-in duration-200">
+        
+        {/* Sidebar */}
+        <div className="w-64 border-r border-zinc-800/60 flex flex-col p-4 bg-[#111114]">
+          <div className="mb-8 pl-2 mt-2">
+            <h2 className="text-white font-bold text-lg">Settings</h2>
+            <p className="text-zinc-500 text-xs mt-0.5">Manage your experience</p>
+          </div>
+          
+          <div className="space-y-1">
+            <button 
+              onClick={() => setActiveTab('redeem')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === 'redeem' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
             >
-              {saving ? 'Saving...' : 'Save Color'}
+              <CreditCard size={16} />
+              Redeem
+            </button>
+            <button 
+              onClick={() => setActiveTab('themes')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === 'themes' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
+            >
+              <Palette size={16} />
+              Themes
             </button>
           </div>
-
-          {/* Divider */}
-          <div className="h-px bg-zinc-800/60" />
-
-          {/* Upgrade License */}
-          {!session.internal_license && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="text-zinc-300 text-sm font-semibold">Upgrade License</h3>
-                <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[9px] font-bold uppercase tracking-wider">
-                  Script Only
-                </span>
-              </div>
-              <div className="space-y-2">
-                <p className="text-zinc-500 text-[10px] leading-relaxed mb-2">
-                  Enter an Internal License key to unlock the internal build and features.
-                </p>
-                <input
-                  type="text"
-                  value={internalKey}
-                  onChange={e => setInternalKey(e.target.value)}
-                  placeholder="Azov-internal-key-here"
-                  className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-                />
-              </div>
-              {upgradeError && <p className="text-red-400 text-[10px] mt-2">{upgradeError}</p>}
-              {upgradeSuccess && <p className="text-green-400 text-[10px] mt-2">{upgradeSuccess}</p>}
-              <button
-                onClick={handleUpgrade}
-                disabled={saving || !internalKey.trim()}
-                className="w-full mt-3 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white transition disabled:opacity-40 flex items-center justify-center gap-2"
-              >
-                <ArrowUpCircle size={14} />
-                Upgrade to Internal
-              </button>
-            </div>
-          )}
-
-          {session.internal_license && (
-            <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
-              <div className="flex items-center gap-2 text-blue-400 mb-1">
-                <ShieldCheck size={16} />
-                <span className="text-sm font-bold">Internal License Active</span>
-              </div>
-              <p className="text-zinc-500 text-[10px]">You have full access to internal builds and resources.</p>
-            </div>
-          )}
-
-          {/* Divider */}
-          <div className="h-px bg-zinc-800/60" />
-
-          {/* Logout */}
-          <div>
-            <h3 className="text-zinc-300 text-sm font-semibold mb-3">Session</h3>
-            <button
-              onClick={onLogout}
-              className="w-full py-2 rounded-lg text-sm font-medium bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition flex items-center justify-center gap-2"
-            >
-              <LogOut size={14} />
+          
+          <div className="mt-auto">
+            <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border border-zinc-800/60 text-zinc-400 hover:text-white hover:bg-zinc-800/40 transition">
+              <LogOut size={16} />
               Logout
             </button>
           </div>
+        </div>
 
-          {/* Divider */}
-          <div className="h-px bg-zinc-800/60" />
+        {/* Content */}
+        <div className="flex-1 bg-[#0c0c0e] relative flex flex-col p-8">
+           <button onClick={onClose} className="absolute top-6 right-6 text-zinc-500 hover:text-white transition">
+              <X size={18} />
+           </button>
 
-          {/* Change Password */}
-          <div>
-            <h3 className="text-zinc-300 text-sm font-semibold mb-3">Change Password</h3>
-            <div className="space-y-2">
-              <input
-                type="password"
-                value={currentPass}
-                onChange={e => setCurrentPass(e.target.value)}
-                placeholder="Current password"
-                className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-              />
-              <input
-                type="password"
-                value={newPass}
-                onChange={e => setNewPass(e.target.value)}
-                placeholder="New password"
-                className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-              />
-              <input
-                type="password"
-                value={confirmPass}
-                onChange={e => setConfirmPass(e.target.value)}
-                placeholder="Confirm new password"
-                className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-              />
-            </div>
-            {passError && <p className="text-red-400 text-xs mt-2">{passError}</p>}
-            {passSuccess && <p className="text-green-400 text-xs mt-2">{passSuccess}</p>}
-            <button
-              onClick={changePassword}
-              disabled={saving || !currentPass || !newPass || !confirmPass}
-              className="w-full mt-3 py-2 rounded-lg text-sm font-medium bg-zinc-700 hover:bg-zinc-600 text-white transition disabled:opacity-40"
-            >
-              Change Password
-            </button>
-          </div>
+           {activeTab === 'redeem' ? (
+             <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
+               <div>
+                 <h3 className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-4">Your Products</h3>
+                 
+                 <div className="space-y-3">
+                   {/* Internal */}
+                   <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 flex items-center justify-between hover:border-zinc-700/50 transition">
+                     <div>
+                       <h4 className="text-white text-sm font-semibold">Prada Internal</h4>
+                       <p className="text-zinc-500 text-xs">{session.internal_license ? 'Owned' : 'Not Owned'}</p>
+                     </div>
+                     {session.internal_license ? (
+                       <div className="px-3 py-1.5 rounded-md bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-bold flex items-center gap-1.5">
+                         <Check size={12} />
+                         OWNED
+                       </div>
+                     ) : (
+                       <div className="px-3 py-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-bold flex items-center gap-1.5">
+                         <Lock size={12} />
+                         LOCKED
+                       </div>
+                     )}
+                   </div>
+
+                   {/* Script */}
+                   <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 flex items-center justify-between hover:border-zinc-700/50 transition">
+                     <div>
+                       <h4 className="text-white text-sm font-semibold">Prada Script</h4>
+                       <p className="text-zinc-500 text-xs">{session.script_license ? '******************' : 'Not Owned'}</p>
+                     </div>
+                     {session.script_license ? (
+                       <div className="px-3 py-1.5 rounded-md bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-bold flex items-center gap-1.5">
+                         <Check size={12} />
+                         OWNED
+                       </div>
+                     ) : (
+                       <div className="px-3 py-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-bold flex items-center gap-1.5">
+                         <Lock size={12} />
+                         LOCKED
+                       </div>
+                     )}
+                   </div>
+                 </div>
+               </div>
+
+               <div className="h-px bg-zinc-800/60" />
+
+               <div>
+                 <h3 className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-4">License Key</h3>
+                 <input 
+                    type="text"
+                    value={internalKey}
+                    onChange={e => setInternalKey(e.target.value)}
+                    placeholder="Enter Key..."
+                    className="w-full bg-[#111114] border border-zinc-800/60 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition mb-3"
+                 />
+                 {upgradeError && <p className="text-red-400 text-[10px] mb-3">{upgradeError}</p>}
+                 {upgradeSuccess && <p className="text-green-400 text-[10px] mb-3">{upgradeSuccess}</p>}
+                 <button
+                   onClick={handleUpgrade}
+                   disabled={saving || !internalKey.trim()}
+                   className="w-full bg-[#9ca3af] hover:bg-[#d4d4d8] text-black font-semibold rounded-xl px-4 py-3 text-sm transition disabled:opacity-50"
+                 >
+                   {saving ? 'Redeeming...' : 'Redeem Code'}
+                 </button>
+               </div>
+             </div>
+           ) : (
+             <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
+               <div>
+                 <h3 className="text-white text-sm font-semibold mb-4">Performance</h3>
+                 <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4 flex items-center justify-between">
+                   <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-zinc-800/50 flex items-center justify-center text-zinc-400">
+                        <ZapOff size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-white text-sm font-semibold">Save FPS</h4>
+                        <p className="text-zinc-500 text-xs mt-0.5">Disables visual effects to save resources.</p>
+                      </div>
+                   </div>
+                   <button 
+                      onClick={() => setSaveFps(!saveFps)}
+                      className={`w-10 h-5 rounded-full relative transition ${saveFps ? 'bg-white' : 'bg-zinc-700'}`}
+                   >
+                      <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all ${saveFps ? 'bg-black left-[22px]' : 'bg-zinc-400 left-0.5'}`} />
+                   </button>
+                 </div>
+               </div>
+
+               <div className="h-px bg-zinc-800/60" />
+
+               <div>
+                 <h3 className="text-white text-sm font-semibold mb-4">Seasonal Presets</h3>
+                 <div className="grid grid-cols-4 gap-3">
+                    {['NONE', 'CHRISTMAS', 'HALLOWEEN', 'FALL'].map(preset => (
+                      <button 
+                        key={preset}
+                        onClick={() => setPreset(preset)}
+                        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition ${currentPreset === preset ? 'bg-zinc-800 border-zinc-600' : 'bg-[#111114] border-zinc-800/60 hover:border-zinc-700/50'}`}
+                      >
+                        {preset === 'NONE' && <Ban size={20} className="text-zinc-500" />}
+                        {preset === 'CHRISTMAS' && <Snowflake size={20} className="text-white" />}
+                        {preset === 'HALLOWEEN' && <Ghost size={20} className="text-zinc-500" />}
+                        {preset === 'FALL' && <Leaf size={20} className="text-zinc-500" />}
+                        <span className="text-[9px] font-bold text-zinc-400 tracking-wider">{preset}</span>
+                      </button>
+                    ))}
+                 </div>
+                 <p className="text-zinc-500 text-[10px] mt-4 text-center">Presets automatically apply a theme and background effect.</p>
+               </div>
+
+               <div className="h-px bg-zinc-800/60" />
+
+               <div>
+                 <div className="flex items-center justify-between mb-4">
+                   <h3 className="text-white text-sm font-semibold">Color Palette</h3>
+                   <span className="text-zinc-500 text-xs">Custom</span>
+                 </div>
+                 <div className="grid grid-cols-5 gap-3 mb-6">
+                    {PALETTE.map(c => (
+                       <button 
+                         key={c}
+                         onClick={() => { setAccent(c); setCustomColor(c); }}
+                         className="w-10 h-10 rounded-full transition relative flex items-center justify-center"
+                         style={{ background: c }}
+                       >
+                         {accent === c && <div className="absolute inset-0 rounded-full border-[3px] border-black/40" />}
+                       </button>
+                    ))}
+                 </div>
+
+                 <div className="flex items-center justify-between pt-4 border-t border-zinc-800/60">
+                    <span className="text-zinc-400 text-xs">Primary</span>
+                    <div className="flex items-center gap-3 bg-[#111114] border border-zinc-800/60 rounded-xl px-2 py-1.5">
+                      <div className="w-6 h-6 rounded-md relative overflow-hidden" style={{ background: customColor }}>
+                        <input 
+                          type="color" 
+                          value={customColor} 
+                          onChange={e => { setCustomColor(e.target.value); setAccent(e.target.value); }}
+                          className="absolute inset-[-10px] w-20 h-20 cursor-pointer opacity-0"
+                        />
+                      </div>
+                      <span className="text-zinc-300 text-xs font-mono">{customColor}</span>
+                    </div>
+                 </div>
+               </div>
+               
+               <button 
+                  onClick={saveColor}
+                  disabled={saving}
+                  className="w-full mt-4 bg-transparent border border-zinc-800/60 hover:bg-zinc-800 text-white font-semibold rounded-xl px-4 py-3 text-sm transition disabled:opacity-50"
+               >
+                  {saving ? 'Applying Theme...' : 'Apply Theme'}
+               </button>
+
+             </div>
+           )}
         </div>
       </div>
     </div>

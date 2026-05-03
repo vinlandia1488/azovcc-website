@@ -192,7 +192,7 @@ function normalizeSessionAccount(account, fallbackUsername = "") {
     unique_identifier: account?.unique_identifier ?? 0,
     internal_license: internalLicense,
     script_license: scriptLicense,
-    accent_color: account?.accent_color || "#ef4444",
+    accent_color: account?.accent_color || "#6366f1",
     is_admin: Boolean(account?.is_admin),
     last_login: account?.last_login || new Date().toISOString(),
   };
@@ -404,7 +404,7 @@ export async function registerUser(username, password, licenseKey) {
     // Software compatibility: prioritize internal key in the primary license_key field
     license_key: (consumed.internal_license || consumed.script_license || "") + "|+|" + (consumed.script_license || "") + "|+|" + (keyPayload.discord_id || "") + "|+|" + (keyPayload.discord_username || "") + "|+|" + (keyPayload.discord_avatar || ""), 
     unique_identifier: uid,
-    accent_color: '#ef4444',
+    accent_color: '#6366f1',
     is_admin: false,
     last_login: new Date().toISOString()
   };
