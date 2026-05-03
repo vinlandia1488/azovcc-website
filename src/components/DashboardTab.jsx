@@ -89,12 +89,11 @@ export default function DashboardTab({ session, onSettings, accent, announcement
             )}
           </div>
           <div>
-            <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Connected as</p>
-            <p className="text-white font-semibold text-lg flex items-center gap-2">
+            <p className="text-zinc-500 text-[10px] uppercase tracking-widest">
+              Connected as <span className="text-zinc-600 ml-1">#{String(session.unique_identifier || 0).padStart(3, '0')}</span>
+            </p>
+            <p className="text-white font-semibold text-lg">
               {displayUsername}
-              <span className="text-[10px] bg-zinc-800 border border-zinc-700/50 px-1.5 py-0.5 rounded-md text-zinc-400 font-mono tracking-tighter">
-                UID: {session.unique_identifier || 0}
-              </span>
             </p>
           </div>
           <div className="w-2 h-2 rounded-full bg-green-400 ml-1 self-start mt-2 shadow-[0_0_6px_#4ade80]" />
