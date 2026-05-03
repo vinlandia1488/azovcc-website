@@ -57,10 +57,14 @@ export default function UserDetailModal({ user, onClose, accent }) {
         <div className="p-6 border-b border-zinc-800/60 flex items-center justify-between bg-gradient-to-br from-zinc-900/50 to-transparent">
           <div className="flex items-center gap-4">
             <div 
-              className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg"
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden shrink-0"
               style={{ background: `${accent}15`, border: `1px solid ${accent}30` }}
             >
-              <User size={24} style={{ color: accent }} />
+              {u.discord_avatar ? (
+                <img src={`https://cdn.discordapp.com/avatars/${u.discord_id}/${u.discord_avatar}.png`} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <User size={24} style={{ color: accent }} />
+              )}
             </div>
             <div>
               <h3 className="text-white text-xl font-bold">{u.username}</h3>

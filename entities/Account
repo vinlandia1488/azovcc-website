@@ -42,6 +42,10 @@
       "type": "string",
       "description": "Linked Discord username"
     },
+    "discord_avatar": {
+      "type": "string",
+      "description": "Linked Discord avatar hash"
+    },
     "last_login": {
       "type": "string",
       "format": "date-time"

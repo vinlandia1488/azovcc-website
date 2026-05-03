@@ -64,6 +64,7 @@ export default function Auth() {
           internalLicenseKey,
           discord_id: discordInfo.id,
           discord_username: discordInfo.username,
+          discord_avatar: discordInfo.avatar,
         });
       }
       navigate('/dashboard');

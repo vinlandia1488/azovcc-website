@@ -130,7 +130,9 @@ export function normalizeAccountDiscordLink(account) {
   const discord_id =
     idVal !== undefined && idVal !== null && idVal !== "" ? String(idVal) : "";
   const discord_username = userVal ? String(userVal) : "";
-  return { ...raw, discord_id, discord_username };
+  const avatarVal = raw.discord_avatar ?? raw.discordAvatar ?? "";
+  const discord_avatar = avatarVal ? String(avatarVal) : "";
+  return { ...raw, discord_id, discord_username, discord_avatar };
 }
 
 function normalizeSessionAccount(account, fallbackUsername = "") {
@@ -236,6 +238,7 @@ export async function fetchDiscordUser(code) {
   return {
     id: snowflake,
     username: `${data.username}${data.discriminator !== "0" ? `#${data.discriminator}` : ""}`,
+    avatar: data.avatar,
   };
 }
 
@@ -341,6 +344,7 @@ export async function registerUser(username, password, licenseKey) {
     script_license: consumed.script_license,
     discord_id: String(keyPayload.discord_id ?? "").trim(),
     discord_username: String(keyPayload.discord_username ?? "").trim(),
+    discord_avatar: String(keyPayload.discord_avatar ?? "").trim(),
     // Software compatibility: prioritize internal key in the primary license_key field
     license_key: consumed.internal_license || consumed.script_license, 
     unique_identifier: uid,

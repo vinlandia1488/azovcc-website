@@ -78,11 +78,15 @@ export default function DashboardTab({ session, onSettings, accent, announcement
         style={{ boxShadow: `0 0 0 1px rgba(255,255,255,0.03), 0 4px 24px ${accent}10` }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-[#1a1a1e] border border-zinc-700/50 rounded-lg flex items-center justify-center"
+          <div className="w-12 h-12 bg-[#1a1a1e] border border-zinc-700/50 rounded-lg flex items-center justify-center overflow-hidden"
             style={{ boxShadow: `0 0 12px ${accent}30` }}>
-            <span className="text-white text-xs font-bold tracking-widest">
-              {displayUsername.substring(0, 4).toUpperCase()}
-            </span>
+            {session.discord_avatar ? (
+              <img src={`https://cdn.discordapp.com/avatars/${session.discord_id}/${session.discord_avatar}.png`} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white text-xs font-bold tracking-widest">
+                {displayUsername.substring(0, 4).toUpperCase()}
+              </span>
+            )}
           </div>
           <div>
             <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Connected as</p>
