@@ -41,7 +41,12 @@ export default function SeasonalEffects() {
   if (preset === 'NONE' || saveFps) return null;
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
+    <div className={`fixed inset-0 pointer-events-none z-[1] overflow-hidden transition-colors duration-1000 ${preset === 'HALLOWEEN' ? 'bg-black/20' : ''}`}>
+      {/* Halloween Vibe Overlay */}
+      {preset === 'HALLOWEEN' && (
+        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/10 via-transparent to-black/40 shadow-[inset_0_0_150px_rgba(0,0,0,0.8)]" />
+      )}
+
       <AnimatePresence>
         {particles.map((p) => (
           <motion.div
@@ -50,8 +55,8 @@ export default function SeasonalEffects() {
             animate={{ 
               y: '110vh', 
               opacity: [0, 1, 1, 0],
-              rotate: preset === 'CHRISTMAS' ? 360 : 180,
-              x: `${p.x + (Math.random() * 10 - 5)}vw`
+              rotate: preset === 'CHRISTMAS' ? 0 : 360,
+              x: [`${p.x}vw`, `${p.x + 5}vw`, `${p.x - 5}vw`, `${p.x}vw`]
             }}
             transition={{ 
               duration: p.duration, 
@@ -59,14 +64,36 @@ export default function SeasonalEffects() {
               delay: p.delay,
               ease: "linear"
             }}
-            className="absolute text-white/20"
+            className="absolute"
           >
-            {preset === 'CHRISTMAS' && <Snowflake size={p.size} />}
-            {preset === 'HALLOWEEN' && <Ghost size={p.size} />}
-            {preset === 'FALL' && <Leaf size={p.size} />}
+            {preset === 'CHRISTMAS' && (
+              <div 
+                className="bg-white rounded-full blur-[1px]" 
+                style={{ width: p.size / 4, height: p.size / 4, opacity: 0.6 }} 
+              />
+            )}
+            {preset === 'HALLOWEEN' && (
+              <div className="text-orange-500/30">
+                <Ghost size={p.size} />
+              </div>
+            )}
+            {preset === 'FALL' && (
+              <div className="text-orange-700/40">
+                <Leaf size={p.size} />
+              </div>
+            )}
           </motion.div>
         ))}
       </AnimatePresence>
+
+      {/* Spooky Fog for Halloween */}
+      {preset === 'HALLOWEEN' && (
+        <motion.div 
+          animate={{ x: ['-10%', '10%'] }}
+          transition={{ duration: 20, repeat: Infinity, repeatType: 'reverse', ease: 'linear' }}
+          className="absolute bottom-0 left-[-20%] right-[-20%] h-64 bg-gradient-to-t from-zinc-900/40 to-transparent blur-3xl opacity-50"
+        />
+      )}
     </div>
   );
 }
