@@ -1,12 +1,32 @@
 {
   "name": "SupportMessage",
-  "schema": {
-    "user_id": "String",
-    "username": "String",
-    "content": "String",
-    "image_url": "String",
-    "sender_type": "String",
-    "created_at": "String",
-    "is_read": "Boolean"
-  }
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "The ID of the user who owns this conversation"
+    },
+    "username": {
+      "type": "string",
+      "description": "Display name of the sender"
+    },
+    "content": {
+      "type": "string",
+      "description": "Text content of the message"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL of an attached image"
+    },
+    "sender_type": {
+      "type": "string",
+      "description": "Either 'user' or 'admin'"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": ["user_id", "username", "sender_type"]
 }
+

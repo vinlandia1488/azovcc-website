@@ -639,105 +639,192 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
         </div>
       )}
       {tab === 'support' && (
-        <div className="flex bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden h-[500px]">
-          {/* User List */}
-          <div className="w-64 border-r border-zinc-800/60 flex flex-col">
-            <div className="p-3 border-b border-zinc-800/60 text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
-              Conversations
+        <div className="flex bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden h-[600px] shadow-2xl">
+          {/* Channel-like User List */}
+          <div className="w-72 border-r border-zinc-800/60 flex flex-col bg-[#0c0c0e]/50">
+            <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20">
+              <h3 className="text-white text-[10px] font-bold uppercase tracking-widest text-zinc-500">Active Support</h3>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar">
               {Array.from(new Set(supportMessages.map(m => m.user_id))).map(uid => {
                 const userMsgs = supportMessages.filter(m => m.user_id === uid);
                 const lastMsg = userMsgs[userMsgs.length - 1];
+                const unreadCount = userMsgs.filter(m => !m.is_read && m.sender_type === 'user').length;
                 const isActive = selectedUser?.id === uid || selectedUser?.username === uid;
+                const userData = accounts.find(a => String(a.id || a.username) === uid);
+                
                 return (
                   <button 
                     key={uid}
-                    onClick={() => setSelectedUser(accounts.find(a => String(a.id || a.username) === uid) || { username: uid })}
-                    className={`w-full p-4 text-left border-b border-zinc-800/30 transition hover:bg-zinc-800/20 ${isActive ? 'bg-zinc-800/40' : ''}`}
+                    onClick={() => setSelectedUser(userData || { username: uid })}
+                    className={`w-full p-4 text-left border-b border-zinc-800/20 transition group relative ${isActive ? 'bg-zinc-800/40' : 'hover:bg-zinc-800/20'}`}
                   >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-white text-xs font-bold truncate">{lastMsg?.username || uid}</span>
-                      <span className="text-[9px] text-zinc-600">{new Date(lastMsg?.created_at).toLocaleDateString()}</span>
+                    {isActive && <div className="absolute left-0 top-2 bottom-2 w-1 bg-white rounded-r-full" style={{ background: accent }} />}
+                    <div className="flex justify-between items-center mb-1">
+                      <span className={`text-sm font-bold truncate ${isActive ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'}`}>
+                        @{userData?.username || uid}
+                      </span>
+                      {unreadCount > 0 && (
+                        <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                          {unreadCount}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-zinc-500 text-[10px] truncate">{lastMsg?.content || 'Image shared'}</p>
+                    <div className="flex justify-between items-center">
+                      <p className="text-zinc-500 text-[10px] truncate max-w-[140px]">
+                        {lastMsg?.content || (lastMsg?.image_url ? 'Sent an image' : 'Empty message')}
+                      </p>
+                      <span className="text-[9px] text-zinc-600 shrink-0">
+                        {new Date(lastMsg?.created_date || lastMsg?.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
                   </button>
                 );
               })}
               {supportMessages.length === 0 && (
-                <div className="p-8 text-center text-zinc-600 text-xs italic">No support tickets.</div>
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center opacity-20">
+                  <MessageSquare size={32} className="mb-2" />
+                  <p className="text-xs italic">No support tickets.</p>
+                </div>
               )}
             </div>
           </div>
 
           {/* Chat Window */}
-          <div className="flex-1 flex flex-col bg-[#0c0c0e]/30">
+          <div className="flex-1 flex flex-col bg-[#0c0c0e]/30 relative">
             {selectedUser ? (
               <>
-                <div className="p-4 border-b border-zinc-800/60 flex items-center justify-between bg-zinc-900/20">
-                  <span className="text-white text-xs font-bold">Chatting with {selectedUser.username}</span>
-                  <button onClick={() => setSelectedUser(null)} className="text-zinc-500 hover:text-white transition">
-                    <MessageSquare size={14} />
+                <div className="p-4 border-b border-zinc-800/60 flex items-center justify-between bg-zinc-900/40 backdrop-blur-md">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 border border-zinc-700/50">
+                      <User size={16} />
+                    </div>
+                    <div>
+                      <span className="text-white text-sm font-bold">Support: {selectedUser.username}</span>
+                      <p className="text-green-500 text-[9px] font-medium tracking-wide uppercase">Active Conversation</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setSelectedUser(null)} className="text-zinc-500 hover:text-white transition p-2">
+                    <X size={16} />
                   </button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar scroll-smooth">
                   {supportMessages
                     .filter(m => m.user_id === String(selectedUser.id || selectedUser.username))
-                    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-                    .map((m, idx) => (
-                      <div key={m.id || idx} className={`flex ${m.sender_type === 'admin' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[80%] px-3 py-2 rounded-xl text-xs ${
-                          m.sender_type === 'admin' 
-                            ? 'bg-blue-600 text-white rounded-tr-none' 
-                            : 'bg-zinc-800 text-zinc-300 rounded-tl-none border border-zinc-700/50'
-                        }`}>
-                          {m.content}
-                          {m.image_url && <img src={m.image_url} className="mt-2 rounded-lg max-w-full" />}
-                          <div className={`text-[8px] mt-1 opacity-50 ${m.sender_type === 'admin' ? 'text-right' : 'text-left'}`}>
-                            {new Date(m.created_at).toLocaleTimeString()}
+                    .sort((a, b) => new Date(a.created_date || a.created_at) - new Date(b.created_date || b.created_at))
+                    .map((m, idx) => {
+                      const isAdminMsg = m.sender_type === 'admin';
+                      return (
+                        <div key={m.id || idx} className={`flex ${isAdminMsg ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`flex gap-3 max-w-[80%] ${isAdminMsg ? 'flex-row-reverse' : 'flex-row'}`}>
+                            <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center border ${isAdminMsg ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-900 border-zinc-800'}`}>
+                              {isAdminMsg ? <Shield size={14} className="text-blue-400" /> : <User size={14} className="text-zinc-400" />}
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                                isAdminMsg 
+                                  ? 'bg-zinc-800 text-white rounded-tr-none shadow-lg' 
+                                  : 'bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-tl-none'
+                              }`}>
+                                {m.content && <p>{m.content}</p>}
+                                {m.image_url && (
+                                  <div className="mt-2 rounded-xl overflow-hidden border border-zinc-700/50 shadow-inner">
+                                    <img 
+                                      src={m.image_url} 
+                                      className="max-w-full max-h-80 object-contain cursor-pointer hover:opacity-90 transition" 
+                                      onClick={() => window.open(m.image_url, '_blank')}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                              <div className={`flex items-center gap-1.5 text-[9px] text-zinc-600 ${isAdminMsg ? 'justify-end' : 'justify-start'}`}>
+                                <Clock size={10} />
+                                {new Date(m.created_date || m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                 </div>
-                <div className="p-4 border-t border-zinc-800/60 bg-zinc-900/40">
+
+                <div className="p-6 border-t border-zinc-800/60 bg-zinc-900/60 backdrop-blur-sm">
                   <form 
                     onSubmit={async (e) => {
                       e.preventDefault();
-                      const msg = e.target.reply.value;
-                      if (!msg.trim()) return;
+                      const form = e.target;
+                      const msgInput = form.reply;
+                      const fileInput = form.file;
+                      const content = msgInput.value.trim();
+                      const file = fileInput.files[0];
+
+                      if (!content && !file) return;
+
+                      let imageUrl = '';
+                      if (file) {
+                        try {
+                          const upload = await db.integrations.Core.UploadFile({ file });
+                          imageUrl = upload.file_url;
+                        } catch (err) {
+                          alert("Upload failed, but sending message...");
+                        }
+                      }
+
                       await db.entities.SupportMessage.create({
                         user_id: String(selectedUser.id || selectedUser.username),
                         username: 'Staff',
-                        content: msg.trim(),
+                        content,
+                        image_url: imageUrl,
                         sender_type: 'admin',
-                        created_at: new Date().toISOString(),
                         is_read: true
                       });
-                      e.target.reply.value = '';
+                      
+                      form.reset();
                       await loadData();
                     }}
-                    className="flex gap-2"
+                    className="flex flex-col gap-3"
                   >
-                    <input 
-                      name="reply"
-                      placeholder="Type a reply..."
-                      className="flex-1 bg-[#111114] border border-zinc-800/60 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500"
-                    />
-                    <button 
-                      type="submit"
-                      className="px-4 py-2 rounded-lg text-xs font-bold transition"
-                      style={{ background: accent, color: isLightColor(accent) ? '#000' : '#fff' }}
-                    >
-                      <Send size={14} />
-                    </button>
+                    <div className="flex gap-3">
+                      <div className="relative flex-1">
+                        <textarea 
+                          name="reply"
+                          rows="1"
+                          placeholder={`Message @${selectedUser.username}`}
+                          className="w-full bg-[#111114] border border-zinc-800/60 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition resize-none"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              e.target.form.requestSubmit();
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <label className="w-12 h-12 bg-zinc-800 border border-zinc-700 rounded-xl flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 cursor-pointer transition">
+                          <ImageIcon size={20} />
+                          <input type="file" name="file" className="hidden" accept="image/*" />
+                        </label>
+                        <button 
+                          type="submit"
+                          className="w-12 h-12 rounded-xl flex items-center justify-center transition shadow-lg"
+                          style={{ background: accent }}
+                        >
+                          <Send size={18} style={{ color: isLightColor(accent) ? '#000' : '#fff' }} />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-zinc-600 text-center">Images are uploaded directly to the server.</p>
                   </form>
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center opacity-30">
-                <MessageSquare size={48} className="mb-4" />
-                <p className="text-zinc-400 text-sm">Select a user to start chatting</p>
+              <div className="flex-1 flex flex-col items-center justify-center opacity-20">
+                <div className="w-24 h-24 rounded-full bg-zinc-800/50 flex items-center justify-center mb-6">
+                  <MessageSquare size={48} />
+                </div>
+                <h4 className="text-white text-lg font-bold mb-2">Support Center</h4>
+                <p className="text-zinc-400 text-sm">Select a user conversation from the left to begin.</p>
               </div>
             )}
           </div>
