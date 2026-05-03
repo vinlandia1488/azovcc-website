@@ -3,6 +3,7 @@ import { Send, ImagePlus, User, Shield, Clock, X } from 'lucide-react';
 import { getBackendDb } from '@/lib/backend';
 
 const db = getBackendDb();
+const SUPPORT_MSG_TYPE = "__SUPPORT_MSG__";
 
 function isLightColor(hex) {
   const h = (hex || '').replace('#', '');
@@ -22,8 +23,6 @@ export default function SupportTab({ session, accent }) {
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const userId = String(session.id || session.username);
-
   useEffect(() => {
     loadMessages();
     const interval = setInterval(loadMessages, 5000);
@@ -38,12 +37,21 @@ export default function SupportTab({ session, accent }) {
 
   async function loadMessages() {
     try {
-      const all = await db.entities.SupportMessage.filter({ user_id: userId });
-      const sorted = (all || []).sort((a, b) => {
-        const da = new Date(a.created_date || a.created_at || 0);
-        const db2 = new Date(b.created_date || b.created_at || 0);
-        return da - db2;
+      // Use CloudConfig as a fallback storage
+      const rows = await db.entities.CloudConfig.filter({ 
+        owner_username: session.username,
+        name: SUPPORT_MSG_TYPE 
       });
+      
+      const parsed = (rows || []).map(r => {
+        try {
+          return { ...JSON.parse(r.content), id: r.id, created_at: r.created_date };
+        } catch {
+          return null;
+        }
+      }).filter(Boolean);
+
+      const sorted = parsed.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
       setMessages(sorted);
     } catch (err) {
       console.error('Failed to load messages:', err);
@@ -72,18 +80,23 @@ export default function SupportTab({ session, accent }) {
           const { file_url } = await db.integrations.Core.UploadFile({ file: pendingImage.file });
           imageUrl = file_url;
         } catch {
-          // Fallback: embed as base64 data URL if upload fails
           imageUrl = pendingImage.previewUrl;
         }
       }
 
-      await db.entities.SupportMessage.create({
-        user_id: userId,
+      const payload = {
         username: session.username,
         content: newMessage.trim(),
         image_url: imageUrl,
         sender_type: 'user',
         is_read: false,
+        created_at: new Date().toISOString()
+      };
+
+      await db.entities.CloudConfig.create({
+        owner_username: session.username,
+        name: SUPPORT_MSG_TYPE,
+        content: JSON.stringify(payload)
       });
 
       setNewMessage('');
@@ -126,7 +139,7 @@ export default function SupportTab({ session, accent }) {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-5">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="w-5 h-5 border-2 border-zinc-800 border-t-white rounded-full animate-spin" />
@@ -164,7 +177,7 @@ export default function SupportTab({ session, accent }) {
                     </div>
                     <div className={`flex items-center gap-1 text-[9px] text-zinc-600 ${isUser ? 'justify-end' : 'justify-start'}`}>
                       <Clock size={9} />
-                      {new Date(m.created_date || m.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 </div>
@@ -176,7 +189,6 @@ export default function SupportTab({ session, accent }) {
 
       {/* Input Area */}
       <div className="px-5 pb-5 pt-4 border-t border-zinc-800/60 shrink-0">
-        {/* Pending image preview */}
         {pendingImage && (
           <div className="mb-3 relative inline-block">
             <img src={pendingImage.previewUrl} alt="Preview" className="h-20 rounded-xl object-cover border border-zinc-700" />
@@ -202,7 +214,6 @@ export default function SupportTab({ session, accent }) {
             />
           </div>
 
-          {/* Image Upload */}
           <input
             ref={fileInputRef}
             type="file"
@@ -218,7 +229,6 @@ export default function SupportTab({ session, accent }) {
             <ImagePlus size={18} />
           </button>
 
-          {/* Send */}
           <button
             type="submit"
             disabled={sending || (!newMessage.trim() && !pendingImage)}

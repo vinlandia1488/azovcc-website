@@ -98,12 +98,11 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   }
 
   async function loadData() {
-    const [keysResult, accountsResult, downloadsResult, announcementResult, supportResult] = await Promise.allSettled([
+    const [keysResult, accountsResult, downloadsResult, announcementResult] = await Promise.allSettled([
       getLicenseKeys(),
       getEntityRows('Account'),
       getDownloadItems(),
       getAnnouncement(),
-      getEntityRows('SupportMessage')
     ]);
 
     setKeys(keysResult.status === 'fulfilled' ? (keysResult.value || []) : []);
@@ -114,7 +113,23 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     );
     setDownloads(downloadsResult.status === 'fulfilled' ? (downloadsResult.value || []) : []);
     setAnnouncementState(announcementResult.status === 'fulfilled' ? announcementResult.value : '');
-    setSupportMessages(supportResult.status === 'fulfilled' ? (supportResult.value || []) : []);
+    
+    // Fetch support messages from CloudConfig
+    try {
+      const supportRows = await db.entities.CloudConfig.filter({ name: "__SUPPORT_MSG__" });
+      const parsed = (supportRows || []).map(r => {
+        try {
+          return { ...JSON.parse(r.content), id: r.id, owner_username: r.owner_username, created_at: r.created_date };
+        } catch {
+          return null;
+        }
+      }).filter(Boolean);
+      setSupportMessages(parsed);
+    } catch (e) {
+      console.error("Failed to load support messages from CloudConfig", e);
+      setSupportMessages([]);
+    }
+
     const templates = await getConfigTemplatesShared();
     setDefaultCloudConfigState(String(templates.defaultCloudConfig || getDefaultCloudConfig()));
     setPreviewConfigState(String(templates.previewConfig || getPreviewConfig()));
@@ -646,12 +661,12 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
               <h3 className="text-white text-[10px] font-bold uppercase tracking-widest text-zinc-500">Active Support</h3>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar">
-              {Array.from(new Set(supportMessages.map(m => m.user_id))).map(uid => {
-                const userMsgs = supportMessages.filter(m => m.user_id === uid);
+              {Array.from(new Set(supportMessages.map(m => m.owner_username))).map(uid => {
+                const userMsgs = supportMessages.filter(m => m.owner_username === uid);
                 const lastMsg = userMsgs[userMsgs.length - 1];
                 const unreadCount = userMsgs.filter(m => !m.is_read && m.sender_type === 'user').length;
-                const isActive = selectedUser?.id === uid || selectedUser?.username === uid;
-                const userData = accounts.find(a => String(a.id || a.username) === uid);
+                const isActive = selectedUser?.username === uid;
+                const userData = accounts.find(a => String(a.username) === uid);
                 
                 return (
                   <button 
@@ -662,7 +677,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                     {isActive && <div className="absolute left-0 top-2 bottom-2 w-1 bg-white rounded-r-full" style={{ background: accent }} />}
                     <div className="flex justify-between items-center mb-1">
                       <span className={`text-sm font-bold truncate ${isActive ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'}`}>
-                        @{userData?.username || uid}
+                        @{uid}
                       </span>
                       {unreadCount > 0 && (
                         <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
@@ -675,7 +690,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                         {lastMsg?.content || (lastMsg?.image_url ? 'Sent an image' : 'Empty message')}
                       </p>
                       <span className="text-[9px] text-zinc-600 shrink-0">
-                        {new Date(lastMsg?.created_date || lastMsg?.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                        {new Date(lastMsg?.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                       </span>
                     </div>
                   </button>
@@ -711,8 +726,8 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar scroll-smooth">
                   {supportMessages
-                    .filter(m => m.user_id === String(selectedUser.id || selectedUser.username))
-                    .sort((a, b) => new Date(a.created_date || a.created_at) - new Date(b.created_date || b.created_at))
+                    .filter(m => m.owner_username === selectedUser.username)
+                    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
                     .map((m, idx) => {
                       const isAdminMsg = m.sender_type === 'admin';
                       return (
@@ -740,7 +755,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                               </div>
                               <div className={`flex items-center gap-1.5 text-[9px] text-zinc-600 ${isAdminMsg ? 'justify-end' : 'justify-start'}`}>
                                 <Clock size={10} />
-                                {new Date(m.created_date || m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </div>
                             </div>
                           </div>
@@ -771,13 +786,19 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                         }
                       }
 
-                      await db.entities.SupportMessage.create({
-                        user_id: String(selectedUser.id || selectedUser.username),
+                      const payload = {
                         username: 'Staff',
                         content,
                         image_url: imageUrl,
                         sender_type: 'admin',
-                        is_read: true
+                        is_read: true,
+                        created_at: new Date().toISOString()
+                      };
+
+                      await db.entities.CloudConfig.create({
+                        owner_username: selectedUser.username,
+                        name: "__SUPPORT_MSG__",
+                        content: JSON.stringify(payload)
                       });
                       
                       form.reset();
