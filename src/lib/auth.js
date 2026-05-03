@@ -113,6 +113,26 @@ async function getAllAccounts() {
   return dbRows;
 }
 
+/**
+ * Unify Discord link fields from API (snake_case / camelCase) for UI and admin tools.
+ */
+export function normalizeAccountDiscordLink(account) {
+  if (!account || typeof account !== "object") return account;
+  const raw = account;
+  const idVal =
+    raw.discord_id ??
+    raw.discordId ??
+    raw.DiscordId;
+  const userVal =
+    raw.discord_username ??
+    raw.discordUsername ??
+    raw.DiscordUsername;
+  const discord_id =
+    idVal !== undefined && idVal !== null && idVal !== "" ? String(idVal) : "";
+  const discord_username = userVal ? String(userVal) : "";
+  return { ...raw, discord_id, discord_username };
+}
+
 function normalizeSessionAccount(account, fallbackUsername = "") {
   const safeUsername = String(account?.username || fallbackUsername || "").trim();
   
@@ -136,16 +156,16 @@ function normalizeSessionAccount(account, fallbackUsername = "") {
     scriptLicense = rawLicense;
   }
 
+  const discord = normalizeAccountDiscordLink(account);
   return {
     ...account,
+    ...discord,
     username: safeUsername,
     unique_identifier: account?.unique_identifier ?? 0,
     internal_license: internalLicense,
     script_license: scriptLicense,
     accent_color: account?.accent_color || "#ef4444",
     is_admin: Boolean(account?.is_admin),
-    discord_id: account?.discord_id || "",
-    discord_username: account?.discord_username || "",
     last_login: account?.last_login || new Date().toISOString(),
   };
 }
@@ -207,13 +227,14 @@ export async function fetchDiscordUser(code) {
   if (!response.ok) throw new Error("Failed to fetch Discord user. Please ensure Implicit Grant is enabled in Dev Portal.");
   const data = await response.json();
 
-  const existing = await db.entities.Account.filter({ discord_id: data.id });
+  const snowflake = String(data.id);
+  const existing = await db.entities.Account.filter({ discord_id: snowflake });
   if (existing && existing.length > 0) {
     throw new Error("This Discord account is already linked to another Azov account.");
   }
 
   return {
-    id: data.id,
+    id: snowflake,
     username: `${data.username}${data.discriminator !== "0" ? `#${data.discriminator}` : ""}`,
   };
 }
@@ -318,8 +339,8 @@ export async function registerUser(username, password, licenseKey) {
     license_key_id: consumed.key_id,
     internal_license: consumed.internal_license,
     script_license: consumed.script_license,
-    discord_id: keyPayload.discord_id || "",
-    discord_username: keyPayload.discord_username || "",
+    discord_id: String(keyPayload.discord_id ?? "").trim(),
+    discord_username: String(keyPayload.discord_username ?? "").trim(),
     // Software compatibility: prioritize internal key in the primary license_key field
     license_key: consumed.internal_license || consumed.script_license, 
     unique_identifier: uid,

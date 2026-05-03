@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { deleteUserAccount, generateInternalLicense, generateScriptLicense } from '@/lib/auth';
+import { deleteUserAccount, generateInternalLicense, generateScriptLicense, normalizeAccountDiscordLink } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 import { getAnnouncement, setAnnouncement } from '@/lib/app-settings';
 import {
@@ -105,7 +105,11 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     ]);
 
     setKeys(keysResult.status === 'fulfilled' ? (keysResult.value || []) : []);
-    setAccounts(accountsResult.status === 'fulfilled' && Array.isArray(accountsResult.value) ? accountsResult.value : []);
+    setAccounts(
+      accountsResult.status === 'fulfilled' && Array.isArray(accountsResult.value)
+        ? accountsResult.value.map((row) => normalizeAccountDiscordLink(row))
+        : []
+    );
     setDownloads(downloadsResult.status === 'fulfilled' ? (downloadsResult.value || []) : []);
     setAnnouncementState(announcementResult.status === 'fulfilled' ? announcementResult.value : '');
     const templates = await getConfigTemplatesShared();
@@ -157,6 +161,23 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
   function toggleReveal(id) {
     setRevealedKeys(prev => ({ ...prev, [id]: !prev[id] }));
+  }
+
+  async function openUserDetails(a) {
+    if (!a?.id) {
+      setSelectedUser(normalizeAccountDiscordLink(a));
+      return;
+    }
+    try {
+      if (typeof db.entities.Account.get === 'function') {
+        const full = await db.entities.Account.get(a.id);
+        setSelectedUser(normalizeAccountDiscordLink({ ...a, ...(full && typeof full === 'object' ? full : {}) }));
+        return;
+      }
+    } catch (e) {
+      console.error('Failed to load full account for admin details', e);
+    }
+    setSelectedUser(normalizeAccountDiscordLink(a));
   }
 
   async function addDownload() {
@@ -390,9 +411,10 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
       {tab === 'users' && (
         <div className="bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden">
-          <div className="grid grid-cols-6 px-4 py-2 border-b border-zinc-800/60 text-[10px] uppercase tracking-widest text-zinc-600">
+          <div className="grid grid-cols-7 px-4 py-2 border-b border-zinc-800/60 text-[10px] uppercase tracking-widest text-zinc-600">
             <span>UID</span>
             <span>Username</span>
+            <span className="min-w-0">Discord</span>
             <span>Internal License</span>
             <span>Last Login</span>
             <span className="col-span-2">Actions</span>
@@ -401,14 +423,17 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
             <p className="text-zinc-600 text-xs p-4">No accounts found.</p>
           )}
           {accounts.map(a => (
-            <div key={a.id || a.username} className="grid grid-cols-6 px-4 py-3 border-b border-zinc-800/30 items-center hover:bg-zinc-800/10 transition">
+            <div key={a.id || a.username} className="grid grid-cols-7 px-4 py-3 border-b border-zinc-800/30 items-center hover:bg-zinc-800/10 transition gap-1">
               <span className="text-zinc-300 text-xs font-mono">{a.unique_identifier ?? '—'}</span>
-              <span className="text-zinc-200 text-xs font-medium">{a.username}</span>
-              <div className="flex items-center gap-1 font-mono text-[10px]">
+              <span className="text-zinc-200 text-xs font-medium truncate min-w-0">{a.username}</span>
+              <span className="text-zinc-400 text-[10px] font-mono truncate min-w-0" title={a.discord_id ? `${a.discord_username || ''} (${a.discord_id})` : ''}>
+                {a.discord_username || (a.discord_id ? `ID:${a.discord_id}` : '—')}
+              </span>
+              <div className="flex items-center gap-1 font-mono text-[10px] min-w-0">
                 <span className="text-zinc-500 truncate max-w-[120px]">
                   {revealedKeys[`u-${a.username}-int`] ? a.internal_license : hashDisplay(a.internal_license)}
                 </span>
-                <button onClick={() => toggleReveal(`u-${a.username}-int`)} className="text-zinc-600 hover:text-zinc-400 transition">
+                <button onClick={() => toggleReveal(`u-${a.username}-int`)} className="text-zinc-600 hover:text-zinc-400 transition shrink-0">
                   {revealedKeys[`u-${a.username}-int`] ? <EyeOff size={11} /> : <Eye size={11} />}
                 </button>
               </div>
@@ -417,7 +442,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
               </span>
               <div className="col-span-2 flex gap-2">
                 <button
-                  onClick={() => setSelectedUser(a)}
+                  onClick={() => openUserDetails(a)}
                   className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg px-3 py-1.5 text-xs transition"
                 >
                   <ExternalLink size={12} />
