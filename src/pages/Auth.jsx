@@ -134,37 +134,39 @@ export default function Auth() {
               </div>
             </div>
 
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-              {!discordLinked ? (
-                <a
-                  href={getDiscordAuthUrl()}
-                  className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-xl px-4 py-3 text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-[#5865F2]/20"
-                >
-                  <MessageSquare size={18} />
-                  Connect Discord
-                </a>
-              ) : (
-                <div className="w-full bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 size={18} className="text-green-500" />
-                    <div className="flex flex-col">
-                      <span className="text-green-500 text-[10px] font-bold uppercase tracking-wider">Discord Linked</span>
-                      <span className="text-zinc-300 text-xs font-mono">{discordInfo?.username}</span>
-                    </div>
-                  </div>
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setDiscordLinked(false);
-                      setDiscordInfo(null);
-                    }}
-                    className="text-zinc-500 hover:text-zinc-300 text-[10px] underline"
+            {mode === 'register' && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                {!discordLinked ? (
+                  <a
+                    href={getDiscordAuthUrl()}
+                    className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-xl px-4 py-3 text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-[#5865F2]/20"
                   >
-                    Change
-                  </button>
-                </div>
-              )}
-            </div>
+                    <MessageSquare size={18} />
+                    Connect Discord
+                  </a>
+                ) : (
+                  <div className="w-full bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 size={18} className="text-green-500" />
+                      <div className="flex flex-col">
+                        <span className="text-green-500 text-[10px] font-bold uppercase tracking-wider">Discord Linked</span>
+                        <span className="text-zinc-300 text-xs font-mono">{discordInfo?.username}</span>
+                      </div>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setDiscordLinked(false);
+                        setDiscordInfo(null);
+                      }}
+                      className="text-zinc-500 hover:text-zinc-300 text-[10px] underline"
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {mode === 'register' && (
               <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
