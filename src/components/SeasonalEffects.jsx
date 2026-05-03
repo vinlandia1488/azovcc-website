@@ -49,10 +49,20 @@ export default function SeasonalEffects() {
   if (preset === 'NONE' || saveFps) return null;
 
   return (
-    <div className={`fixed inset-0 pointer-events-none z-[1] overflow-hidden transition-colors duration-1000 ${preset === 'HALLOWEEN' ? 'bg-black/20' : ''}`}>
-      {/* Halloween Vibe Overlay */}
+    <div className={`fixed inset-0 pointer-events-none z-[1] overflow-hidden transition-colors duration-1000 ${
+      preset === 'HALLOWEEN' ? 'bg-black/20' : 
+      preset === 'CHRISTMAS' ? 'bg-white/[0.02]' : 
+      preset === 'FALL' ? 'bg-orange-900/[0.02]' : ''
+    }`}>
+      {/* Seasonal Vibe Overlays */}
       {preset === 'HALLOWEEN' && (
         <div className="absolute inset-0 bg-gradient-to-t from-purple-900/10 via-transparent to-black/40 shadow-[inset_0_0_150px_rgba(0,0,0,0.8)]" />
+      )}
+      {preset === 'CHRISTMAS' && (
+        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-transparent shadow-[inset_0_0_100px_rgba(255,255,255,0.1)]" />
+      )}
+      {preset === 'FALL' && (
+        <div className="absolute inset-0 bg-gradient-to-t from-orange-900/10 via-transparent to-black/20 shadow-[inset_0_0_120px_rgba(124,45,18,0.2)]" />
       )}
 
       <AnimatePresence>
@@ -64,7 +74,7 @@ export default function SeasonalEffects() {
               y: '110vh', 
               opacity: [0, 1, 1, 0],
               rotate: preset === 'CHRISTMAS' ? 0 : 360,
-              x: [`${p.x}vw`, `${p.x + 5}vw`, `${p.x - 5}vw`, `${p.x}vw`]
+              x: preset === 'CHRISTMAS' ? `${p.x}vw` : [`${p.x}vw`, `${p.x + 5}vw`, `${p.x - 5}vw`, `${p.x}vw`]
             }}
             transition={{ 
               duration: p.duration, 

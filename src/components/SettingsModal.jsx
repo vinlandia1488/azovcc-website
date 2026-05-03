@@ -250,7 +250,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                           min="1" max="100" 
                           value={effectAmount} 
                           onChange={(e) => setEffectAmount(parseInt(e.target.value))}
-                          className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white transition-all hover:h-1.5"
+                          className="w-full custom-slider"
                         />
                       </div>
                     </div>
@@ -265,7 +265,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                           min="1" max="10" 
                           value={effectSpeed} 
                           onChange={(e) => setEffectSpeed(parseInt(e.target.value))}
-                          className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white transition-all hover:h-1.5"
+                          className="w-full custom-slider"
                         />
                       </div>
                     </div>
