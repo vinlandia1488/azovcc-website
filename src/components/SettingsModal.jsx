@@ -18,6 +18,8 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [customColor, setCustomColor] = useState(session.accent_color || '#6366f1');
   const [saveFps, setSaveFps] = useState(() => localStorage.getItem('azov_saveFps') === 'true');
   const [currentPreset, setPreset] = useState(() => localStorage.getItem('azov_preset') || 'NONE');
+  const [effectAmount, setEffectAmount] = useState(() => parseInt(localStorage.getItem('azov_effectAmount') || '30'));
+  const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('azov_effectSpeed') || '5'));
   const [saving, setSaving] = useState(false);
   
   // Redeem state
@@ -33,6 +35,14 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   useEffect(() => {
     localStorage.setItem('azov_preset', currentPreset);
   }, [currentPreset]);
+
+  useEffect(() => {
+    localStorage.setItem('azov_effectAmount', effectAmount);
+  }, [effectAmount]);
+
+  useEffect(() => {
+    localStorage.setItem('azov_effectSpeed', effectSpeed);
+  }, [effectSpeed]);
 
   async function saveColor() {
     setSaving(true);
@@ -222,6 +232,40 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                     ))}
                  </div>
                  <p className="text-zinc-500 text-[10px] mt-4 text-center">Presets automatically apply a theme and background effect.</p>
+               </div>
+               
+               <div className="h-px bg-zinc-800/60" />
+
+               <div>
+                 <h3 className="text-white text-sm font-semibold mb-4">Effect Settings</h3>
+                 <div className="space-y-4">
+                   <div>
+                     <div className="flex justify-between mb-2">
+                       <label className="text-zinc-400 text-xs">Amount</label>
+                       <span className="text-white text-xs">{effectAmount}</span>
+                     </div>
+                     <input 
+                       type="range" 
+                       min="1" max="100" 
+                       value={effectAmount} 
+                       onChange={(e) => setEffectAmount(parseInt(e.target.value))}
+                       className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
+                     />
+                   </div>
+                   <div>
+                     <div className="flex justify-between mb-2">
+                       <label className="text-zinc-400 text-xs">Speed</label>
+                       <span className="text-white text-xs">{effectSpeed}</span>
+                     </div>
+                     <input 
+                       type="range" 
+                       min="1" max="10" 
+                       value={effectSpeed} 
+                       onChange={(e) => setEffectSpeed(parseInt(e.target.value))}
+                       className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
+                     />
+                   </div>
+                 </div>
                </div>
 
                <div className="h-px bg-zinc-800/60" />

@@ -5,19 +5,25 @@ import { Snowflake, Ghost, Leaf } from 'lucide-react';
 export default function SeasonalEffects() {
   const [preset, setPreset] = useState(() => localStorage.getItem('azov_preset') || 'NONE');
   const [saveFps, setSaveFps] = useState(() => localStorage.getItem('azov_saveFps') === 'true');
+  const [effectAmount, setEffectAmount] = useState(() => parseInt(localStorage.getItem('azov_effectAmount') || '30'));
+  const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('azov_effectSpeed') || '5'));
   const [particles, setParticles] = useState([]);
 
   useEffect(() => {
-    // Poll for changes in localStorage since it might change from SettingsModal
     const interval = setInterval(() => {
       const currentPreset = localStorage.getItem('azov_preset') || 'NONE';
       const currentFps = localStorage.getItem('azov_saveFps') === 'true';
+      const currentAmount = parseInt(localStorage.getItem('azov_effectAmount') || '30');
+      const currentSpeed = parseInt(localStorage.getItem('azov_effectSpeed') || '5');
+      
       if (currentPreset !== preset) setPreset(currentPreset);
       if (currentFps !== saveFps) setSaveFps(currentFps);
+      if (currentAmount !== effectAmount) setEffectAmount(currentAmount);
+      if (currentSpeed !== effectSpeed) setEffectSpeed(currentSpeed);
     }, 500);
 
     return () => clearInterval(interval);
-  }, [preset, saveFps]);
+  }, [preset, saveFps, effectAmount, effectSpeed]);
 
   useEffect(() => {
     if (preset === 'NONE' || saveFps) {
@@ -25,18 +31,20 @@ export default function SeasonalEffects() {
       return;
     }
 
-    // Create initial particles
-    const particleCount = preset === 'CHRISTMAS' ? 30 : 15;
-    const newParticles = Array.from({ length: particleCount }).map((_, i) => ({
+    // Map speed (1-10) to duration (Fastest Speed 10 -> 2s, Slowest Speed 1 -> 20s)
+    const baseDuration = (11 - effectSpeed) * 2;
+
+    // Create particles based on effectAmount
+    const newParticles = Array.from({ length: effectAmount }).map((_, i) => ({
       id: i,
       x: Math.random() * 100,
       size: Math.random() * 20 + 10,
-      duration: Math.random() * 10 + 10,
-      delay: Math.random() * 20,
+      duration: baseDuration + (Math.random() * baseDuration * 0.5),
+      delay: Math.random() * baseDuration,
     }));
 
     setParticles(newParticles);
-  }, [preset, saveFps]);
+  }, [preset, saveFps, effectAmount, effectSpeed]);
 
   if (preset === 'NONE' || saveFps) return null;
 
