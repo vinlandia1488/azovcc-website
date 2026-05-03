@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginUser, registerUser, getSession, ensureAdminExists, getDiscordAuthUrl, fetchDiscordUser } from '@/lib/auth';
-import { Eye, EyeOff, MessageSquare, CheckCircle2, ShieldCheck, ExternalLink } from 'lucide-react';
+import { Eye, EyeOff, MessageSquare, CheckCircle2 } from 'lucide-react';
 import PreviewTablesModal from '@/components/PreviewTablesModal';
 
 export default function Auth() {
@@ -24,7 +24,6 @@ export default function Auth() {
     if (session) navigate('/dashboard');
     ensureAdminExists().catch(() => {});
 
-    // Handle Discord OAuth2 Redirect
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -37,7 +36,7 @@ export default function Auth() {
         .then(info => {
           setDiscordInfo(info);
           setDiscordLinked(true);
-          window.history.replaceState({}, document.title, "/");
+          window.history.replaceState({}, document.title, '/');
         })
         .catch(err => setError(err.message))
         .finally(() => setLoading(false));
@@ -75,14 +74,6 @@ export default function Auth() {
     }
   }
 
-  async function handleVerifyCode() {
-    // Legacy - redirected to Discord OAuth2
-  }
-
-  function handleConnectDiscord() {
-    window.location.href = getDiscordAuthUrl();
-  }
-
   return (
     <div className="min-h-screen bg-[#07070a] flex items-center justify-center relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
@@ -109,6 +100,8 @@ export default function Auth() {
                 onChange={e => setUsername(e.target.value)}
                 placeholder="Username"
                 required
+                autoComplete="username"
+                maxLength={32}
                 className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
               />
             </div>
@@ -122,6 +115,7 @@ export default function Auth() {
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 pr-10 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
                 />
                 <button
@@ -153,12 +147,9 @@ export default function Auth() {
                         <span className="text-zinc-300 text-xs font-mono">{discordInfo?.username}</span>
                       </div>
                     </div>
-                    <button 
+                    <button
                       type="button"
-                      onClick={() => {
-                        setDiscordLinked(false);
-                        setDiscordInfo(null);
-                      }}
+                      onClick={() => { setDiscordLinked(false); setDiscordInfo(null); }}
                       className="text-zinc-500 hover:text-zinc-300 text-[10px] underline"
                     >
                       Change
@@ -191,6 +182,7 @@ export default function Auth() {
                         onChange={e => setInternalLicenseKey(e.target.value)}
                         placeholder="Internal key..."
                         required={licenseType === 'internal'}
+                        maxLength={64}
                         className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono"
                       />
                     </div>
@@ -203,6 +195,7 @@ export default function Auth() {
                       onChange={e => setScriptLicenseKey(e.target.value)}
                       placeholder="Script key..."
                       required
+                      maxLength={64}
                       className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono"
                     />
                   </div>

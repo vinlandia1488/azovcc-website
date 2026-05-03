@@ -22,30 +22,24 @@ function writeLocal(rows) {
 }
 
 function normalize(row) {
-  // Use 'key' or 'script_key' as the source of truth
   const rawKey = row?.key || row?.script_key || "";
   let internalKey = row?.internal_key || row?.internal_license || "";
   let scriptKey = row?.script_key || row?.script_license || "";
   let type = row?.type;
 
-  // 1. Handle combined keys (internal|script) stored in the 'key' field
   if (rawKey.includes("|")) {
     const parts = rawKey.split("|");
     internalKey = parts[0];
     scriptKey = parts[1];
     type = "internal";
-  } 
-  // 2. Fallback: check note for hidden internal key [IK:xxx]
-  else if (row?.note && row.note.includes("[IK:")) {
+  } else if (row?.note && row.note.includes("[IK:")) {
     const match = row.note.match(/\[IK:([^\]]+)\]/);
     if (match) {
       internalKey = match[1];
       scriptKey = rawKey;
       type = "internal";
     }
-  }
-  // 3. Regular script key
-  else {
+  } else {
     scriptKey = rawKey;
     if (!internalKey) {
       type = "script";
@@ -72,12 +66,12 @@ async function tryDbList() {
   const entity = db.entities?.LicenseKey;
   if (!entity) return [];
   try {
-    const rows = typeof entity.list === "function" 
-      ? await entity.list("-created_date", 300)
-      : await entity.filter({});
+    const rows =
+      typeof entity.list === "function"
+        ? await entity.list("-created_date", 300)
+        : await entity.filter({});
     return Array.isArray(rows) ? rows : [];
-  } catch (e) {
-    console.error("DB List Failed:", e);
+  } catch {
     return [];
   }
 }
@@ -85,26 +79,24 @@ async function tryDbList() {
 async function tryDbCreate(payload) {
   const entity = db.entities?.LicenseKey;
   if (!entity) throw new Error("LicenseKey entity is unavailable");
-  
+
   const isInternal = payload.type === "internal";
-  const storageKey = isInternal 
+  const storageKey = isInternal
     ? `${payload.internal_key}|${payload.script_key}`
     : payload.script_key;
 
-  // We store the internal key in multiple places to ensure at least one sticks
   const dbPayload = {
     type: payload.type,
     internal_key: payload.internal_key,
     script_key: storageKey,
     key: storageKey,
-    // Add internal key to note as a hidden tag for absolute recovery
-    note: isInternal 
-      ? `${payload.note || ""} [IK:${payload.internal_key}]`.trim() 
+    note: isInternal
+      ? `${payload.note || ""} [IK:${payload.internal_key}]`.trim()
       : payload.note,
     used: payload.used,
-    created_date: payload.created_date || new Date().toISOString()
+    created_date: payload.created_date || new Date().toISOString(),
   };
-  
+
   const created = await entity.create(dbPayload);
   if (!created?.id) throw new Error("Failed to create record in database");
   return created;
@@ -245,9 +237,9 @@ export async function consumeLicenseForRegistration({
       (k) =>
         !k.used &&
         k.type === "internal" &&
-        (String(k.internal_key || "").trim() === normalizedInternal || 
-         String(k.script_key || "").trim() === normalizedScript ||
-         String(k.key || "").trim() === `${normalizedInternal}|${normalizedScript}`)
+        (String(k.internal_key || "").trim() === normalizedInternal ||
+          String(k.script_key || "").trim() === normalizedScript ||
+          String(k.key || "").trim() === `${normalizedInternal}|${normalizedScript}`)
     );
     if (!row) throw new Error("Invalid or already used internal/script key pair");
     await markLicenseKeyUsed(row.id, username);

@@ -13,7 +13,7 @@ function MaskedField({ value, label, copyable, accent }) {
   const [copied, setCopied] = useState(false);
 
   const masked = value
-    ? value.substring(0, 6) + '•'.repeat(Math.max(4, value.length - 6))
+    ? '•'.repeat(16)
     : '—';
 
   function copyVal() {

@@ -2,8 +2,62 @@ import { consumeLicenseForRegistration } from "@/lib/license-keys";
 import { getBackendDb } from "@/lib/backend";
 
 const db = getBackendDb();
-
 const ACCOUNTS_CACHE_KEY = "azov_accounts_cache";
+const SESSION_KEY = "azov_session";
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
+const RATE_LIMIT_KEY = "azov_rate_limits";
+
+function getRateLimits() {
+  try {
+    return JSON.parse(localStorage.getItem(RATE_LIMIT_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function setRateLimits(data) {
+  localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(data));
+}
+
+function checkRateLimit(username) {
+  const limits = getRateLimits();
+  const key = username.toLowerCase();
+  const entry = limits[key];
+  if (!entry) return;
+  const now = Date.now();
+  if (entry.lockedUntil && now < entry.lockedUntil) {
+    const remainingMins = Math.ceil((entry.lockedUntil - now) / 60000);
+    throw new Error(`Too many failed attempts. Try again in ${remainingMins} minute${remainingMins !== 1 ? "s" : ""}.`);
+  }
+  if (entry.lockedUntil && now >= entry.lockedUntil) {
+    delete limits[key];
+    setRateLimits(limits);
+  }
+}
+
+function recordFailedAttempt(username) {
+  const limits = getRateLimits();
+  const key = username.toLowerCase();
+  if (!limits[key]) limits[key] = { attempts: 0, lockedUntil: null };
+  limits[key].attempts += 1;
+  if (limits[key].attempts >= MAX_LOGIN_ATTEMPTS) {
+    limits[key].lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
+    limits[key].attempts = 0;
+  }
+  setRateLimits(limits);
+}
+
+function clearFailedAttempts(username) {
+  const limits = getRateLimits();
+  delete limits[username.toLowerCase()];
+  setRateLimits(limits);
+}
+
+function sanitizeString(input, maxLength = 128) {
+  if (typeof input !== "string") return "";
+  return input.trim().slice(0, maxLength).replace(/[<>"'`]/g, "");
+}
 
 function readAccountsCache() {
   try {
@@ -47,17 +101,16 @@ function removeAccountFromCache(accountId, username) {
   writeAccountsCache(next);
 }
 
-
 export async function sha256(message) {
   const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export function generateLicenseKey(prefix = 'AZOV') {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  const seg = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+export function generateLicenseKey(prefix = "AZOV") {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const seg = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
   return `${prefix}-${seg()}-${seg()}-${seg()}-${seg()}`;
 }
 
@@ -66,23 +119,29 @@ export function generateInternalLicense() {
 }
 
 export function generateScriptLicense() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  return Array.from({ length: 22 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  return Array.from({ length: 22 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
 export function getSession() {
   try {
-    const s = localStorage.getItem('azov_session');
-    return s ? JSON.parse(s) : null;
-  } catch { return null; }
+    const s = localStorage.getItem(SESSION_KEY);
+    if (!s) return null;
+    const parsed = JSON.parse(s);
+    if (!parsed || typeof parsed !== "object" || !parsed.username) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
 }
 
 export function setSession(account) {
-  localStorage.setItem('azov_session', JSON.stringify(account));
+  if (!account || typeof account !== "object") return;
+  localStorage.setItem(SESSION_KEY, JSON.stringify(account));
 }
 
 export function clearSession() {
-  localStorage.removeItem('azov_session');
+  localStorage.removeItem(SESSION_KEY);
 }
 
 export async function deleteUserAccount(account) {
@@ -94,7 +153,6 @@ export async function deleteUserAccount(account) {
     }
   } catch {}
   removeAccountFromCache(accountId, username);
-
   const currentSession = getSession();
   if (currentSession && ((accountId && currentSession.id === accountId) || (username && currentSession.username === username))) {
     clearSession();
@@ -113,46 +171,36 @@ async function getAllAccounts() {
   return dbRows;
 }
 
-/**
- * Unify Discord link fields from API (snake_case / camelCase) for UI and admin tools.
- */
 export function normalizeAccountDiscordLink(account) {
   if (!account || typeof account !== "object") return account;
   const raw = { ...account };
-  const idVal =
-    raw.discord_id ??
-    raw.discordId ??
-    raw.DiscordId;
-  const userVal =
-    raw.discord_username ??
-    raw.discordUsername ??
-    raw.DiscordUsername;
+  const idVal = raw.discord_id ?? raw.discordId ?? raw.DiscordId;
+  const userVal = raw.discord_username ?? raw.discordUsername ?? raw.DiscordUsername;
   const avatarVal = raw.discord_avatar ?? raw.discordAvatar ?? "";
-  
+
   let packedId = idVal;
   let packedUser = userVal;
   let packedAvatar = avatarVal;
 
   const rawLicense = raw.license_key || "";
   if (rawLicense.includes("|+|")) {
-      const parts = rawLicense.split("|+|");
-      if (parts.length >= 5) {
-          packedId = packedId || parts[2];
-          packedUser = packedUser || parts[3];
-          packedAvatar = packedAvatar || parts[4];
-      }
-      raw.internal_license = parts[0] || raw.internal_license;
-      raw.script_license = parts[1] || raw.script_license;
-      raw.license_key = raw.internal_license || raw.script_license;
+    const parts = rawLicense.split("|+|");
+    if (parts.length >= 5) {
+      packedId = packedId || parts[2];
+      packedUser = packedUser || parts[3];
+      packedAvatar = packedAvatar || parts[4];
+    }
+    raw.internal_license = parts[0] || raw.internal_license;
+    raw.script_license = parts[1] || raw.script_license;
+    raw.license_key = raw.internal_license || raw.script_license;
   } else if (rawLicense.includes("|")) {
-      const parts = rawLicense.split("|");
-      raw.internal_license = parts[0] || raw.internal_license;
-      raw.script_license = parts[1] || raw.script_license;
-      raw.license_key = raw.internal_license || raw.script_license;
+    const parts = rawLicense.split("|");
+    raw.internal_license = parts[0] || raw.internal_license;
+    raw.script_license = parts[1] || raw.script_license;
+    raw.license_key = raw.internal_license || raw.script_license;
   }
 
-  const discord_id =
-    packedId !== undefined && packedId !== null && packedId !== "" ? String(packedId) : "";
+  const discord_id = packedId !== undefined && packedId !== null && packedId !== "" ? String(packedId) : "";
   const discord_username = packedUser ? String(packedUser) : "";
   const discord_avatar = packedAvatar ? String(packedAvatar) : "";
   return { ...raw, discord_id, discord_username, discord_avatar };
@@ -160,12 +208,10 @@ export function normalizeAccountDiscordLink(account) {
 
 function normalizeSessionAccount(account, fallbackUsername = "") {
   const safeUsername = String(account?.username || fallbackUsername || "").trim();
-  
-  // Extract internal/script licenses using a robust fallback system
   const rawLicense = account?.license_key || "";
   let internalLicense = account?.internal_license || "";
   let scriptLicense = account?.script_license || "";
-  
+
   if (rawLicense.includes("|+|")) {
     const parts = rawLicense.split("|+|");
     if (!internalLicense) internalLicense = parts[0];
@@ -174,13 +220,9 @@ function normalizeSessionAccount(account, fallbackUsername = "") {
     const parts = rawLicense.split("|");
     if (!internalLicense) internalLicense = parts[0];
     if (!scriptLicense) scriptLicense = parts[1];
-  } 
-  // If it's an internal account but the field is empty, the internal key might be in license_key
-  else if (!internalLicense && (rawLicense.startsWith("Azov-") || rawLicense.length > 20)) {
+  } else if (!internalLicense && (rawLicense.startsWith("Azov-") || rawLicense.length > 20)) {
     internalLicense = rawLicense;
-  }
-  // If it's a script key in license_key
-  else if (!scriptLicense && rawLicense && !rawLicense.startsWith("Azov-")) {
+  } else if (!scriptLicense && rawLicense && !rawLicense.startsWith("Azov-")) {
     scriptLicense = rawLicense;
   }
 
@@ -204,7 +246,7 @@ export async function upgradeToInternal(username, internalKey) {
   const account = accounts[0];
 
   const keys = await getLicenseKeys();
-  const row = keys.find(k => !k.used && k.type === "internal" && k.internal_key === internalKey);
+  const row = keys.find((k) => !k.used && k.type === "internal" && k.internal_key === internalKey);
   if (!row) throw new Error("Invalid or already used internal key");
 
   await markLicenseKeyUsed(row.id, username);
@@ -212,14 +254,15 @@ export async function upgradeToInternal(username, internalKey) {
   const oldLicense = account.license_key || "";
   let discordInfoPacked = "";
   if (oldLicense.includes("|+|")) {
-      const parts = oldLicense.split("|+|");
-      if (parts.length >= 5) discordInfoPacked = "|+|" + (parts[2] || "") + "|+|" + (parts[3] || "") + "|+|" + (parts[4] || "");
+    const parts = oldLicense.split("|+|");
+    if (parts.length >= 5)
+      discordInfoPacked = "|+|" + (parts[2] || "") + "|+|" + (parts[3] || "") + "|+|" + (parts[4] || "");
   }
 
   const updated = {
     ...account,
     internal_license: row.internal_key,
-    license_key: row.internal_key + "|+|" + (account.script_license || "") + discordInfoPacked, // Ensure software compatibility on upgrade
+    license_key: row.internal_key + "|+|" + (account.script_license || "") + discordInfoPacked,
   };
 
   await db.entities.Account.update(account.id, updated);
@@ -228,35 +271,20 @@ export async function upgradeToInternal(username, internalKey) {
 }
 
 export async function verifyDiscordCode(code) {
-  // This is now replaced by real OAuth2 flow
   return null;
 }
 
 export function getDiscordAuthUrl() {
   const clientId = "1495669650883739678";
-  // Dynamically use the current origin for the redirect URI
   const redirectUri = encodeURIComponent(window.location.origin + "/");
   const scope = encodeURIComponent("identify");
-  // ALWAYS use response_type=token for frontend-only apps like Vercel
   return `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
 }
 
 export async function fetchDiscordUser(code) {
-  // Since the user is using response_type=code, we need to exchange the code for a token.
-  // However, in a client-side only app, this is insecure/difficult.
-  // We will assume for now that the user wants to handle this flow.
-  // For immediate functionality, we'll implement a token exchange if possible, 
-  // but usually 'code' flow requires a client_secret which we shouldn't put in frontend.
-  
-  // IF the user switches to 'token' (Implicit Grant), the previous logic would work.
-  // Since they provided a 'code' URL, let's try to adapt or advise.
-  
-  // NOTE: If this fails with a CORS error, the user MUST use 'Implicit Grant' (response_type=token)
-  // as discussed before for frontend-only apps.
-  
   const response = await fetch("https://discord.com/api/users/@me", {
     headers: {
-      Authorization: `Bearer ${code}`, // This will only work if 'code' is actually a token
+      Authorization: `Bearer ${code}`,
     },
   });
   if (!response.ok) throw new Error("Failed to fetch Discord user. Please ensure Implicit Grant is enabled in Dev Portal.");
@@ -282,10 +310,13 @@ function assertPersistedAccount(account, context) {
 }
 
 export async function loginUser(username, password, discordInfo = null) {
-  const normalizedUsername = String(username ?? '').trim();
-  if (!normalizedUsername) throw new Error('Username is required');
+  const normalizedUsername = sanitizeString(String(username ?? ""), 64);
+  if (!normalizedUsername) throw new Error("Username is required");
+  if (!password || typeof password !== "string" || password.length < 1) throw new Error("Password is required");
 
-  const isAdminLogin = normalizedUsername.toLowerCase() === 'admin';
+  checkRateLimit(normalizedUsername);
+
+  const isAdminLogin = normalizedUsername.toLowerCase() === "admin";
   if (isAdminLogin) {
     await ensureAdminExists();
   }
@@ -293,57 +324,62 @@ export async function loginUser(username, password, discordInfo = null) {
   const hash = await sha256(password);
   let accounts = await db.entities.Account.filter({ username: normalizedUsername });
   if (!accounts || accounts.length === 0) {
-    // Fallback for data sources that are case-sensitive or don't index this field.
     const allAccounts = await getAllAccounts();
     accounts = allAccounts.filter(
       (a) => String(a.username || "").toLowerCase() === normalizedUsername.toLowerCase()
     );
   }
   if ((!accounts || accounts.length === 0) && isAdminLogin) {
-    const adminHash = await sha256('adminkey1234');
+    const adminHash = await sha256("adminkey1234");
     const createdAdmin = await db.entities.Account.create({
-      username: 'admin',
+      username: "admin",
       password_hash: adminHash,
       internal_license: generateInternalLicense(),
       script_license: generateScriptLicense(),
       unique_identifier: 0,
-      accent_color: '#ef4444',
+      accent_color: "#ef4444",
       is_admin: true,
-      last_login: new Date().toISOString()
+      last_login: new Date().toISOString(),
     });
     assertPersistedAccount(createdAdmin, "Admin bootstrap failed");
     accounts = [createdAdmin];
   }
-  if (!accounts || accounts.length === 0) throw new Error('User not found');
-  let account = normalizeSessionAccount(accounts[0], normalizedUsername);
-  const isDefaultAdminCredential = isAdminLogin && password === 'adminkey1234';
-  if (!isDefaultAdminCredential && account.password_hash !== hash) {
-    throw new Error('Incorrect password');
+  if (!accounts || accounts.length === 0) {
+    recordFailedAttempt(normalizedUsername);
+    throw new Error("User not found");
   }
 
-  // Keep admin record aligned with the default credential when that credential is used.
+  let account = normalizeSessionAccount(accounts[0], normalizedUsername);
+  const isDefaultAdminCredential = isAdminLogin && password === "adminkey1234";
+  if (!isDefaultAdminCredential && account.password_hash !== hash) {
+    recordFailedAttempt(normalizedUsername);
+    throw new Error("Incorrect password");
+  }
+
+  clearFailedAttempts(normalizedUsername);
+
   if (isDefaultAdminCredential) {
     account = {
       ...account,
       username: "admin",
       is_admin: true,
-      password_hash: await sha256('adminkey1234'),
+      password_hash: await sha256("adminkey1234"),
     };
     try {
       await db.entities.Account.update(account.id, {
         username: "admin",
         password_hash: account.password_hash,
-        is_admin: true
+        is_admin: true,
       });
     } catch {}
   }
+
   const now = new Date().toISOString();
   const updates = { last_login: now };
   if (discordInfo) {
     updates.discord_id = String(discordInfo.id);
     updates.discord_username = String(discordInfo.username);
     updates.discord_avatar = String(discordInfo.avatar);
-
     const oldLicense = account.license_key || "";
     let intKey = account.internal_license || "";
     let scrKey = account.script_license || "";
@@ -358,10 +394,18 @@ export async function loginUser(username, password, discordInfo = null) {
     } else {
       intKey = intKey || oldLicense;
     }
-    updates.license_key = (intKey || "") + "|+|" + (scrKey || "") + "|+|" + (discordInfo.id || "") + "|+|" + (discordInfo.username || "") + "|+|" + (discordInfo.avatar || "");
+    updates.license_key =
+      (intKey || "") +
+      "|+|" +
+      (scrKey || "") +
+      "|+|" +
+      (discordInfo.id || "") +
+      "|+|" +
+      (discordInfo.username || "") +
+      "|+|" +
+      (discordInfo.avatar || "");
   }
 
-  // Do not block login if updating metadata fails.
   try {
     await db.entities.Account.update(account.id, updates);
   } catch {}
@@ -372,15 +416,19 @@ export async function loginUser(username, password, discordInfo = null) {
 }
 
 export async function registerUser(username, password, licenseKey) {
-  // Check if username taken
-  const normalizedUsername = String(username || "").trim();
-  const existing = await db.entities.Account.filter({ username: normalizedUsername });
-  if (existing && existing.length > 0) throw new Error('Username already taken');
+  const normalizedUsername = sanitizeString(String(username || ""), 32);
+  if (!normalizedUsername) throw new Error("Username is required");
+  if (normalizedUsername.length < 3) throw new Error("Username must be at least 3 characters");
+  if (!/^[a-zA-Z0-9_.-]+$/.test(normalizedUsername)) throw new Error("Username may only contain letters, numbers, underscores, dots, and dashes");
+  if (!password || password.length < 6) throw new Error("Password must be at least 6 characters");
 
-  // Validate license keys (v2 supports internal+script pair or script-only).
-  const keyPayload = typeof licenseKey === "object" && licenseKey !== null
-    ? licenseKey
-    : { licenseType: "script", scriptLicenseKey: String(licenseKey || "") };
+  const existing = await db.entities.Account.filter({ username: normalizedUsername });
+  if (existing && existing.length > 0) throw new Error("Username already taken");
+
+  const keyPayload =
+    typeof licenseKey === "object" && licenseKey !== null
+      ? licenseKey
+      : { licenseType: "script", scriptLicenseKey: String(licenseKey || "") };
   const consumed = await consumeLicenseForRegistration({
     licenseType: keyPayload.licenseType || "script",
     scriptLicenseKey: keyPayload.scriptLicenseKey || "",
@@ -390,7 +438,7 @@ export async function registerUser(username, password, licenseKey) {
 
   const hash = await sha256(password);
   const allAccounts = await getAllAccounts();
-  const uid = (allAccounts.length + 1);
+  const uid = allAccounts.length + 1;
 
   const payload = {
     username: normalizedUsername,
@@ -401,12 +449,20 @@ export async function registerUser(username, password, licenseKey) {
     discord_id: String(keyPayload.discord_id ?? "").trim(),
     discord_username: String(keyPayload.discord_username ?? "").trim(),
     discord_avatar: String(keyPayload.discord_avatar ?? "").trim(),
-    // Software compatibility: prioritize internal key in the primary license_key field
-    license_key: (consumed.internal_license || consumed.script_license || "") + "|+|" + (consumed.script_license || "") + "|+|" + (keyPayload.discord_id || "") + "|+|" + (keyPayload.discord_username || "") + "|+|" + (keyPayload.discord_avatar || ""), 
+    license_key:
+      (consumed.internal_license || consumed.script_license || "") +
+      "|+|" +
+      (consumed.script_license || "") +
+      "|+|" +
+      (keyPayload.discord_id || "") +
+      "|+|" +
+      (keyPayload.discord_username || "") +
+      "|+|" +
+      (keyPayload.discord_avatar || ""),
     unique_identifier: uid,
-    accent_color: '#6366f1',
+    accent_color: "#6366f1",
     is_admin: false,
-    last_login: new Date().toISOString()
+    last_login: new Date().toISOString(),
   };
 
   const created = await db.entities.Account.create(payload);
@@ -418,18 +474,38 @@ export async function registerUser(username, password, licenseKey) {
   return createdAccount;
 }
 
+export async function changePassword(username, oldPassword, newPassword) {
+  const normalizedUsername = sanitizeString(String(username ?? ""), 64);
+  if (!newPassword || newPassword.length < 6) throw new Error("New password must be at least 6 characters");
+  
+  const hash = await sha256(oldPassword);
+  const accounts = await db.entities.Account.filter({ username: normalizedUsername });
+  if (!accounts || accounts.length === 0) throw new Error("User not found");
+  
+  const account = accounts[0];
+  if (account.password_hash !== hash) throw new Error("Current password incorrect");
+  
+  const newHash = await sha256(newPassword);
+  await db.entities.Account.update(account.id, { password_hash: newHash });
+  
+  const updated = normalizeSessionAccount({ ...account, password_hash: newHash }, normalizedUsername);
+  upsertAccountCache(updated);
+  setSession(updated);
+  return updated;
+}
+
 export async function ensureAdminExists() {
-  const adminHash = await sha256('adminkey1234');
+  const adminHash = await sha256("adminkey1234");
   const now = new Date().toISOString();
 
-  const existingAdminUser = await db.entities.Account.filter({ username: 'admin' });
+  const existingAdminUser = await db.entities.Account.filter({ username: "admin" });
   if (existingAdminUser && existingAdminUser.length > 0) {
     const adminAccount = existingAdminUser[0];
     await db.entities.Account.update(adminAccount.id, {
       password_hash: adminHash,
-      is_admin: true
+      is_admin: true,
     });
-    upsertAccountCache(normalizeSessionAccount({ ...adminAccount, username: 'admin', is_admin: true }, 'admin'));
+    upsertAccountCache(normalizeSessionAccount({ ...adminAccount, username: "admin", is_admin: true }, "admin"));
     return;
   }
 
@@ -437,11 +513,11 @@ export async function ensureAdminExists() {
   if (admins && admins.length > 0) {
     const adminAccount = admins[0];
     await db.entities.Account.update(adminAccount.id, {
-      username: 'admin',
+      username: "admin",
       password_hash: adminHash,
-      is_admin: true
+      is_admin: true,
     });
-    upsertAccountCache(normalizeSessionAccount({ ...adminAccount, username: 'admin', is_admin: true }, 'admin'));
+    upsertAccountCache(normalizeSessionAccount({ ...adminAccount, username: "admin", is_admin: true }, "admin"));
     return;
   }
 
@@ -449,16 +525,16 @@ export async function ensureAdminExists() {
   const scriptKey = generateScriptLicense();
 
   const createdAdmin = await db.entities.Account.create({
-    username: 'admin',
+    username: "admin",
     password_hash: adminHash,
     internal_license: internalKey,
     script_license: scriptKey,
-    license_key: internalKey, // For software login as admin
+    license_key: internalKey,
     unique_identifier: 0,
-    accent_color: '#ef4444',
+    accent_color: "#ef4444",
     is_admin: true,
-    last_login: now
+    last_login: now,
   });
   assertPersistedAccount(createdAdmin, "Admin bootstrap failed");
-  upsertAccountCache(normalizeSessionAccount(createdAdmin, 'admin'));
+  upsertAccountCache(normalizeSessionAccount(createdAdmin, "admin"));
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, LogOut, Check, Lock, ZapOff, Ban, Snowflake, Ghost, Leaf, CreditCard, Palette } from 'lucide-react';
-import { setSession, upgradeToInternal } from '@/lib/auth';
+import { X, LogOut, Check, Lock, ZapOff, Ban, Snowflake, Ghost, Leaf, CreditCard, Palette, Shield } from 'lucide-react';
+import { setSession, upgradeToInternal, changePassword } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 
 const db = getBackendDb();
@@ -13,7 +13,6 @@ const PALETTE = [
 export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [activeTab, setActiveTab] = useState('redeem');
   
-  // Theme state
   const [accent, setAccent] = useState(session.accent_color || '#6366f1');
   const [customColor, setCustomColor] = useState(session.accent_color || '#6366f1');
   const [saveFps, setSaveFps] = useState(() => localStorage.getItem('azov_saveFps') === 'true');
@@ -22,12 +21,16 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('azov_effectSpeed') || '5'));
   const [saving, setSaving] = useState(false);
   
-  // Redeem state
   const [internalKey, setInternalKey] = useState('');
   const [upgradeError, setUpgradeError] = useState('');
   const [upgradeSuccess, setUpgradeSuccess] = useState('');
+  
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [securityError, setSecurityError] = useState('');
+  const [securitySuccess, setSecuritySuccess] = useState('');
 
-  // Update local storage when they change
   useEffect(() => {
     localStorage.setItem('azov_saveFps', saveFps);
   }, [saveFps]);
@@ -79,11 +82,40 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
     }
   }
 
+  async function handlePasswordChange() {
+    setSecurityError('');
+    setSecuritySuccess('');
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      setSecurityError('All fields are required');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setSecurityError('Passwords do not match');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setSecurityError('New password must be at least 6 characters');
+      return;
+    }
+    setSaving(true);
+    try {
+      await changePassword(session.username, oldPassword, newPassword);
+      setSecuritySuccess('Password successfully updated!');
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      await onSaved();
+    } catch (err) {
+      setSecurityError(err.message || 'Failed to update password');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div className="bg-[#111114] border border-zinc-800/60 rounded-3xl w-full max-w-3xl flex shadow-2xl min-h-[500px] overflow-hidden animate-in fade-in zoom-in duration-200">
         
-        {/* Sidebar */}
         <div className="w-64 border-r border-zinc-800/60 flex flex-col p-4 bg-[#111114]">
           <div className="mb-8 pl-2 mt-2">
             <h2 className="text-white font-bold text-lg">Settings</h2>
@@ -105,6 +137,13 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
               <Palette size={16} />
               Themes
             </button>
+            <button 
+              onClick={() => setActiveTab('security')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === 'security' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
+            >
+              <Shield size={16} />
+              Security
+            </button>
           </div>
           
           <div className="mt-auto">
@@ -115,7 +154,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
           </div>
         </div>
 
-        {/* Content */}
         <div className="flex-1 bg-[#0c0c0e] relative flex flex-col p-8">
            <button onClick={onClose} className="absolute top-6 right-6 text-zinc-500 hover:text-white transition">
               <X size={18} />
@@ -125,13 +163,11 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
              <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
                <div>
                  <h3 className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-4">Your Products</h3>
-                 
                  <div className="space-y-3">
-                   {/* Internal */}
                    <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 flex items-center justify-between hover:border-zinc-700/50 transition">
                      <div>
                        <h4 className="text-white text-sm font-semibold">Azov Internal</h4>
-                       <p className="text-zinc-500 text-xs">{session.internal_license ? 'Owned' : 'Not Owned'}</p>
+                       <p className="text-zinc-500 text-xs">{session.internal_license ? '******************' : 'Not Owned'}</p>
                      </div>
                      {session.internal_license ? (
                        <div className="px-3 py-1.5 rounded-md bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-bold flex items-center gap-1.5">
@@ -145,8 +181,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                        </div>
                      )}
                    </div>
-
-                   {/* Script */}
                    <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 flex items-center justify-between hover:border-zinc-700/50 transition">
                      <div>
                        <h4 className="text-white text-sm font-semibold">Azov Script</h4>
@@ -166,9 +200,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                    </div>
                  </div>
                </div>
-
                <div className="h-px bg-zinc-800/60" />
-
                <div>
                  <h3 className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-4">License Key</h3>
                  <input 
@@ -189,7 +221,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                  </button>
                </div>
              </div>
-           ) : (
+           ) : activeTab === 'themes' ? (
              <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
                <div>
                  <h3 className="text-white text-sm font-semibold mb-4">Performance</h3>
@@ -211,9 +243,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                    </button>
                  </div>
                </div>
-
                <div className="h-px bg-zinc-800/60" />
-
                <div>
                  <h3 className="text-white text-sm font-semibold mb-4">Seasonal Presets</h3>
                  <div className="grid grid-cols-4 gap-3">
@@ -233,9 +263,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                  </div>
                  <p className="text-zinc-500 text-[10px] mt-4 text-center">Presets automatically apply a theme and background effect.</p>
                </div>
-               
                <div className="h-px bg-zinc-800/60" />
-
                 <div>
                   <h3 className="text-white text-sm font-semibold mb-4">Effect Settings</h3>
                   <div className="space-y-6">
@@ -271,9 +299,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                     </div>
                   </div>
                 </div>
-
                <div className="h-px bg-zinc-800/60" />
-
                <div>
                  <div className="flex items-center justify-between mb-4">
                    <h3 className="text-white text-sm font-semibold">Color Palette</h3>
@@ -291,7 +317,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                        </button>
                     ))}
                  </div>
-
                  <div className="flex items-center justify-between pt-4 border-t border-zinc-800/60">
                     <span className="text-zinc-400 text-xs">Primary</span>
                     <div className="flex items-center gap-3 bg-[#111114] border border-zinc-800/60 rounded-xl px-2 py-1.5">
@@ -307,7 +332,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                     </div>
                  </div>
                </div>
-               
                <button 
                   onClick={saveColor}
                   disabled={saving}
@@ -315,7 +339,67 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                >
                   {saving ? 'Applying Theme...' : 'Apply Theme'}
                </button>
-
+             </div>
+           ) : (
+             <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
+               <div>
+                 <h3 className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-6">Change Password</h3>
+                 <div className="space-y-4">
+                   <div>
+                     <label className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1.5 block">Current Password</label>
+                     <input 
+                       type="password"
+                       value={oldPassword}
+                       onChange={e => setOldPassword(e.target.value)}
+                       placeholder="••••••••"
+                       className="w-full bg-[#111114] border border-zinc-800/60 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+                     />
+                   </div>
+                   <div className="grid grid-cols-2 gap-4">
+                     <div>
+                       <label className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1.5 block">New Password</label>
+                       <input 
+                         type="password"
+                         value={newPassword}
+                         onChange={e => setNewPassword(e.target.value)}
+                         placeholder="••••••••"
+                         className="w-full bg-[#111114] border border-zinc-800/60 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+                       />
+                     </div>
+                     <div>
+                       <label className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1.5 block">Confirm Password</label>
+                       <input 
+                         type="password"
+                         value={confirmPassword}
+                         onChange={e => setConfirmPassword(e.target.value)}
+                         placeholder="••••••••"
+                         className="w-full bg-[#111114] border border-zinc-800/60 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+                       />
+                     </div>
+                   </div>
+                 </div>
+                 {securityError && <p className="text-red-400 text-[10px] mt-4">{securityError}</p>}
+                 {securitySuccess && <p className="text-green-400 text-[10px] mt-4">{securitySuccess}</p>}
+                 <button
+                   onClick={handlePasswordChange}
+                   disabled={saving}
+                   className="w-full mt-6 bg-[#ef4444] hover:bg-[#dc2626] text-white font-semibold rounded-xl px-4 py-3 text-sm transition disabled:opacity-50"
+                 >
+                   {saving ? 'Updating...' : 'Update Password'}
+                 </button>
+               </div>
+               <div className="h-px bg-zinc-800/60" />
+               <div className="bg-[#111114]/50 border border-zinc-800/60 rounded-2xl p-6">
+                 <div className="flex items-center gap-3 mb-3">
+                   <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400">
+                     <Shield size={16} />
+                   </div>
+                   <h4 className="text-white text-sm font-semibold">Account Security</h4>
+                 </div>
+                 <p className="text-zinc-500 text-xs leading-relaxed">
+                   Protect your account by using a strong password. We recommend a mix of letters, numbers, and symbols. 
+                 </p>
+               </div>
              </div>
            )}
         </div>

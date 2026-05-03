@@ -62,23 +62,25 @@ export default function Dashboard() {
 
   if (!session) return null;
 
+  if (activeTab === 'panel' && !session.is_admin) {
+    setActiveTab('dashboard');
+    return null;
+  }
+
   const accent = session.accent_color || '#ef4444';
 
   return (
     <div className="min-h-screen bg-[#07070a] text-white relative overflow-hidden">
       <SeasonalEffects />
-      {/* Background glow */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-20 blur-3xl rounded-full"
           style={{ background: `radial-gradient(ellipse, ${accent}44, transparent)` }} />
       </div>
 
-      {/* Nav */}
       <div className="relative z-10 pt-6 pb-4 flex justify-center">
         <NavTabs activeTab={activeTab} setActiveTab={setActiveTab} accent={accent} isAdmin={session.is_admin} />
       </div>
 
-      {/* Content */}
       <div className="relative z-10 max-w-5xl mx-auto px-4 pb-16">
         {activeTab === 'dashboard' && (
           <DashboardTab session={session} onSettings={() => setShowSettings(true)} accent={accent} announcement={announcement} />

@@ -286,7 +286,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
         )}
       </div>
 
-      {/* Sub tabs */}
+      
       <div className="flex gap-2">
         {[
           { id: 'keys', label: 'License Keys', icon: Key },
@@ -372,7 +372,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
             </div>
           </div>
 
-          {/* Keys list */}
+          
           <div className="bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden">
             <div className="grid grid-cols-7 px-4 py-2 border-b border-zinc-800/60 text-[10px] uppercase tracking-widest text-zinc-600">
               <span>Type</span>
@@ -656,7 +656,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
       )}
       {tab === 'support' && (
         <div className="flex bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden h-[600px] shadow-2xl">
-          {/* Channel-like User List */}
+          
           <div className="w-72 border-r border-zinc-800/60 flex flex-col bg-[#0c0c0e]/50">
             <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20">
               <h3 className="text-white text-[10px] font-bold uppercase tracking-widest text-zinc-500">Active Support</h3>
@@ -706,7 +706,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
             </div>
           </div>
 
-          {/* Chat Window */}
+          
           <div className="flex-1 flex flex-col bg-[#0c0c0e]/30 relative">
             {activeSupportUser ? (
               <>
