@@ -18,7 +18,7 @@ import {
   getDownloadItems,
   updateDownloadItem,
 } from '@/lib/downloads';
-import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, MessageSquare, Send, Image as ImageIcon } from 'lucide-react';
+import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, MessageSquare, Send, Image as ImageIcon, X, Clock, Shield, User } from 'lucide-react';
 import UserDetailModal from '@/components/UserDetailModal';
 
 const db = getBackendDb();
@@ -62,7 +62,8 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   const [announcement, setAnnouncementState] = useState('');
   const [defaultCloudConfig, setDefaultCloudConfigState] = useState('');
   const [previewConfig, setPreviewConfigState] = useState('');
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null); // For detail modal
+  const [activeSupportUser, setActiveSupportUser] = useState(null); // For support chat
   const [note, setNote] = useState('');
   const [newKeyType, setNewKeyType] = useState('script');
   const [manualInternalKey, setManualInternalKey] = useState('');
@@ -665,13 +666,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                 const userMsgs = supportMessages.filter(m => m.owner_username === uid);
                 const lastMsg = userMsgs[userMsgs.length - 1];
                 const unreadCount = userMsgs.filter(m => !m.is_read && m.sender_type === 'user').length;
-                const isActive = selectedUser?.username === uid;
+                const isActive = activeSupportUser?.username === uid;
                 const userData = accounts.find(a => String(a.username) === uid);
                 
                 return (
                   <button 
                     key={uid}
-                    onClick={() => setSelectedUser(userData || { username: uid })}
+                    onClick={() => setActiveSupportUser(userData || { username: uid })}
                     className={`w-full p-4 text-left border-b border-zinc-800/20 transition group relative ${isActive ? 'bg-zinc-800/40' : 'hover:bg-zinc-800/20'}`}
                   >
                     {isActive && <div className="absolute left-0 top-2 bottom-2 w-1 bg-white rounded-r-full" style={{ background: accent }} />}
@@ -707,7 +708,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
           {/* Chat Window */}
           <div className="flex-1 flex flex-col bg-[#0c0c0e]/30 relative">
-            {selectedUser ? (
+            {activeSupportUser ? (
               <>
                 <div className="p-4 border-b border-zinc-800/60 flex items-center justify-between bg-zinc-900/40 backdrop-blur-md">
                   <div className="flex items-center gap-3">
@@ -715,18 +716,27 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                       <User size={16} />
                     </div>
                     <div>
-                      <span className="text-white text-sm font-bold">Support: {selectedUser.username}</span>
+                      <span className="text-white text-sm font-bold">Support: {activeSupportUser.username}</span>
                       <p className="text-green-500 text-[9px] font-medium tracking-wide uppercase">Active Conversation</p>
                     </div>
                   </div>
-                  <button onClick={() => setSelectedUser(null)} className="text-zinc-500 hover:text-white transition p-2">
-                    <X size={16} />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => openUserDetails(activeSupportUser)}
+                      className="text-zinc-500 hover:text-white transition p-2 bg-zinc-800/50 rounded-lg border border-zinc-700/50"
+                      title="View User Profile"
+                    >
+                      <ExternalLink size={16} />
+                    </button>
+                    <button onClick={() => setActiveSupportUser(null)} className="text-zinc-500 hover:text-white transition p-2">
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar scroll-smooth">
                   {supportMessages
-                    .filter(m => m.owner_username === selectedUser.username)
+                    .filter(m => m.owner_username === activeSupportUser.username)
                     .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
                     .map((m, idx) => {
                       const isAdminMsg = m.sender_type === 'admin';
@@ -796,7 +806,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                       };
 
                       await db.entities.CloudConfig.create({
-                        owner_username: selectedUser.username,
+                        owner_username: activeSupportUser.username,
                         name: "__SUPPORT_MSG__",
                         content: JSON.stringify(payload)
                       });
@@ -811,7 +821,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                         <textarea 
                           name="reply"
                           rows="1"
-                          placeholder={`Message @${selectedUser.username}`}
+                          placeholder={`Message @${activeSupportUser.username}`}
                           className="w-full bg-[#111114] border border-zinc-800/60 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition resize-none"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
