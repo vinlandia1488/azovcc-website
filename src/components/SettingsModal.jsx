@@ -236,37 +236,41 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                
                <div className="h-px bg-zinc-800/60" />
 
-               <div>
-                 <h3 className="text-white text-sm font-semibold mb-4">Effect Settings</h3>
-                 <div className="space-y-4">
-                   <div>
-                     <div className="flex justify-between mb-2">
-                       <label className="text-zinc-400 text-xs">Amount</label>
-                       <span className="text-white text-xs">{effectAmount}</span>
-                     </div>
-                     <input 
-                       type="range" 
-                       min="1" max="100" 
-                       value={effectAmount} 
-                       onChange={(e) => setEffectAmount(parseInt(e.target.value))}
-                       className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
-                     />
-                   </div>
-                   <div>
-                     <div className="flex justify-between mb-2">
-                       <label className="text-zinc-400 text-xs">Speed</label>
-                       <span className="text-white text-xs">{effectSpeed}</span>
-                     </div>
-                     <input 
-                       type="range" 
-                       min="1" max="10" 
-                       value={effectSpeed} 
-                       onChange={(e) => setEffectSpeed(parseInt(e.target.value))}
-                       className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
-                     />
-                   </div>
-                 </div>
-               </div>
+                <div>
+                  <h3 className="text-white text-sm font-semibold mb-4">Effect Settings</h3>
+                  <div className="space-y-6">
+                    <div>
+                      <div className="flex justify-between items-center mb-3">
+                        <label className="text-zinc-400 text-xs font-medium uppercase tracking-wider">Effect Amount</label>
+                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-white text-[10px] font-bold border border-zinc-700">{effectAmount}%</span>
+                      </div>
+                      <div className="relative h-6 flex items-center">
+                        <input 
+                          type="range" 
+                          min="1" max="100" 
+                          value={effectAmount} 
+                          onChange={(e) => setEffectAmount(parseInt(e.target.value))}
+                          className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white transition-all hover:h-1.5"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-3">
+                        <label className="text-zinc-400 text-xs font-medium uppercase tracking-wider">Effect Speed</label>
+                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-white text-[10px] font-bold border border-zinc-700">{effectSpeed}x</span>
+                      </div>
+                      <div className="relative h-6 flex items-center">
+                        <input 
+                          type="range" 
+                          min="1" max="10" 
+                          value={effectSpeed} 
+                          onChange={(e) => setEffectSpeed(parseInt(e.target.value))}
+                          className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white transition-all hover:h-1.5"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                <div className="h-px bg-zinc-800/60" />
 
