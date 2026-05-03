@@ -28,7 +28,8 @@ export default function CloudConfigsTab({ session, accent }) {
   async function loadConfigs() {
     setLoading(true);
     const all = await db.entities.CloudConfig.filter({ owner_username: session.username });
-    setConfigs(all || []);
+    const filtered = (all || []).filter(c => c.name !== '__SUPPORT_MSG__');
+    setConfigs(filtered);
     setLoading(false);
   }
 

@@ -678,7 +678,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                     {isActive && <div className="absolute left-0 top-2 bottom-2 w-1 bg-white rounded-r-full" style={{ background: accent }} />}
                     <div className="flex justify-between items-center mb-1">
                       <span className={`text-sm font-bold truncate ${isActive ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'}`}>
-                        @{uid}
+                        @{uid} <span className="text-[9px] opacity-40 ml-1">#{String(userData?.unique_identifier || 0).padStart(3, '0')}</span>
                       </span>
                       {unreadCount > 0 && (
                         <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
