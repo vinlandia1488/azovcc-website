@@ -181,12 +181,17 @@ export default function CloudConfigsTab({ session, accent }) {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-white text-sm font-medium">{cfg.name}</span>
-                  <button
-                    onClick={(e) => deleteConfig(cfg, e)}
-                    className="text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-mono text-zinc-600 bg-zinc-900/50 px-1.5 py-0.5 rounded border border-zinc-800/40">
+                      ID: {cfg.id.split('-')[0]}
+                    </span>
+                    <button
+                      onClick={(e) => deleteConfig(cfg, e)}
+                      className="text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
                 <p className="text-zinc-600 text-[11px] mt-0.5">
                   {cfg.created_date ? new Date(cfg.created_date).toLocaleDateString() : ''}
