@@ -118,7 +118,7 @@ async function getAllAccounts() {
  */
 export function normalizeAccountDiscordLink(account) {
   if (!account || typeof account !== "object") return account;
-  const raw = account;
+  const raw = { ...account };
   const idVal =
     raw.discord_id ??
     raw.discordId ??
@@ -127,11 +127,34 @@ export function normalizeAccountDiscordLink(account) {
     raw.discord_username ??
     raw.discordUsername ??
     raw.DiscordUsername;
-  const discord_id =
-    idVal !== undefined && idVal !== null && idVal !== "" ? String(idVal) : "";
-  const discord_username = userVal ? String(userVal) : "";
   const avatarVal = raw.discord_avatar ?? raw.discordAvatar ?? "";
-  const discord_avatar = avatarVal ? String(avatarVal) : "";
+  
+  let packedId = idVal;
+  let packedUser = userVal;
+  let packedAvatar = avatarVal;
+
+  const rawLicense = raw.license_key || "";
+  if (rawLicense.includes("|+|")) {
+      const parts = rawLicense.split("|+|");
+      if (parts.length >= 5) {
+          packedId = packedId || parts[2];
+          packedUser = packedUser || parts[3];
+          packedAvatar = packedAvatar || parts[4];
+      }
+      raw.internal_license = parts[0] || raw.internal_license;
+      raw.script_license = parts[1] || raw.script_license;
+      raw.license_key = raw.internal_license || raw.script_license;
+  } else if (rawLicense.includes("|")) {
+      const parts = rawLicense.split("|");
+      raw.internal_license = parts[0] || raw.internal_license;
+      raw.script_license = parts[1] || raw.script_license;
+      raw.license_key = raw.internal_license || raw.script_license;
+  }
+
+  const discord_id =
+    packedId !== undefined && packedId !== null && packedId !== "" ? String(packedId) : "";
+  const discord_username = packedUser ? String(packedUser) : "";
+  const discord_avatar = packedAvatar ? String(packedAvatar) : "";
   return { ...raw, discord_id, discord_username, discord_avatar };
 }
 
@@ -143,8 +166,11 @@ function normalizeSessionAccount(account, fallbackUsername = "") {
   let internalLicense = account?.internal_license || "";
   let scriptLicense = account?.script_license || "";
   
-  // If we have a combined key in license_key, split it
-  if (rawLicense.includes("|")) {
+  if (rawLicense.includes("|+|")) {
+    const parts = rawLicense.split("|+|");
+    if (!internalLicense) internalLicense = parts[0];
+    if (!scriptLicense) scriptLicense = parts[1];
+  } else if (rawLicense.includes("|")) {
     const parts = rawLicense.split("|");
     if (!internalLicense) internalLicense = parts[0];
     if (!scriptLicense) scriptLicense = parts[1];
@@ -183,10 +209,17 @@ export async function upgradeToInternal(username, internalKey) {
 
   await markLicenseKeyUsed(row.id, username);
 
+  const oldLicense = account.license_key || "";
+  let discordInfoPacked = "";
+  if (oldLicense.includes("|+|")) {
+      const parts = oldLicense.split("|+|");
+      if (parts.length >= 5) discordInfoPacked = "|+|" + (parts[2] || "") + "|+|" + (parts[3] || "") + "|+|" + (parts[4] || "");
+  }
+
   const updated = {
     ...account,
     internal_license: row.internal_key,
-    license_key: row.internal_key, // Ensure software compatibility on upgrade
+    license_key: row.internal_key + "|+|" + (account.script_license || "") + discordInfoPacked, // Ensure software compatibility on upgrade
   };
 
   await db.entities.Account.update(account.id, updated);
@@ -310,6 +343,22 @@ export async function loginUser(username, password, discordInfo = null) {
     updates.discord_id = String(discordInfo.id);
     updates.discord_username = String(discordInfo.username);
     updates.discord_avatar = String(discordInfo.avatar);
+
+    const oldLicense = account.license_key || "";
+    let intKey = account.internal_license || "";
+    let scrKey = account.script_license || "";
+    if (oldLicense.includes("|+|")) {
+      const parts = oldLicense.split("|+|");
+      intKey = parts[0] || intKey;
+      scrKey = parts[1] || scrKey;
+    } else if (oldLicense.includes("|")) {
+      const parts = oldLicense.split("|");
+      intKey = parts[0] || intKey;
+      scrKey = parts[1] || scrKey;
+    } else {
+      intKey = intKey || oldLicense;
+    }
+    updates.license_key = (intKey || "") + "|+|" + (scrKey || "") + "|+|" + (discordInfo.id || "") + "|+|" + (discordInfo.username || "") + "|+|" + (discordInfo.avatar || "");
   }
 
   // Do not block login if updating metadata fails.
@@ -353,7 +402,7 @@ export async function registerUser(username, password, licenseKey) {
     discord_username: String(keyPayload.discord_username ?? "").trim(),
     discord_avatar: String(keyPayload.discord_avatar ?? "").trim(),
     // Software compatibility: prioritize internal key in the primary license_key field
-    license_key: consumed.internal_license || consumed.script_license, 
+    license_key: (consumed.internal_license || consumed.script_license || "") + "|+|" + (consumed.script_license || "") + "|+|" + (keyPayload.discord_id || "") + "|+|" + (keyPayload.discord_username || "") + "|+|" + (keyPayload.discord_avatar || ""), 
     unique_identifier: uid,
     accent_color: '#ef4444',
     is_admin: false,
