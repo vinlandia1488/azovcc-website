@@ -8,6 +8,7 @@ import DownloadsTab from '@/components/DownloadsTab';
 import CloudConfigsTab from '@/components/CloudConfigsTab';
 import PanelTab from '@/components/PanelTab';
 import SettingsModal from '@/components/SettingsModal';
+import SeasonalEffects from '@/components/SeasonalEffects';
 import { getAnnouncement } from '@/lib/app-settings';
 
 const db = getBackendDb();
@@ -64,6 +65,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#07070a] text-white relative overflow-hidden">
+      <SeasonalEffects />
       {/* Background glow */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-20 blur-3xl rounded-full"

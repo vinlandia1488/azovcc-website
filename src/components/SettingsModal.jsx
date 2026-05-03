@@ -120,7 +120,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                    {/* Internal */}
                    <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 flex items-center justify-between hover:border-zinc-700/50 transition">
                      <div>
-                       <h4 className="text-white text-sm font-semibold">Prada Internal</h4>
+                       <h4 className="text-white text-sm font-semibold">Azov Internal</h4>
                        <p className="text-zinc-500 text-xs">{session.internal_license ? 'Owned' : 'Not Owned'}</p>
                      </div>
                      {session.internal_license ? (
@@ -139,7 +139,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                    {/* Script */}
                    <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 flex items-center justify-between hover:border-zinc-700/50 transition">
                      <div>
-                       <h4 className="text-white text-sm font-semibold">Prada Script</h4>
+                       <h4 className="text-white text-sm font-semibold">Azov Script</h4>
                        <p className="text-zinc-500 text-xs">{session.script_license ? '******************' : 'Not Owned'}</p>
                      </div>
                      {session.script_license ? (
