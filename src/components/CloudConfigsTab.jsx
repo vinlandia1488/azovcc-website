@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getBackendDb } from '@/lib/backend';
 
-import { Plus, Play, RotateCcw, Trash2 } from 'lucide-react';
+import { Plus, Play, RotateCcw, Trash2, Copy, Check, Eye } from 'lucide-react';
 import { getDefaultCloudConfig, getConfigTemplatesShared } from '@/lib/config-templates';
 
 const db = getBackendDb();
@@ -14,6 +14,7 @@ export default function CloudConfigsTab({ session, accent }) {
   const [newName, setNewName] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -92,6 +93,20 @@ export default function CloudConfigsTab({ session, accent }) {
 
   function handleReset() {
     setEditorContent(defaultConfig);
+  }
+
+  function copyId(id, e) {
+    e.stopPropagation();
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  function viewDetail(cfg, e) {
+    e.stopPropagation();
+    const fullId = cfg.id;
+    const shortId = fullId.split('-')[0];
+    alert(`Config Details:\n\nName: ${cfg.name}\nFull ID: ${fullId}\nShort ID: ${shortId}\nCreated: ${cfg.created_date ? new Date(cfg.created_date).toLocaleString() : 'N/A'}`);
   }
 
   return (
@@ -181,13 +196,26 @@ export default function CloudConfigsTab({ session, accent }) {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-white text-sm font-medium">{cfg.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-mono text-zinc-600 bg-zinc-900/50 px-1.5 py-0.5 rounded border border-zinc-800/40">
-                      ID: {cfg.id.split('-')[0]}
-                    </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={(e) => copyId(cfg.id.split('-')[0], e)}
+                      className="flex items-center gap-1 text-[9px] font-mono text-zinc-400 bg-zinc-900/80 px-2 py-0.5 rounded border border-zinc-800 hover:border-zinc-600 hover:text-zinc-200 transition"
+                      title="Click to copy short ID"
+                    >
+                      {copiedId === cfg.id.split('-')[0] ? <Check size={10} className="text-green-500" /> : <Copy size={10} />}
+                      {cfg.id.split('-')[0]}
+                    </button>
+                    <button
+                      onClick={(e) => viewDetail(cfg, e)}
+                      className="text-zinc-600 hover:text-blue-400 transition p-1"
+                      title="View full details"
+                    >
+                      <Eye size={13} />
+                    </button>
                     <button
                       onClick={(e) => deleteConfig(cfg, e)}
-                      className="text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
+                      className="text-zinc-600 hover:text-red-400 transition p-1"
+                      title="Delete config"
                     >
                       <Trash2 size={13} />
                     </button>
