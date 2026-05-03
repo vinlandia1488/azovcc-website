@@ -248,7 +248,7 @@ function assertPersistedAccount(account, context) {
   }
 }
 
-export async function loginUser(username, password) {
+export async function loginUser(username, password, discordInfo = null) {
   const normalizedUsername = String(username ?? '').trim();
   if (!normalizedUsername) throw new Error('Username is required');
 
@@ -305,11 +305,18 @@ export async function loginUser(username, password) {
     } catch {}
   }
   const now = new Date().toISOString();
+  const updates = { last_login: now };
+  if (discordInfo) {
+    updates.discord_id = String(discordInfo.id);
+    updates.discord_username = String(discordInfo.username);
+    updates.discord_avatar = String(discordInfo.avatar);
+  }
+
   // Do not block login if updating metadata fails.
   try {
-    await db.entities.Account.update(account.id, { last_login: now });
+    await db.entities.Account.update(account.id, updates);
   } catch {}
-  const updated = normalizeSessionAccount({ ...account, last_login: now }, normalizedUsername);
+  const updated = normalizeSessionAccount({ ...account, ...updates }, normalizedUsername);
   upsertAccountCache(updated);
   setSession(updated);
   return updated;
