@@ -5,6 +5,10 @@
       "destination": "/api/auth"
     },
     {
+      "source": "/dist/v1/config/0x9a3c1e4f2b8d7a5c",
+      "destination": "/api/config"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
