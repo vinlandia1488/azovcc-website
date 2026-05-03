@@ -58,9 +58,24 @@ export default function CloudConfigsTab({ session, accent }) {
   async function updateConfig() {
     if (!selected) return;
     setSaving(true);
-    await db.entities.CloudConfig.update(selected.id, { content: editorContent });
-    setConfigs(configs.map(c => c.id === selected.id ? { ...c, content: editorContent } : c));
-    setSelected({ ...selected, content: editorContent });
+    try {
+      // 1. Update the CloudConfig entity itself
+      await db.entities.CloudConfig.update(selected.id, { content: editorContent });
+      
+      // 2. Update the user's Account to mark this as the currently selected execution config
+      const userAccount = await db.entities.Account.filter({ username: session.username });
+      if (userAccount && userAccount.length > 0) {
+        await db.entities.Account.update(userAccount[0].id, { 
+          selected_config_content: editorContent 
+        });
+      }
+
+      setConfigs(configs.map(c => c.id === selected.id ? { ...c, content: editorContent } : c));
+      setSelected({ ...selected, content: editorContent });
+    } catch (error) {
+      console.error('Failed to update config:', error);
+      alert('Failed to save config to account.');
+    }
     setSaving(false);
   }
 
