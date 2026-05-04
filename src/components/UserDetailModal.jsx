@@ -54,6 +54,7 @@ export default function UserDetailModal({ user, onClose, accent, onUpdate }) {
   const [updating, setUpdating] = useState(false);
   const [availableKeys, setAvailableKeys] = useState([]);
   const [showAdminConfirm, setShowAdminConfirm] = useState(false);
+  const [manualLicenseInput, setManualLicenseInput] = useState('');
 
   if (!user) return null;
   const u = normalizeAccountDiscordLink(user);
@@ -83,6 +84,32 @@ export default function UserDetailModal({ user, onClose, accent, onUpdate }) {
       alert("Successfully upgraded user to Internal!");
     } catch (err) {
       alert("Upgrade failed: " + err.message);
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  async function handleDirectAssign() {
+    const key = manualLicenseInput.trim();
+    if (!key) return;
+    setUpdating(true);
+    try {
+      // Write the internal license directly to the user account
+      const oldLicense = u.license_key || '';
+      let discordInfoPacked = '';
+      if (oldLicense.includes('|+|')) {
+        const parts = oldLicense.split('|+|');
+        if (parts.length >= 5)
+          discordInfoPacked = '|+|' + (parts[2] || '') + '|+|' + (parts[3] || '') + '|+|' + (parts[4] || '');
+      }
+      await db.entities.Account.update(u.id, {
+        internal_license: key,
+        license_key: key + '|+|' + (u.script_license || '') + discordInfoPacked,
+      });
+      setManualLicenseInput('');
+      if (onUpdate) await onUpdate();
+    } catch (err) {
+      alert('Failed to assign license: ' + err.message);
     } finally {
       setUpdating(false);
     }
@@ -142,16 +169,24 @@ export default function UserDetailModal({ user, onClose, accent, onUpdate }) {
         <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar space-y-4">
           <div className="grid grid-cols-1 gap-4">
             <div className="flex gap-2 mb-2">
-              {!u.internal_license && (
+            {!u.internal_license && (
+              <div className="flex gap-2 mb-2">
+                <input
+                  value={manualLicenseInput}
+                  onChange={e => setManualLicenseInput(e.target.value)}
+                  placeholder="Type internal license key..."
+                  className="flex-1 bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-2.5 text-xs font-mono placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50"
+                />
                 <button
-                  onClick={handleUpgrade}
-                  disabled={updating}
-                  className="flex-1 flex items-center justify-center gap-2 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 py-2.5 rounded-xl text-xs font-bold transition disabled:opacity-50"
+                  onClick={handleDirectAssign}
+                  disabled={updating || !manualLicenseInput.trim()}
+                  className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 px-4 py-2.5 rounded-xl text-xs font-bold transition disabled:opacity-40"
                 >
                   <ArrowUpCircle size={14} />
-                  UPGRADE TO INTERNAL
+                  ASSIGN
                 </button>
-              )}
+              </div>
+            )}
               {u.username !== 'admin' && (
                 <button
                   onClick={() => setShowAdminConfirm(true)}

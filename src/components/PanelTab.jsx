@@ -392,31 +392,6 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
       {tab === 'keys' && (
         <div className="space-y-6">
-          {/* Stats Section */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-5 shadow-lg">
-              <div className="flex items-center gap-3 mb-2 text-zinc-500">
-                <Key size={14} />
-                <span className="text-[10px] uppercase font-bold tracking-widest">Total Keys</span>
-              </div>
-              <div className="text-2xl font-bold text-white">{keys.length}</div>
-            </div>
-            <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-5 shadow-lg">
-              <div className="flex items-center gap-3 mb-2 text-red-400">
-                <Shield size={14} />
-                <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">Used Keys</span>
-              </div>
-              <div className="text-2xl font-bold text-white">{keys.filter(k => k.used).length}</div>
-            </div>
-            <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-5 shadow-lg">
-              <div className="flex items-center gap-3 mb-2 text-green-400">
-                <Check size={14} />
-                <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">Available</span>
-              </div>
-              <div className="text-2xl font-bold text-white">{keys.filter(k => !k.used).length}</div>
-            </div>
-          </div>
-
           <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-6 space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="text-white font-bold text-lg">Generate Keys</h3>
@@ -489,38 +464,39 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
             </button>
           </div>
 
-          <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl overflow-hidden shadow-xl">
-            <div className="p-4 border-b border-zinc-800/60 flex items-center justify-between bg-zinc-900/20">
-              <h3 className="text-white text-sm font-bold uppercase tracking-wider">License Management</h3>
-              <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
-                <input
-                  type="text"
-                  value={keySearchQuery}
-                  onChange={e => setKeySearchQuery(e.target.value)}
-                  placeholder="Search keys, users, notes..."
-                  className="bg-[#1a1a1e] border border-zinc-800/60 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-600 w-64"
-                />
+          <div className="bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden shadow-xl">
+            <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20 flex items-center justify-between">
+              <h3 className="text-white text-sm font-bold uppercase tracking-wider">License Keys</h3>
+              <div className="flex items-center gap-3">
+                <span className="text-zinc-600 text-[10px] font-bold">{keys.filter(k => !k.used).length} available / {keys.length} total</span>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+                  <input
+                    type="text"
+                    value={keySearchQuery}
+                    onChange={e => setKeySearchQuery(e.target.value)}
+                    placeholder="Search keys..."
+                    className="bg-[#1a1a1e] border border-zinc-800/60 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-600 w-64"
+                  />
+                </div>
               </div>
             </div>
-            
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-800/60 text-[10px] uppercase font-bold tracking-widest text-zinc-600">
                     <th className="px-6 py-4">Type</th>
-                    <th className="px-6 py-4">Licenses</th>
+                    <th className="px-6 py-4">Key</th>
                     <th className="px-6 py-4">Status</th>
                     <th className="px-6 py-4">Used By</th>
                     <th className="px-6 py-4">Note</th>
-                    <th className="px-6 py-4">Created</th>
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/30">
                   {filteredKeys.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-zinc-600 text-sm italic">
+                      <td colSpan={6} className="px-6 py-12 text-center text-zinc-600 text-sm italic">
                         {keys.length === 0 ? 'No license keys found.' : 'No keys match your search.'}
                       </td>
                     </tr>
@@ -533,29 +509,14 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="space-y-1">
-                            {k.internal_key && (
-                              <div className="flex items-center gap-2 group/key">
-                                <span className="text-[10px] text-zinc-500 font-bold w-12">INTERNAL</span>
-                                <code className="text-zinc-300 text-xs font-mono">
-                                  {revealedKeys[`${k.id}-int`] ? k.internal_key : hashDisplay(k.internal_key)}
-                                </code>
-                                <button onClick={() => toggleReveal(`${k.id}-int`)} className="text-zinc-600 hover:text-white transition opacity-0 group-hover/key:opacity-100">
-                                  {revealedKeys[`${k.id}-int`] ? <EyeOff size={12} /> : <Eye size={12} />}
-                                </button>
-                                {revealedKeys[`${k.id}-int`] && <CopyBtn value={k.internal_key} />}
-                              </div>
-                            )}
-                            <div className="flex items-center gap-2 group/key">
-                              <span className="text-[10px] text-zinc-500 font-bold w-12">SCRIPT</span>
-                              <code className="text-zinc-300 text-xs font-mono">
-                                {revealedKeys[`${k.id}-scr`] ? k.script_key : hashDisplay(k.script_key)}
-                              </code>
-                              <button onClick={() => toggleReveal(`${k.id}-scr`)} className="text-zinc-600 hover:text-white transition opacity-0 group-hover/key:opacity-100">
-                                {revealedKeys[`${k.id}-scr`] ? <EyeOff size={12} /> : <Eye size={12} />}
-                              </button>
-                              {revealedKeys[`${k.id}-scr`] && <CopyBtn value={k.script_key} />}
-                            </div>
+                          <div className="flex items-center gap-2 group/key">
+                            <code className="text-zinc-400 text-[11px] font-mono">
+                              {revealedKeys[k.id] ? (k.internal_key || k.script_key) : hashDisplay(k.internal_key || k.script_key)}
+                            </code>
+                            <button onClick={() => toggleReveal(k.id)} className="text-zinc-600 hover:text-white transition opacity-0 group-hover/key:opacity-100">
+                              {revealedKeys[k.id] ? <EyeOff size={11} /> : <Eye size={11} />}
+                            </button>
+                            {revealedKeys[k.id] && <CopyBtn value={k.internal_key || k.script_key} />}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -583,30 +544,14 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                             {k.note || <span className="italic text-zinc-700">—</span>}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className="text-zinc-600 text-[10px] whitespace-nowrap">
-                            {k.created_date ? new Date(k.created_date).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' }) : '—'}
-                          </span>
-                        </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {!k.used && k.type === 'internal' && (
-                              <button
-                                onClick={() => { setAssignLicenseTarget(k); setAssignLicenseUser(''); }}
-                                className="p-2 text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition"
-                                title="Assign Internal License to User"
-                              >
-                                <Users size={14} />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => removeLicenseKey(k.id)}
-                              className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
-                              title="Delete Key"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => removeLicenseKey(k.id)}
+                            className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                            title="Delete Key"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </td>
                       </tr>
                     ))
