@@ -69,6 +69,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   const [newKeyType, setNewKeyType] = useState('script');
   const [manualInternalKey, setManualInternalKey] = useState('');
   const [manualScriptKey, setManualScriptKey] = useState('');
+  const [bulkScriptKeys, setBulkScriptKeys] = useState('');
   const [newDownload, setNewDownload] = useState({
     name: '',
     version: 'Version 1.0.0',
@@ -181,19 +182,43 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     setGenerating(true);
     setPanelError('');
     try {
-      const internalKey = newKeyType === 'internal' ? (manualInternalKey || generateInternalLicense()).trim() : '';
-      const scriptKey = (manualScriptKey || generateScriptLicense()).trim();
-      
-      const payload = {
-        type: newKeyType,
-        internal_key: internalKey,
-        script_key: scriptKey,
-        key: scriptKey,
-        note: note.trim(),
-        used: false,
-      };
+      if (newKeyType === 'bulk') {
+        const keysToCreate = bulkScriptKeys
+          .split('\n')
+          .map(k => k.trim())
+          .filter(k => k.length > 0);
+          
+        if (keysToCreate.length === 0) {
+          throw new Error('Please enter at least one key.');
+        }
 
-      await createLicenseKeyRecord(payload);
+        await Promise.all(keysToCreate.map(scriptKey => {
+          return createLicenseKeyRecord({
+            type: 'script',
+            internal_key: '',
+            script_key: scriptKey,
+            key: scriptKey,
+            note: note.trim(),
+            used: false,
+          });
+        }));
+
+        setBulkScriptKeys('');
+      } else {
+        const internalKey = newKeyType === 'internal' ? (manualInternalKey || generateInternalLicense()).trim() : '';
+        const scriptKey = (manualScriptKey || generateScriptLicense()).trim();
+        
+        const payload = {
+          type: newKeyType,
+          internal_key: internalKey,
+          script_key: scriptKey,
+          key: scriptKey,
+          note: note.trim(),
+          used: false,
+        };
+
+        await createLicenseKeyRecord(payload);
+      }
       
       setManualInternalKey('');
       setManualScriptKey('');
@@ -201,7 +226,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
       await loadData();
     } catch (err) {
       console.error("Key generation failed:", err);
-      setPanelError(err?.message || 'Failed to generate key.');
+      setPanelError(err?.message || 'Failed to generate key(s).');
     } finally {
       setGenerating(false);
     }
@@ -379,50 +404,73 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                 >
                   INTERNAL PAIR
                 </button>
+                <button 
+                  onClick={() => setNewKeyType('bulk')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${newKeyType === 'bulk' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:bg-zinc-800/40'}`}
+                >
+                  BULK ADD
+                </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-12 gap-3">
-              <div className="col-span-4 relative">
-                <input
-                  value={manualInternalKey}
-                  onChange={(e) => setManualInternalKey(e.target.value)}
-                  placeholder="Internal Key (Auto)"
-                  disabled={newKeyType === 'script'}
-                  className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm disabled:opacity-30 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+            {newKeyType === 'bulk' ? (
+              <div className="space-y-3">
+                <textarea
+                  value={bulkScriptKeys}
+                  onChange={(e) => setBulkScriptKeys(e.target.value)}
+                  placeholder="Paste script keys here (one per line)...&#10;scriptkey1&#10;scriptkey2&#10;scriptkey3"
+                  className="w-full h-32 bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 font-mono resize-y"
                 />
-                {newKeyType === 'internal' && (
+                <input
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                  placeholder="Note / Tag (Optional, applied to all keys)"
+                  className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-12 gap-3">
+                <div className="col-span-4 relative">
+                  <input
+                    value={manualInternalKey}
+                    onChange={(e) => setManualInternalKey(e.target.value)}
+                    placeholder="Internal Key (Auto)"
+                    disabled={newKeyType === 'script'}
+                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm disabled:opacity-30 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                  />
+                  {newKeyType === 'internal' && (
+                    <button
+                      onClick={() => setManualInternalKey(generateInternalLicense())}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white"
+                    >
+                      <Shuffle size={14} />
+                    </button>
+                  )}
+                </div>
+                <div className="col-span-4 relative">
+                  <input
+                    value={manualScriptKey}
+                    onChange={(e) => setManualScriptKey(e.target.value)}
+                    placeholder="Script Key (Auto)"
+                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                  />
                   <button
-                    onClick={() => setManualInternalKey(generateInternalLicense())}
+                    onClick={() => setManualScriptKey(generateScriptLicense())}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white"
                   >
                     <Shuffle size={14} />
                   </button>
-                )}
+                </div>
+                <div className="col-span-4">
+                  <input
+                    value={note}
+                    onChange={e => setNote(e.target.value)}
+                    placeholder="Note / Tag"
+                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
               </div>
-              <div className="col-span-4 relative">
-                <input
-                  value={manualScriptKey}
-                  onChange={(e) => setManualScriptKey(e.target.value)}
-                  placeholder="Script Key (Auto)"
-                  className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
-                />
-                <button
-                  onClick={() => setManualScriptKey(generateScriptLicense())}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white"
-                >
-                  <Shuffle size={14} />
-                </button>
-              </div>
-              <div className="col-span-4">
-                <input
-                  value={note}
-                  onChange={e => setNote(e.target.value)}
-                  placeholder="Note / Tag"
-                  className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
-                />
-              </div>
-            </div>
+            )}
 
             <button
               onClick={generateKey}
@@ -1066,9 +1114,11 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                 </div>
                 <div>
                   <p className="text-white font-bold text-sm">Maintenance Mode</p>
-                  <p className={`text-xs font-semibold uppercase tracking-wider ${isActive ? 'text-red-400' : 'text-zinc-500'}`}>
-                    {isActive ? '🔴 Currently Active — Site is locked' : '🟢 Inactive — Site is live'}
-                  </p>
+                  {isActive && (
+                    <p className="text-xs font-semibold uppercase tracking-wider text-red-400">
+                      Currently Active — Site is locked
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -1143,28 +1193,6 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                 <Save size={14} />
                 Start Maintenance Window
               </button>
-            </div>
-
-            {/* Preview */}
-            <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-6 space-y-3">
-              <p className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">Banner Preview</p>
-              <div className="rounded-xl bg-[#07070a] border border-zinc-800 p-8 flex flex-col items-center justify-center text-center gap-3">
-                <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-1">
-                  <Wrench size={28} className="text-red-400" />
-                </div>
-                <h2 className="text-white text-xl font-bold">Azov's website is currently in maintenance.</h2>
-                <p className="text-zinc-400 text-sm">Check back later!</p>
-                {(maintenance.from || maintenance.to) && (
-                  <div className="flex items-center gap-2 mt-1 px-4 py-2 rounded-full bg-zinc-800/60 border border-zinc-700/40">
-                    <Clock size={13} className="text-zinc-500" />
-                    <span className="text-zinc-300 text-xs font-mono">
-                      {maintenance.from ? new Date(maintenance.from).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '?'}
-                      {' — '}
-                      {maintenance.to ? new Date(maintenance.to).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '?'}
-                    </span>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         );
