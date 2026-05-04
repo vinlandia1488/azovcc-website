@@ -13,7 +13,7 @@ const tabs = [
   { id: 'dashboard', label: 'DASHBOARD', icon: Home },
   { id: 'downloads', label: 'DOWNLOADS', icon: Download },
   { id: 'cloud-configs', label: 'CLOUD CONFIGS', icon: CloudUpload },
-  { id: 'support', label: 'SUPPORT', icon: MessageSquare },
+  { id: 'chat', label: 'CHAT', icon: MessageSquare },
   { id: 'panel', label: 'PANEL', icon: Shield, adminOnly: true },
 ];
 

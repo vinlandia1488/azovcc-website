@@ -92,7 +92,7 @@ export default function Dashboard() {
         {activeTab === 'cloud-configs' && (
           <CloudConfigsTab session={session} accent={accent} />
         )}
-        {activeTab === 'support' && (
+        {activeTab === 'chat' && (
           <SupportTab session={session} accent={accent} />
         )}
         {activeTab === 'panel' && session.is_admin && (

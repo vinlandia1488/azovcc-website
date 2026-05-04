@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, LogOut, Check, Lock, ZapOff, Ban, Snowflake, Ghost, Leaf, CreditCard, Palette, Shield } from 'lucide-react';
+import { X, LogOut, Check, Lock, ZapOff, Ban, Snowflake, Ghost, Leaf, CreditCard, Palette, Shield, User, ImagePlus } from 'lucide-react';
 import { setSession, upgradeToInternal, changePassword } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 

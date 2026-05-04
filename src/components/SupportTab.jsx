@@ -5,7 +5,7 @@ import { getBackendDb } from '@/lib/backend';
 const db = getBackendDb();
 const SUPPORT_MSG_TYPE = "__SUPPORT_MSG__";
 const GLOBAL_MSG_TYPE = "__GLOBAL_MSG__";
-const GLOBAL_OWNER = "admin"; // Using admin as the holder for global messages
+const GLOBAL_OWNER = "admin"; 
 
 function isLightColor(hex) {
   const h = (hex || '').replace('#', '');
@@ -17,7 +17,7 @@ function isLightColor(hex) {
 }
 
 export default function SupportTab({ session, accent }) {
-  const [activeTab, setActiveTab] = useState('global'); // 'global' or 'support'
+  const [activeTab, setActiveTab] = useState('global'); 
   const [messages, setMessages] = useState([]);
   const [globalMessages, setGlobalMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -25,8 +25,8 @@ export default function SupportTab({ session, accent }) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUser, setSelectedUser] = useState(null); // For admin DM view
-  const [userList, setUserList] = useState([]); // List of users for admin
+  const [selectedUser, setSelectedUser] = useState(null); 
+  const [userList, setUserList] = useState([]); 
   
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -79,7 +79,6 @@ export default function SupportTab({ session, accent }) {
       }).filter(Boolean);
       const sorted = parsed.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
       
-      // Mark as read if viewing
       if (!session.is_admin || (session.is_admin && selectedUser?.username === username)) {
          const unread = sorted.filter(m => !m.is_read && m.sender_type !== (session.is_admin ? 'admin' : 'user'));
          if (unread.length > 0) {
@@ -94,29 +93,38 @@ export default function SupportTab({ session, accent }) {
       } else {
         setMessages(sorted);
       }
-    } catch (err) { console.error('Support load failed:', err); }
+    } catch (err) { console.error('Chat load failed:', err); }
   }
 
   async function loadUserList() {
     try {
-      // Get all Support messages to see who messaged
+      // Fetch all accounts to allow admin to search any user
+      const accounts = await db.entities.Account.list();
+      
+      // Also fetch messages to show unread status and last message time
       const allMsgs = await db.entities.CloudConfig.filter({ name: SUPPORT_MSG_TYPE });
-      const usersMap = {};
+      const msgStatus = {};
       (allMsgs || []).forEach(r => {
         try {
           const m = JSON.parse(r.content);
-          if (!usersMap[r.owner_username] || new Date(m.created_at) > new Date(usersMap[r.owner_username].last_msg)) {
-            usersMap[r.owner_username] = {
-              username: r.owner_username,
+          if (!msgStatus[r.owner_username] || new Date(m.created_at) > new Date(msgStatus[r.owner_username].last_msg)) {
+            msgStatus[r.owner_username] = {
               last_msg: m.created_at,
               unread: !m.is_read && m.sender_type === 'user'
             };
           } else if (!m.is_read && m.sender_type === 'user') {
-            usersMap[r.owner_username].unread = true;
+            msgStatus[r.owner_username].unread = true;
           }
         } catch {}
       });
-      setUserList(Object.values(usersMap).sort((a, b) => new Date(b.last_msg) - new Date(a.last_msg)));
+
+      const processedList = accounts.map(acc => ({
+        username: acc.username,
+        last_msg: msgStatus[acc.username]?.last_msg || '1970-01-01T00:00:00Z',
+        unread: msgStatus[acc.username]?.unread || false
+      })).filter(u => u.username !== session.username);
+
+      setUserList(processedList.sort((a, b) => new Date(b.last_msg) - new Date(a.last_msg)));
     } catch (err) { console.error('User list load failed:', err); }
   }
 
@@ -192,7 +200,7 @@ export default function SupportTab({ session, accent }) {
           >
             <div className="flex items-center gap-3">
               <MessageSquare size={14} />
-              {session.is_admin ? 'TICKETS' : 'SUPPORT'}
+              {session.is_admin ? 'DIRECT MESSAGES' : 'STAFF CHAT'}
             </div>
             {!session.is_admin && messages.some(m => !m.is_read && m.sender_type === 'admin') && (
               <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
@@ -207,7 +215,7 @@ export default function SupportTab({ session, accent }) {
                 <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-600" />
                 <input 
                   type="text"
-                  placeholder="Search users..."
+                  placeholder="Search all users..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className="w-full bg-zinc-900/50 border border-zinc-800/60 rounded-lg pl-8 pr-3 py-1.5 text-[10px] text-white focus:outline-none focus:border-zinc-700"
@@ -243,7 +251,7 @@ export default function SupportTab({ session, accent }) {
             </div>
             <div>
               <h3 className="text-white font-bold text-sm tracking-tight">
-                {activeTab === 'global' ? 'Global Channel' : (session.is_admin ? (selectedUser ? `Ticket: ${selectedUser.username}` : 'Select a user') : 'Staff Support')}
+                {activeTab === 'global' ? 'Global Channel' : (session.is_admin ? (selectedUser ? `Chat: ${selectedUser.username}` : 'Select a user') : 'Staff Chat')}
               </h3>
               <p className="text-zinc-600 text-[9px] uppercase tracking-widest">
                 {activeTab === 'global' ? 'Public Community' : 'Private Encryption'}
@@ -257,7 +265,7 @@ export default function SupportTab({ session, accent }) {
           {(activeTab === 'support' && session.is_admin && !selectedUser) ? (
             <div className="flex flex-col items-center justify-center h-full text-center opacity-30 space-y-3">
               <Search size={36} />
-              <p className="text-zinc-400 text-sm">Select a user to start messaging</p>
+              <p className="text-zinc-400 text-sm">Search for a user to start a DM</p>
             </div>
           ) : loading ? (
             <div className="flex items-center justify-center h-full">
