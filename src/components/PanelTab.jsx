@@ -20,6 +20,7 @@ import {
 } from '@/lib/downloads';
 import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, MessageSquare, Send, Image as ImageIcon, X, Clock, Shield, User, Search, Wrench, AlertTriangle, CalendarClock, StopCircle } from 'lucide-react';
 import UserDetailModal from '@/components/UserDetailModal';
+import KeyDetailModal from '@/components/KeyDetailModal';
 
 const db = getBackendDb();
 
@@ -83,8 +84,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [keySearchQuery, setKeySearchQuery] = useState('');
   const [confirmAdminTarget, setConfirmAdminTarget] = useState(null);
-  const [assignLicenseTarget, setAssignLicenseTarget] = useState(null);
-  const [assignLicenseUser, setAssignLicenseUser] = useState('');
+  const [selectedKey, setSelectedKey] = useState(null);
   const [panelWorking, setPanelWorking] = useState(false);
   const [maintenance, setMaintenanceState] = useState({ active: false, from: '', to: '' });
 
@@ -545,13 +545,22 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => removeLicenseKey(k.id)}
-                            className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
-                            title="Delete Key"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setSelectedKey(k)}
+                              className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition"
+                              title="View Key Details"
+                            >
+                              <ExternalLink size={14} />
+                            </button>
+                            <button
+                              onClick={() => removeLicenseKey(k.id)}
+                              className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                              title="Delete Key"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -1128,34 +1137,49 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                 <CalendarClock size={16} className="text-zinc-500" />
                 <h3 className="text-white font-bold text-sm">Maintenance Window</h3>
               </div>
-              <p className="text-zinc-500 text-xs">Set the scheduled window to display to users. You can still stop maintenance early at any time.</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-2">Start Time</label>
+              <p className="text-zinc-500 text-xs">Set the duration for the maintenance. The countdown will be shown to users.</p>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-2">Duration</label>
                   <input
-                    type="datetime-local"
-                    value={maintenance.from || ''}
-                    onChange={e => setMaintenanceState(prev => ({ ...prev, from: e.target.value }))}
-                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-500 transition [color-scheme:dark]"
+                    id="maint-duration"
+                    type="number"
+                    placeholder="e.g. 30"
+                    defaultValue="30"
+                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-500 transition"
                   />
                 </div>
-                <div>
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-2">End Time</label>
-                  <input
-                    type="datetime-local"
-                    value={maintenance.to || ''}
-                    onChange={e => setMaintenanceState(prev => ({ ...prev, to: e.target.value }))}
-                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-500 transition [color-scheme:dark]"
-                  />
+                <div className="flex-1">
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-2">Unit</label>
+                  <select
+                    id="maint-unit"
+                    defaultValue="minutes"
+                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-500 transition"
+                  >
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                    <option value="days">Days</option>
+                  </select>
                 </div>
               </div>
               <button
-                onClick={() => saveMaintenance({})}
+                onClick={() => {
+                  const duration = parseFloat(document.getElementById('maint-duration').value);
+                  if (isNaN(duration) || duration <= 0) return alert('Enter a valid duration');
+                  const unit = document.getElementById('maint-unit').value;
+                  const now = new Date();
+                  const end = new Date(now.getTime());
+                  if (unit === 'minutes') end.setMinutes(end.getMinutes() + duration);
+                  if (unit === 'hours') end.setHours(end.getHours() + duration);
+                  if (unit === 'days') end.setDate(end.getDate() + duration);
+                  
+                  saveMaintenance({ active: true, from: now.toISOString(), to: end.toISOString() });
+                }}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition"
                 style={{ background: accent, color: accentText }}
               >
                 <Save size={14} />
-                Save Window
+                Start Maintenance Window
               </button>
             </div>
 
@@ -1190,6 +1214,16 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
           onClose={() => setSelectedUser(null)}
           accent={accent}
           onUpdate={loadData}
+        />
+      )}
+
+      {selectedKey && (
+        <KeyDetailModal
+          keyRecord={selectedKey}
+          onClose={() => setSelectedKey(null)}
+          accent={accent}
+          onUpdate={loadData}
+          accounts={accounts}
         />
       )}
 

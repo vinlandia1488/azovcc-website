@@ -219,6 +219,24 @@ export async function deleteLicenseKeyRecord(id) {
   writeLocal(next);
 }
 
+export async function updateLicenseKeyRecord(id, payload) {
+  const current = await getLicenseKeys();
+  const existing = current.find(r => r.id === id);
+  if (!existing) throw new Error("Key not found");
+  
+  const updated = { ...existing, ...payload };
+  const next = current.map(r => r.id === id ? updated : r);
+  writeLocal(next);
+  
+  try {
+    await tryDbUpdate(id, payload);
+  } catch (error) {
+    if (!isMissingSchemaError(error)) throw error;
+    await writeFallbackStore(next);
+  }
+  return updated;
+}
+
 export async function consumeLicenseForRegistration({
   licenseType,
   scriptLicenseKey,
