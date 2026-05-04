@@ -1,6 +1,10 @@
-import { useState } from 'react';
-import { X, Copy, Check, Eye, EyeOff, User, Shield, Key, Calendar, Fingerprint, MessageSquare } from 'lucide-react';
-import { normalizeAccountDiscordLink } from '@/lib/auth';
+import { useState, useEffect } from 'react';
+import { X, Copy, Check, Eye, EyeOff, User, Shield, Key, Calendar, Fingerprint, MessageSquare, ArrowUpCircle, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { normalizeAccountDiscordLink, upgradeToInternal } from '@/lib/auth';
+import { getBackendDb } from '@/lib/backend';
+import { getLicenseKeys } from '@/lib/license-keys';
+
+const db = getBackendDb();
 
 function InfoRow({ label, value, icon: Icon, isSensitive = false, onCopy }) {
   const [revealed, setRevealed] = useState(false);
@@ -46,9 +50,57 @@ function InfoRow({ label, value, icon: Icon, isSensitive = false, onCopy }) {
   );
 }
 
-export default function UserDetailModal({ user, onClose, accent }) {
+export default function UserDetailModal({ user, onClose, accent, onUpdate }) {
+  const [updating, setUpdating] = useState(false);
+  const [availableKeys, setAvailableKeys] = useState([]);
+  const [showAdminConfirm, setShowAdminConfirm] = useState(false);
+
   if (!user) return null;
   const u = normalizeAccountDiscordLink(user);
+
+  useEffect(() => {
+    loadKeys();
+  }, []);
+
+  async function loadKeys() {
+    const all = await getLicenseKeys();
+    setAvailableKeys(all.filter(k => !k.used && k.type === 'internal'));
+  }
+
+  async function handleUpgrade() {
+    if (availableKeys.length === 0) {
+      alert("No available internal keys found. Please generate one first.");
+      return;
+    }
+    
+    const keyToUse = availableKeys[0].internal_key;
+    if (!confirm(`Upgrade ${u.username} to Internal using key: ${keyToUse}?`)) return;
+
+    setUpdating(true);
+    try {
+      await upgradeToInternal(u.username, keyToUse);
+      if (onUpdate) await onUpdate();
+      alert("Successfully upgraded user to Internal!");
+    } catch (err) {
+      alert("Upgrade failed: " + err.message);
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  async function toggleAdmin() {
+    setUpdating(true);
+    try {
+      const newAdminStatus = !u.is_admin;
+      await db.entities.Account.update(u.id, { is_admin: newAdminStatus });
+      if (onUpdate) await onUpdate();
+      setShowAdminConfirm(false);
+    } catch (err) {
+      alert("Failed to update admin status: " + err.message);
+    } finally {
+      setUpdating(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
@@ -87,8 +139,47 @@ export default function UserDetailModal({ user, onClose, accent }) {
         </div>
 
         {/* Content */}
-        <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar space-y-4">
+        <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar space-y-4">
           <div className="grid grid-cols-1 gap-4">
+            <div className="flex gap-2 mb-2">
+              {!u.internal_license && (
+                <button
+                  onClick={handleUpgrade}
+                  disabled={updating}
+                  className="flex-1 flex items-center justify-center gap-2 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 py-2.5 rounded-xl text-xs font-bold transition disabled:opacity-50"
+                >
+                  <ArrowUpCircle size={14} />
+                  UPGRADE TO INTERNAL
+                </button>
+              )}
+              {u.username !== 'admin' && (
+                <button
+                  onClick={() => setShowAdminConfirm(true)}
+                  disabled={updating}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition disabled:opacity-50 ${u.is_admin ? 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20' : 'bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20'}`}
+                >
+                  <Shield size={14} />
+                  {u.is_admin ? 'REVOKE ADMIN' : 'MAKE ADMIN'}
+                </button>
+              )}
+            </div>
+
+            {showAdminConfirm && (
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-3 mb-3 text-amber-500">
+                  <ShieldAlert size={18} />
+                  <p className="text-sm font-bold uppercase tracking-tight">Confirm Action?</p>
+                </div>
+                <p className="text-zinc-400 text-xs mb-4">
+                  Are you sure you want to {u.is_admin ? 'remove' : 'grant'} administrator privileges {u.is_admin ? 'from' : 'to'} <strong>{u.username}</strong>?
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={toggleAdmin} className="flex-1 bg-amber-500 text-black text-[10px] font-bold py-2 rounded-lg hover:bg-amber-400 transition">YES, CONFIRM</button>
+                  <button onClick={() => setShowAdminConfirm(false)} className="flex-1 bg-zinc-800 text-white text-[10px] font-bold py-2 rounded-lg hover:bg-zinc-700 transition">CANCEL</button>
+                </div>
+              </div>
+            )}
+
             <InfoRow 
               label="Password Hash" 
               value={u.password_hash} 

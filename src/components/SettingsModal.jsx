@@ -216,7 +216,12 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                <div className="grid grid-cols-2 gap-4">
                  <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4">
                    <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block mb-1">Rank</span>
-                   <span className="text-white text-sm font-medium">{session.is_admin ? 'Administrator' : 'User'}</span>
+                   <div className="flex flex-col">
+                     <span className="text-white text-sm font-medium">{session.is_admin ? 'Administrator' : 'User'}</span>
+                     <span className="text-zinc-500 text-[10px] uppercase tracking-tighter">
+                       {session.internal_license ? 'Internal License' : (session.script_license ? 'Script License' : 'No License')}
+                     </span>
+                   </div>
                  </div>
                  <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4">
                    <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block mb-1">Status</span>

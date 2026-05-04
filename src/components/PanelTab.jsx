@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { deleteUserAccount, generateInternalLicense, generateScriptLicense, normalizeAccountDiscordLink } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 import { getAnnouncement, setAnnouncement } from '@/lib/app-settings';
@@ -18,7 +18,7 @@ import {
   getDownloadItems,
   updateDownloadItem,
 } from '@/lib/downloads';
-import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, MessageSquare, Send, Image as ImageIcon, X, Clock, Shield, User } from 'lucide-react';
+import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, MessageSquare, Send, Image as ImageIcon, X, Clock, Shield, User, Search } from 'lucide-react';
 import UserDetailModal from '@/components/UserDetailModal';
 
 const db = getBackendDb();
@@ -79,6 +79,19 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   const [panelError, setPanelError] = useState('');
   const accentText = isLightColor(accent) ? '#000' : '#fff';
   const accentBorder = isLightColor(accent) ? '1px solid #444' : 'none';
+
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+
+  const filteredAccounts = useMemo(() => {
+    if (!userSearchQuery.trim()) return accounts;
+    const q = userSearchQuery.toLowerCase();
+    return accounts.filter(a => 
+      a.username.toLowerCase().includes(q) ||
+      (a.discord_username && a.discord_username.toLowerCase().includes(q)) ||
+      (a.discord_id && a.discord_id.toLowerCase().includes(q)) ||
+      (String(a.unique_identifier).includes(q))
+    );
+  }, [accounts, userSearchQuery]);
 
   useEffect(() => {
     loadData();
@@ -311,175 +324,316 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
       </div>
 
       {tab === 'keys' && (
-        <div className="space-y-4">
-          <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 space-y-3">
-            <div className="grid grid-cols-4 gap-2">
-              <select
-                value={newKeyType}
-                onChange={(e) => setNewKeyType(e.target.value)}
-                className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
-              >
-                <option value="script">Script key only</option>
-                <option value="internal">Internal + Script pair</option>
-              </select>
-              {newKeyType === 'internal' && (
-                <div className="col-span-3 flex gap-2">
-                  <input
-                    value={manualInternalKey}
-                    onChange={(e) => setManualInternalKey(e.target.value)}
-                    placeholder="Internal key (leave empty to randomize)"
-                    className="flex-1 bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
-                  />
-                  <button
-                    onClick={() => setManualInternalKey(generateInternalLicense())}
-                    className="bg-[#1a1a1e] border border-zinc-700/50 text-zinc-300 hover:text-white rounded-lg px-3 py-2 text-xs"
-                  >
-                    <Shuffle size={12} />
-                  </button>
-                </div>
-              )}
+        <div className="space-y-6">
+          {/* Stats Section */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-5 shadow-lg">
+              <div className="flex items-center gap-3 mb-2 text-zinc-500">
+                <Key size={14} />
+                <span className="text-[10px] uppercase font-bold tracking-widest">Total Keys</span>
+              </div>
+              <div className="text-2xl font-bold text-white">{keys.length}</div>
             </div>
-            <div className="flex gap-2">
-              <input
-                value={manualScriptKey}
-                onChange={(e) => setManualScriptKey(e.target.value)}
-                placeholder="Script key (leave empty to randomize)"
-                className="flex-1 bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
-              />
-              <button
-                onClick={() => setManualScriptKey(generateScriptLicense())}
-                className="bg-[#1a1a1e] border border-zinc-700/50 text-zinc-300 hover:text-white rounded-lg px-3 py-2 text-xs"
-              >
-                <Shuffle size={12} />
-              </button>
+            <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-5 shadow-lg">
+              <div className="flex items-center gap-3 mb-2 text-red-400">
+                <Shield size={14} />
+                <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">Used Keys</span>
+              </div>
+              <div className="text-2xl font-bold text-white">{keys.filter(k => k.used).length}</div>
             </div>
-            <div className="flex items-center gap-3">
-              <input
-                value={note}
-                onChange={e => setNote(e.target.value)}
-                placeholder="Note (optional)"
-                className="flex-1 bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-              />
-              <button
-                onClick={generateKey}
-                disabled={generating}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50"
-                style={{ background: accent, color: accentText, border: accentBorder }}
-              >
-                <Plus size={14} />
-                {generating ? 'Generating...' : 'Create Key'}
-              </button>
+            <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-5 shadow-lg">
+              <div className="flex items-center gap-3 mb-2 text-green-400">
+                <Check size={14} />
+                <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">Available</span>
+              </div>
+              <div className="text-2xl font-bold text-white">{keys.filter(k => !k.used).length}</div>
             </div>
           </div>
 
-          
-          <div className="bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden">
-            <div className="grid grid-cols-7 px-4 py-2 border-b border-zinc-800/60 text-[10px] uppercase tracking-widest text-zinc-600">
-              <span>Type</span>
-              <span>Internal Key</span>
-              <span>Script Key</span>
-              <span>Status</span>
-              <span>Used By</span>
-              <span>Note</span>
-              <span>Action</span>
-            </div>
-            {keys.length === 0 && (
-              <p className="text-zinc-600 text-xs p-4">No keys generated yet.</p>
-            )}
-            {keys.map(k => (
-              <div key={k.id} className="grid grid-cols-7 px-4 py-3 border-b border-zinc-800/30 items-center hover:bg-zinc-800/10 transition">
-                <span className="text-zinc-400 text-xs uppercase">{k.type}</span>
-                <div className="flex items-center gap-1 font-mono text-xs">
-                  <span className="text-zinc-300">
-                    {k.internal_key ? (revealedKeys[`${k.id}-int`] ? k.internal_key : hashDisplay(k.internal_key)) : '—'}
-                  </span>
-                  {k.internal_key && (
-                    <>
-                      <button onClick={() => toggleReveal(`${k.id}-int`)} className="text-zinc-600 hover:text-zinc-400 transition">
-                        {revealedKeys[`${k.id}-int`] ? <EyeOff size={11} /> : <Eye size={11} />}
-                      </button>
-                      {revealedKeys[`${k.id}-int`] && <CopyBtn value={k.internal_key} />}
-                    </>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 font-mono text-xs">
-                  <span className="text-zinc-300">
-                    {revealedKeys[`${k.id}-scr`] ? k.script_key : hashDisplay(k.script_key)}
-                  </span>
-                  <button onClick={() => toggleReveal(`${k.id}-scr`)} className="text-zinc-600 hover:text-zinc-400 transition">
-                    {revealedKeys[`${k.id}-scr`] ? <EyeOff size={11} /> : <Eye size={11} />}
-                  </button>
-                  {revealedKeys[`${k.id}-scr`] && <CopyBtn value={k.script_key} />}
-                </div>
-                <span className={`text-xs font-medium ${k.used ? 'text-red-400' : 'text-green-400'}`}>
-                  {k.used ? 'Used' : 'Available'}
-                </span>
-                <span className="text-zinc-400 text-xs">{k.used_by_username || '—'}</span>
-                <span className="text-zinc-500 text-xs truncate">{k.note || '—'}</span>
-                <button
-                  onClick={() => removeLicenseKey(k.id)}
-                  className="justify-self-start flex items-center gap-1 bg-red-500/10 border border-red-500/30 text-red-400 hover:text-red-300 rounded-lg px-2 py-1 text-xs transition"
+          <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-bold text-lg">Generate Keys</h3>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setNewKeyType('script')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${newKeyType === 'script' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:bg-zinc-800/40'}`}
                 >
-                  <Trash2 size={11} />
-                  Delete
+                  SCRIPT ONLY
+                </button>
+                <button 
+                  onClick={() => setNewKeyType('internal')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${newKeyType === 'internal' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:bg-zinc-800/40'}`}
+                >
+                  INTERNAL PAIR
                 </button>
               </div>
-            ))}
+            </div>
+
+            <div className="grid grid-cols-12 gap-3">
+              <div className="col-span-4 relative">
+                <input
+                  value={manualInternalKey}
+                  onChange={(e) => setManualInternalKey(e.target.value)}
+                  placeholder="Internal Key (Auto)"
+                  disabled={newKeyType === 'script'}
+                  className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm disabled:opacity-30 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                />
+                {newKeyType === 'internal' && (
+                  <button
+                    onClick={() => setManualInternalKey(generateInternalLicense())}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white"
+                  >
+                    <Shuffle size={14} />
+                  </button>
+                )}
+              </div>
+              <div className="col-span-4 relative">
+                <input
+                  value={manualScriptKey}
+                  onChange={(e) => setManualScriptKey(e.target.value)}
+                  placeholder="Script Key (Auto)"
+                  className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                />
+                <button
+                  onClick={() => setManualScriptKey(generateScriptLicense())}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white"
+                >
+                  <Shuffle size={14} />
+                </button>
+              </div>
+              <div className="col-span-4">
+                <input
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                  placeholder="Note / Tag"
+                  className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={generateKey}
+              disabled={generating}
+              className="w-full h-12 rounded-xl text-sm font-bold tracking-wider transition disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ background: accent, color: accentText }}
+            >
+              <Plus size={18} />
+              {generating ? 'CREATING...' : 'CREATE LICENSE KEY'}
+            </button>
+          </div>
+
+          <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl overflow-hidden shadow-xl">
+            <div className="p-4 border-b border-zinc-800/60 flex items-center justify-between bg-zinc-900/20">
+              <h3 className="text-white text-sm font-bold uppercase tracking-wider">License Management</h3>
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+                <input 
+                  type="text"
+                  placeholder="Search keys, users, notes..."
+                  className="bg-[#1a1a1e] border border-zinc-800/60 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-600 w-64"
+                />
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-800/60 text-[10px] uppercase font-bold tracking-widest text-zinc-600">
+                    <th className="px-6 py-4">Type</th>
+                    <th className="px-6 py-4">Licenses</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Used By</th>
+                    <th className="px-6 py-4">Note</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/30">
+                  {keys.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center text-zinc-600 text-sm italic">
+                        No license keys found.
+                      </td>
+                    </tr>
+                  ) : (
+                    keys.map(k => (
+                      <tr key={k.id} className="hover:bg-zinc-800/10 transition group">
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 rounded text-[9px] font-bold uppercase tracking-tighter ${k.type === 'internal' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-zinc-800 text-zinc-400 border border-zinc-700/50'}`}>
+                            {k.type}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="space-y-1">
+                            {k.internal_key && (
+                              <div className="flex items-center gap-2 group/key">
+                                <span className="text-[10px] text-zinc-500 font-bold w-12">INTERNAL</span>
+                                <code className="text-zinc-300 text-xs font-mono">
+                                  {revealedKeys[`${k.id}-int`] ? k.internal_key : hashDisplay(k.internal_key)}
+                                </code>
+                                <button onClick={() => toggleReveal(`${k.id}-int`)} className="text-zinc-600 hover:text-white transition opacity-0 group-hover/key:opacity-100">
+                                  {revealedKeys[`${k.id}-int`] ? <EyeOff size={12} /> : <Eye size={12} />}
+                                </button>
+                                {revealedKeys[`${k.id}-int`] && <CopyBtn value={k.internal_key} />}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 group/key">
+                              <span className="text-[10px] text-zinc-500 font-bold w-12">SCRIPT</span>
+                              <code className="text-zinc-300 text-xs font-mono">
+                                {revealedKeys[`${k.id}-scr`] ? k.script_key : hashDisplay(k.script_key)}
+                              </code>
+                              <button onClick={() => toggleReveal(`${k.id}-scr`)} className="text-zinc-600 hover:text-white transition opacity-0 group-hover/key:opacity-100">
+                                {revealedKeys[`${k.id}-scr`] ? <EyeOff size={12} /> : <Eye size={12} />}
+                              </button>
+                              {revealedKeys[`${k.id}-scr`] && <CopyBtn value={k.script_key} />}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-1.5 h-1.5 rounded-full ${k.used ? 'bg-red-500' : 'bg-green-500'}`} />
+                            <span className={`text-[11px] font-bold uppercase ${k.used ? 'text-red-400' : 'text-green-400'}`}>
+                              {k.used ? 'Redeemed' : 'Active'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-zinc-300 text-xs font-medium">
+                            {k.used_by_username ? `@${k.used_by_username}` : '—'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-zinc-500 text-[11px] max-w-[150px] truncate block">
+                            {k.note || 'No note'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => removeLicenseKey(k.id)}
+                            className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                            title="Delete Key"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
       {tab === 'users' && (
-        <div className="bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden">
-          <div className="grid grid-cols-7 px-4 py-2 border-b border-zinc-800/60 text-[10px] uppercase tracking-widest text-zinc-600">
-            <span>UID</span>
-            <span>Username</span>
-            <span className="min-w-0">Discord</span>
-            <span>Internal License</span>
-            <span>Last Login</span>
-            <span className="col-span-2">Actions</span>
-          </div>
-          {accounts.length === 0 && (
-            <p className="text-zinc-600 text-xs p-4">No accounts found.</p>
-          )}
-          {accounts.map(a => (
-            <div key={a.id || a.username} className="grid grid-cols-7 px-4 py-3 border-b border-zinc-800/30 items-center hover:bg-zinc-800/10 transition gap-1">
-              <span className="text-zinc-300 text-xs font-mono">{a.unique_identifier ?? '—'}</span>
-              <span className="text-zinc-200 text-xs font-medium truncate min-w-0">{a.username}</span>
-              <span className="text-zinc-400 text-[10px] font-mono truncate min-w-0" title={a.discord_id ? `${a.discord_username || ''} (${a.discord_id})` : ''}>
-                {a.discord_username || (a.discord_id ? `ID:${a.discord_id}` : '—')}
-              </span>
-              <div className="flex items-center gap-1 font-mono text-[10px] min-w-0">
-                <span className="text-zinc-500 truncate max-w-[120px]">
-                  {revealedKeys[`u-${a.username}-int`] ? a.internal_license : hashDisplay(a.internal_license)}
-                </span>
-                <button onClick={() => toggleReveal(`u-${a.username}-int`)} className="text-zinc-600 hover:text-zinc-400 transition shrink-0">
-                  {revealedKeys[`u-${a.username}-int`] ? <EyeOff size={11} /> : <Eye size={11} />}
-                </button>
-              </div>
-              <span className="text-zinc-500 text-xs">
-                {a.last_login ? new Date(a.last_login).toLocaleDateString() : '—'}
-              </span>
-              <div className="col-span-2 flex gap-2">
-                <button
-                  onClick={() => openUserDetails(a)}
-                  className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg px-3 py-1.5 text-xs transition"
-                >
-                  <ExternalLink size={12} />
-                  View Details
-                </button>
-                {a.username !== 'admin' && (
-                  <button
-                    onClick={() => removeUser(a)}
-                    className="flex items-center gap-1 bg-red-500/10 border border-red-500/30 text-red-400 hover:text-red-300 rounded-lg px-2 py-1 text-xs transition"
-                  >
-                    <Trash2 size={11} />
-                    Remove
-                  </button>
-                )}
-              </div>
+        <div className="bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden shadow-xl">
+          <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20 flex items-center justify-between">
+            <h3 className="text-white text-sm font-bold uppercase tracking-wider">User Directory</h3>
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+              <input 
+                type="text"
+                value={userSearchQuery}
+                onChange={e => setUserSearchQuery(e.target.value)}
+                placeholder="Search users..."
+                className="bg-[#1a1a1e] border border-zinc-800/60 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-600 w-64"
+              />
             </div>
-          ))}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-zinc-800/60 text-[10px] uppercase font-bold tracking-widest text-zinc-600">
+                  <th className="px-6 py-4">UID</th>
+                  <th className="px-6 py-4">Username</th>
+                  <th className="px-6 py-4">Discord</th>
+                  <th className="px-6 py-4">License</th>
+                  <th className="px-6 py-4">Last Login</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800/30">
+                {filteredAccounts.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-zinc-600 text-sm italic">
+                      {accounts.length === 0 ? 'No users found.' : 'No users match your search.'}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredAccounts.map(a => (
+                    <tr key={a.id || a.username} className="hover:bg-zinc-800/10 transition group">
+                      <td className="px-6 py-4">
+                        <span className="text-zinc-500 text-[11px] font-mono">#{String(a.unique_identifier || 0).padStart(3, '0')}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 border border-zinc-700/50">
+                            <User size={14} />
+                          </div>
+                          <div>
+                            <div className="text-white text-xs font-bold flex items-center gap-2">
+                              {a.username}
+                              {a.is_admin && <Shield size={10} className="text-amber-500" />}
+                            </div>
+                            <span className="text-[10px] text-zinc-600 uppercase tracking-tighter">
+                              {a.is_admin ? 'Administrator' : 'User'}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {a.discord_id ? (
+                          <div className="flex flex-col">
+                            <span className="text-zinc-300 text-xs truncate max-w-[120px]">{a.discord_username}</span>
+                            <span className="text-[9px] text-zinc-600 font-mono">{a.discord_id}</span>
+                          </div>
+                        ) : (
+                          <span className="text-zinc-700 text-xs italic">Not linked</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 group/key">
+                          <code className="text-zinc-500 text-[10px] font-mono">
+                            {revealedKeys[`u-${a.username}-int`] ? (a.internal_license || 'NO LICENSE') : hashDisplay(a.internal_license)}
+                          </code>
+                          {a.internal_license && (
+                            <button onClick={() => toggleReveal(`u-${a.username}-int`)} className="text-zinc-600 hover:text-white transition opacity-0 group-hover/key:opacity-100">
+                              {revealedKeys[`u-${a.username}-int`] ? <EyeOff size={11} /> : <Eye size={11} />}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-zinc-500 text-[11px]">
+                          {a.last_login ? new Date(a.last_login).toLocaleDateString() : 'Never'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => openUserDetails(a)}
+                            className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition"
+                            title="View Full Profile"
+                          >
+                            <ExternalLink size={14} />
+                          </button>
+                          {a.username !== 'admin' && (
+                            <button
+                              onClick={() => removeUser(a)}
+                              className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                              title="Ban/Remove User"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -613,11 +767,11 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
             value={announcement}
             onChange={(e) => setAnnouncementState(e.target.value)}
             placeholder="Write announcement here..."
-            className="w-full min-h-[120px] bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+            className="w-full min-h-[120px] bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition resize-none"
           />
           <button
             onClick={saveAnnouncementValue}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg"
             style={{ background: accent, color: accentText, border: accentBorder }}
           >
             <Save size={13} />
@@ -629,24 +783,24 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
       {tab === 'configs' && (
         <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 space-y-4">
           <div>
-            <p className="text-zinc-400 text-xs mb-2">Default Cloud Config Template</p>
+            <p className="text-zinc-400 text-xs mb-2 uppercase font-bold tracking-widest">Default Cloud Config Template</p>
             <textarea
               value={defaultCloudConfig}
               onChange={(e) => setDefaultCloudConfigState(e.target.value)}
-              className="w-full min-h-[180px] bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-500 transition"
+              className="w-full min-h-[180px] bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-500 transition resize-none"
             />
           </div>
           <div>
-            <p className="text-zinc-400 text-xs mb-2">Preview Config Template</p>
+            <p className="text-zinc-400 text-xs mb-2 uppercase font-bold tracking-widest">Preview Config Template</p>
             <textarea
               value={previewConfig}
               onChange={(e) => setPreviewConfigState(e.target.value)}
-              className="w-full min-h-[180px] bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-500 transition"
+              className="w-full min-h-[180px] bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-500 transition resize-none"
             />
           </div>
           <button
             onClick={saveConfigTemplates}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg"
             style={{ background: accent, color: accentText, border: accentBorder }}
           >
             <Save size={13} />
@@ -655,7 +809,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
         </div>
       )}
       {tab === 'support' && (
-        <div className="flex bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden h-[600px] shadow-2xl">
+        <div className="flex bg-[#111114] border border-zinc-800/60 rounded-2xl overflow-hidden h-[600px] shadow-2xl">
           
           <div className="w-72 border-r border-zinc-800/60 flex flex-col bg-[#0c0c0e]/50">
             <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20">
@@ -866,6 +1020,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
           accent={accent}
+          onUpdate={loadData}
         />
       )}
     </div>
