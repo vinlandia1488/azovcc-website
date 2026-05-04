@@ -39,3 +39,37 @@ export async function setAnnouncement(announcement) {
     throw new Error("Failed to persist announcement to backend");
   }
 }
+
+const MAINTENANCE_NAME = "__maintenance__";
+
+export async function getMaintenance() {
+  const rows = await db.entities.CloudConfig.filter({
+    name: MAINTENANCE_NAME,
+    owner_username: SYSTEM_OWNER,
+  });
+  const row = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+  if (!row?.content) return { active: false, from: '', to: '' };
+  try {
+    return JSON.parse(row.content);
+  } catch {
+    return { active: false, from: '', to: '' };
+  }
+}
+
+export async function setMaintenance(data) {
+  const content = JSON.stringify(data);
+  const rows = await db.entities.CloudConfig.filter({
+    name: MAINTENANCE_NAME,
+    owner_username: SYSTEM_OWNER,
+  });
+  const existing = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+  if (existing?.id) {
+    await db.entities.CloudConfig.update(existing.id, { content });
+  } else {
+    await db.entities.CloudConfig.create({
+      name: MAINTENANCE_NAME,
+      owner_username: SYSTEM_OWNER,
+      content,
+    });
+  }
+}

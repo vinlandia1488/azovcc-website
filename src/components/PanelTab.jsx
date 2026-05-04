@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { deleteUserAccount, generateInternalLicense, generateScriptLicense, normalizeAccountDiscordLink } from '@/lib/auth';
+import { deleteUserAccount, generateInternalLicense, generateScriptLicense, normalizeAccountDiscordLink, upgradeToInternal } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
-import { getAnnouncement, setAnnouncement } from '@/lib/app-settings';
+import { getAnnouncement, setAnnouncement, getMaintenance, setMaintenance } from '@/lib/app-settings';
 import {
   getDefaultCloudConfig,
   getPreviewConfig,
@@ -18,7 +18,7 @@ import {
   getDownloadItems,
   updateDownloadItem,
 } from '@/lib/downloads';
-import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, MessageSquare, Send, Image as ImageIcon, X, Clock, Shield, User, Search } from 'lucide-react';
+import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, MessageSquare, Send, Image as ImageIcon, X, Clock, Shield, User, Search, Wrench, AlertTriangle, CalendarClock, StopCircle } from 'lucide-react';
 import UserDetailModal from '@/components/UserDetailModal';
 
 const db = getBackendDb();
@@ -81,17 +81,37 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   const accentBorder = isLightColor(accent) ? '1px solid #444' : 'none';
 
   const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [keySearchQuery, setKeySearchQuery] = useState('');
+  const [confirmAdminTarget, setConfirmAdminTarget] = useState(null);
+  const [assignLicenseTarget, setAssignLicenseTarget] = useState(null);
+  const [assignLicenseUser, setAssignLicenseUser] = useState('');
+  const [panelWorking, setPanelWorking] = useState(false);
+  const [maintenance, setMaintenanceState] = useState({ active: false, from: '', to: '' });
 
   const filteredAccounts = useMemo(() => {
     if (!userSearchQuery.trim()) return accounts;
     const q = userSearchQuery.toLowerCase();
-    return accounts.filter(a => 
+    return accounts.filter(a =>
       a.username.toLowerCase().includes(q) ||
       (a.discord_username && a.discord_username.toLowerCase().includes(q)) ||
       (a.discord_id && a.discord_id.toLowerCase().includes(q)) ||
       (String(a.unique_identifier).includes(q))
     );
   }, [accounts, userSearchQuery]);
+
+  const filteredKeys = useMemo(() => {
+    if (!keySearchQuery.trim()) return keys;
+    const q = keySearchQuery.toLowerCase();
+    return keys.filter(k =>
+      (k.script_key && k.script_key.toLowerCase().includes(q)) ||
+      (k.internal_key && k.internal_key.toLowerCase().includes(q)) ||
+      (k.note && k.note.toLowerCase().includes(q)) ||
+      (k.used_by_username && k.used_by_username.toLowerCase().includes(q)) ||
+      (k.type && k.type.toLowerCase().includes(q))
+    );
+  }, [keys, keySearchQuery]);
+
+  const availableInternalKeys = useMemo(() => keys.filter(k => !k.used && k.type === 'internal'), [keys]);
 
   useEffect(() => {
     loadData();
@@ -127,6 +147,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     );
     setDownloads(downloadsResult.status === 'fulfilled' ? (downloadsResult.value || []) : []);
     setAnnouncementState(announcementResult.status === 'fulfilled' ? announcementResult.value : '');
+    try { const m = await getMaintenance(); setMaintenanceState(m); } catch {}
     
     // Fetch support messages from CloudConfig
     try {
@@ -287,6 +308,51 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     await loadData();
   }
 
+  async function handleInlineToggleAdmin(account) {
+    if (!account?.id) return;
+    setPanelWorking(true);
+    try {
+      await db.entities.Account.update(account.id, { is_admin: !account.is_admin });
+      setConfirmAdminTarget(null);
+      await loadData();
+    } catch (err) {
+      setPanelError(err?.message || 'Failed to update admin status.');
+    } finally {
+      setPanelWorking(false);
+    }
+  }
+
+  async function handleInlineAssignLicense(keyRecord, username) {
+    if (!username || !keyRecord) return;
+    setPanelWorking(true);
+    try {
+      await upgradeToInternal(username, keyRecord.internal_key);
+      setAssignLicenseTarget(null);
+      setAssignLicenseUser('');
+      await loadData();
+    } catch (err) {
+      setPanelError(err?.message || 'Failed to assign license.');
+    } finally {
+      setPanelWorking(false);
+    }
+  }
+
+  async function handleQuickAssignInternal(account) {
+    if (!availableInternalKeys.length) {
+      setPanelError('No available internal keys. Generate one first in the Keys tab.');
+      return;
+    }
+    setPanelWorking(true);
+    try {
+      await upgradeToInternal(account.username, availableInternalKeys[0].internal_key);
+      await loadData();
+    } catch (err) {
+      setPanelError(err?.message || 'Failed to assign internal license.');
+    } finally {
+      setPanelWorking(false);
+    }
+  }
+
   return (
     <div className="pt-4 space-y-6">
       <div>
@@ -308,6 +374,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
           { id: 'announcement', label: 'Announcement', icon: Megaphone },
           { id: 'configs', label: 'Configs', icon: FileText },
           { id: 'support', label: 'Support', icon: MessageSquare },
+          { id: 'maintenance', label: 'Maintenance', icon: Wrench },
         ].map(t => (
           <button
             key={t.id}
@@ -427,8 +494,10 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
               <h3 className="text-white text-sm font-bold uppercase tracking-wider">License Management</h3>
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
-                <input 
+                <input
                   type="text"
+                  value={keySearchQuery}
+                  onChange={e => setKeySearchQuery(e.target.value)}
                   placeholder="Search keys, users, notes..."
                   className="bg-[#1a1a1e] border border-zinc-800/60 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-600 w-64"
                 />
@@ -444,18 +513,19 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                     <th className="px-6 py-4">Status</th>
                     <th className="px-6 py-4">Used By</th>
                     <th className="px-6 py-4">Note</th>
+                    <th className="px-6 py-4">Created</th>
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/30">
-                  {keys.length === 0 ? (
+                  {filteredKeys.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-zinc-600 text-sm italic">
-                        No license keys found.
+                      <td colSpan={7} className="px-6 py-12 text-center text-zinc-600 text-sm italic">
+                        {keys.length === 0 ? 'No license keys found.' : 'No keys match your search.'}
                       </td>
                     </tr>
                   ) : (
-                    keys.map(k => (
+                    filteredKeys.map(k => (
                       <tr key={k.id} className="hover:bg-zinc-800/10 transition group">
                         <td className="px-6 py-4">
                           <span className={`px-2 py-1 rounded text-[9px] font-bold uppercase tracking-tighter ${k.type === 'internal' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-zinc-800 text-zinc-400 border border-zinc-700/50'}`}>
@@ -497,23 +567,46 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-zinc-300 text-xs font-medium">
-                            {k.used_by_username ? `@${k.used_by_username}` : '—'}
-                          </span>
+                          {k.used_by_username ? (
+                            <button
+                              onClick={() => openUserDetails(accounts.find(a => a.username === k.used_by_username) || { username: k.used_by_username })}
+                              className="text-indigo-400 hover:text-indigo-300 text-xs font-medium hover:underline transition text-left"
+                            >
+                              @{k.used_by_username}
+                            </button>
+                          ) : (
+                            <span className="text-zinc-600 text-xs">—</span>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-zinc-500 text-[11px] max-w-[150px] truncate block">
-                            {k.note || 'No note'}
+                            {k.note || <span className="italic text-zinc-700">—</span>}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-zinc-600 text-[10px] whitespace-nowrap">
+                            {k.created_date ? new Date(k.created_date).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' }) : '—'}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => removeLicenseKey(k.id)}
-                            className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
-                            title="Delete Key"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            {!k.used && k.type === 'internal' && (
+                              <button
+                                onClick={() => { setAssignLicenseTarget(k); setAssignLicenseUser(''); }}
+                                className="p-2 text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition"
+                                title="Assign Internal License to User"
+                              >
+                                <Users size={14} />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => removeLicenseKey(k.id)}
+                              className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                              title="Delete Key"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -610,6 +703,30 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {!a.internal_license && a.username !== 'admin' && (
+                            <button
+                              onClick={() => handleQuickAssignInternal(a)}
+                              disabled={panelWorking}
+                              className="p-2 text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition disabled:opacity-40"
+                              title={availableInternalKeys.length ? 'Assign Internal License' : 'No internal keys available'}
+                            >
+                              <Key size={14} />
+                            </button>
+                          )}
+                          {a.username !== 'admin' && (
+                            <button
+                              onClick={() => setConfirmAdminTarget(a)}
+                              disabled={panelWorking}
+                              className={`p-2 rounded-lg transition disabled:opacity-40 ${
+                                a.is_admin
+                                  ? 'text-amber-500 hover:text-amber-300 hover:bg-amber-500/10'
+                                  : 'text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10'
+                              }`}
+                              title={a.is_admin ? 'Revoke Admin' : 'Make Admin'}
+                            >
+                              <Shield size={14} />
+                            </button>
+                          )}
                           <button
                             onClick={() => openUserDetails(a)}
                             className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition"
@@ -1015,6 +1132,113 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
           </div>
         </div>
       )}
+
+      {tab === 'maintenance' && (() => {
+        const isActive = maintenance.active;
+        async function saveMaintenance(patch) {
+          const next = { ...maintenance, ...patch };
+          setMaintenanceState(next);
+          try { await setMaintenance(next); } catch (err) { setPanelError(err?.message || 'Failed to save maintenance settings.'); }
+        }
+        return (
+          <div className="space-y-6">
+            {/* Status Banner */}
+            <div className={`rounded-2xl p-5 border flex items-center justify-between ${isActive ? 'bg-red-500/10 border-red-500/30' : 'bg-zinc-900/40 border-zinc-800/60'}`}>
+              <div className="flex items-center gap-4">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${isActive ? 'bg-red-500/20' : 'bg-zinc-800'}`}>
+                  <Wrench size={20} className={isActive ? 'text-red-400' : 'text-zinc-500'} />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">Maintenance Mode</p>
+                  <p className={`text-xs font-semibold uppercase tracking-wider ${isActive ? 'text-red-400' : 'text-zinc-500'}`}>
+                    {isActive ? '🔴 Currently Active — Site is locked' : '🟢 Inactive — Site is live'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {isActive ? (
+                  <button
+                    onClick={() => saveMaintenance({ active: false })}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 text-xs font-bold transition"
+                  >
+                    <StopCircle size={14} />
+                    STOP MAINTENANCE
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => saveMaintenance({ active: true })}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition"
+                    style={{ background: accent, color: accentText }}
+                  >
+                    <Wrench size={14} />
+                    ACTIVATE MAINTENANCE
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Time Range */}
+            <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-6 space-y-5">
+              <div className="flex items-center gap-3 mb-1">
+                <CalendarClock size={16} className="text-zinc-500" />
+                <h3 className="text-white font-bold text-sm">Maintenance Window</h3>
+              </div>
+              <p className="text-zinc-500 text-xs">Set the scheduled window to display to users. You can still stop maintenance early at any time.</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-2">Start Time</label>
+                  <input
+                    type="datetime-local"
+                    value={maintenance.from || ''}
+                    onChange={e => setMaintenanceState(prev => ({ ...prev, from: e.target.value }))}
+                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-500 transition [color-scheme:dark]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-2">End Time</label>
+                  <input
+                    type="datetime-local"
+                    value={maintenance.to || ''}
+                    onChange={e => setMaintenanceState(prev => ({ ...prev, to: e.target.value }))}
+                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-500 transition [color-scheme:dark]"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={() => saveMaintenance({})}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition"
+                style={{ background: accent, color: accentText }}
+              >
+                <Save size={14} />
+                Save Window
+              </button>
+            </div>
+
+            {/* Preview */}
+            <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-6 space-y-3">
+              <p className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">Banner Preview</p>
+              <div className="rounded-xl bg-[#07070a] border border-zinc-800 p-8 flex flex-col items-center justify-center text-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-1">
+                  <Wrench size={28} className="text-red-400" />
+                </div>
+                <h2 className="text-white text-xl font-bold">Azov's website is currently in maintenance.</h2>
+                <p className="text-zinc-400 text-sm">Check back later!</p>
+                {(maintenance.from || maintenance.to) && (
+                  <div className="flex items-center gap-2 mt-1 px-4 py-2 rounded-full bg-zinc-800/60 border border-zinc-700/40">
+                    <Clock size={13} className="text-zinc-500" />
+                    <span className="text-zinc-300 text-xs font-mono">
+                      {maintenance.from ? new Date(maintenance.from).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '?'}
+                      {' — '}
+                      {maintenance.to ? new Date(maintenance.to).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '?'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {selectedUser && (
         <UserDetailModal
           user={selectedUser}
@@ -1022,6 +1246,88 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
           accent={accent}
           onUpdate={loadData}
         />
+      )}
+
+      {/* Confirm Admin Toggle Modal */}
+      {confirmAdminTarget && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={() => setConfirmAdminTarget(null)}>
+          <div className="bg-[#111114] border border-amber-500/30 rounded-2xl w-full max-w-sm p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                <Shield size={18} className="text-amber-500" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm">Confirm Action</p>
+                <p className="text-zinc-500 text-[11px]">{confirmAdminTarget.is_admin ? 'Revoke administrator' : 'Grant administrator'} privileges</p>
+              </div>
+            </div>
+            <p className="text-zinc-400 text-xs mb-5 leading-relaxed">
+              Are you sure you want to {confirmAdminTarget.is_admin ? <><span className="text-red-400 font-bold">revoke admin</span> from</> : <><span className="text-amber-400 font-bold">grant admin</span> to</>} <span className="text-white font-bold">@{confirmAdminTarget.username}</span>?
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleInlineToggleAdmin(confirmAdminTarget)}
+                disabled={panelWorking}
+                className={`flex-1 py-2.5 rounded-xl text-[11px] font-bold transition disabled:opacity-50 ${
+                  confirmAdminTarget.is_admin
+                    ? 'bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30'
+                    : 'bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30'
+                }`}
+              >
+                {panelWorking ? 'WORKING...' : confirmAdminTarget.is_admin ? 'YES, REVOKE ADMIN' : 'YES, MAKE ADMIN'}
+              </button>
+              <button
+                onClick={() => setConfirmAdminTarget(null)}
+                className="flex-1 py-2.5 rounded-xl text-[11px] font-bold bg-zinc-800 hover:bg-zinc-700 text-white transition"
+              >
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Internal License to User Modal */}
+      {assignLicenseTarget && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={() => setAssignLicenseTarget(null)}>
+          <div className="bg-[#111114] border border-indigo-500/30 rounded-2xl w-full max-w-sm p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                <Key size={18} className="text-indigo-400" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm">Assign Internal License</p>
+                <p className="text-zinc-500 text-[11px] font-mono truncate max-w-[200px]">{assignLicenseTarget.internal_key}</p>
+              </div>
+            </div>
+            <p className="text-zinc-500 text-[11px] uppercase font-bold tracking-widest mb-2">Select User</p>
+            <select
+              value={assignLicenseUser}
+              onChange={e => setAssignLicenseUser(e.target.value)}
+              className="w-full bg-[#1a1a1e] border border-zinc-700/60 text-white rounded-xl px-4 py-3 text-sm mb-4 focus:outline-none focus:border-indigo-500/60 transition"
+            >
+              <option value="">— Choose a user —</option>
+              {accounts.filter(a => !a.internal_license && a.username !== 'admin').map(a => (
+                <option key={a.id || a.username} value={a.username}>@{a.username} (#{String(a.unique_identifier || 0).padStart(3, '0')})</option>
+              ))}
+            </select>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleInlineAssignLicense(assignLicenseTarget, assignLicenseUser)}
+                disabled={!assignLicenseUser || panelWorking}
+                className="flex-1 py-2.5 rounded-xl text-[11px] font-bold bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/30 transition disabled:opacity-40"
+              >
+                {panelWorking ? 'ASSIGNING...' : 'ASSIGN LICENSE'}
+              </button>
+              <button
+                onClick={() => { setAssignLicenseTarget(null); setAssignLicenseUser(''); }}
+                className="flex-1 py-2.5 rounded-xl text-[11px] font-bold bg-zinc-800 hover:bg-zinc-700 text-white transition"
+              >
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

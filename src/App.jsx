@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
@@ -10,19 +10,36 @@ import { getBackendDb } from '@/lib/backend';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
+import MaintenanceScreen from '@/components/MaintenanceScreen';
+import { getMaintenance } from '@/lib/app-settings';
 // Add page imports here
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [maintenanceData, setMaintenanceData] = useState(null);
+
+  // Check maintenance status on mount and poll every 60s
+  useEffect(() => {
+    async function checkMaintenance() {
+      try {
+        const data = await getMaintenance();
+        setMaintenanceData(data);
+      } catch {
+        setMaintenanceData({ active: false, from: '', to: '' });
+      }
+    }
+    checkMaintenance();
+    const interval = setInterval(checkMaintenance, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     // Session validation: logout if account no longer exists
     async function validateSession() {
       const session = getSession();
       if (!session || session.username === 'admin') return;
-
       try {
         const db = getBackendDb();
         const accounts = await db.entities.Account.filter({ username: session.username });
@@ -34,11 +51,10 @@ const AuthenticatedApp = () => {
         console.error('Session validation failed:', err);
       }
     }
-
     validateSession();
   }, [location.pathname, navigate]);
 
-  // Show loading spinner while checking app public settings or auth
+  // Loading spinner while checking settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -51,12 +67,19 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // App uses custom auth — render routes normally
+    }
+    // auth_required: App uses custom auth — render routes normally
+  }
+
+  // Maintenance gate: block non-admins when maintenance is active
+  if (maintenanceData?.active) {
+    const session = getSession();
+    const isAdmin = session?.is_admin === true || session?.username === 'admin';
+    if (!isAdmin) {
+      return <MaintenanceScreen from={maintenanceData.from} to={maintenanceData.to} />;
     }
   }
 
-  // Render the main app
   return (
     <Routes>
       <Route path="/" element={<Auth />} />
@@ -69,7 +92,6 @@ const AuthenticatedApp = () => {
 };
 
 function App() {
-
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
@@ -79,7 +101,7 @@ function App() {
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
-  )
+  );
 }
 
-export default App
+export default App;
