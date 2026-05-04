@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
-import { Send, ImagePlus, User, Shield, Clock, X } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Send, ImagePlus, User, Shield, Clock, X, Globe, MessageSquare, Search } from 'lucide-react';
 import { getBackendDb } from '@/lib/backend';
 
 const db = getBackendDb();
 const SUPPORT_MSG_TYPE = "__SUPPORT_MSG__";
+const GLOBAL_MSG_TYPE = "__GLOBAL_MSG__";
+const GLOBAL_OWNER = "admin"; // Using admin as the holder for global messages
 
 function isLightColor(hex) {
   const h = (hex || '').replace('#', '');
@@ -15,57 +17,107 @@ function isLightColor(hex) {
 }
 
 export default function SupportTab({ session, accent }) {
+  const [activeTab, setActiveTab] = useState('global'); // 'global' or 'support'
   const [messages, setMessages] = useState([]);
+  const [globalMessages, setGlobalMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [pendingImage, setPendingImage] = useState(null); // { file, previewUrl }
+  const [pendingImage, setPendingImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null); // For admin DM view
+  const [userList, setUserList] = useState([]); // List of users for admin
+  
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    loadMessages();
-    const interval = setInterval(loadMessages, 5000);
+    loadAll();
+    const interval = setInterval(loadAll, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedUser]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, globalMessages, activeTab]);
 
-  async function loadMessages() {
-    try {
-      // Use CloudConfig as a fallback storage
-      const rows = await db.entities.CloudConfig.filter({ 
-        owner_username: session.username,
-        name: SUPPORT_MSG_TYPE 
-      });
-      
-      const parsed = (rows || []).map(r => {
-        try {
-          return { ...JSON.parse(r.content), id: r.id, created_at: r.created_date };
-        } catch {
-          return null;
-        }
-      }).filter(Boolean);
-
-      const sorted = parsed.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      setMessages(sorted);
-    } catch (err) {
-      console.error('Failed to load messages:', err);
-    } finally {
-      setLoading(false);
-    }
+  async function loadAll() {
+    await Promise.all([
+      loadGlobalMessages(),
+      session.is_admin ? loadUserList() : loadSupportMessages(session.username),
+      (session.is_admin && selectedUser) ? loadSupportMessages(selectedUser.username) : Promise.resolve()
+    ]);
+    setLoading(false);
   }
 
-  function handleFileSelect(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const previewUrl = URL.createObjectURL(file);
-    setPendingImage({ file, previewUrl });
-    e.target.value = '';
+  async function loadGlobalMessages() {
+    try {
+      const rows = await db.entities.CloudConfig.filter({ 
+        owner_username: GLOBAL_OWNER,
+        name: GLOBAL_MSG_TYPE 
+      });
+      const parsed = (rows || []).map(r => {
+        try { return { ...JSON.parse(r.content), id: r.id, created_at: r.created_date }; }
+        catch { return null; }
+      }).filter(Boolean);
+      setGlobalMessages(parsed.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
+    } catch (err) { console.error('Global load failed:', err); }
+  }
+
+  async function loadSupportMessages(username) {
+    if (!username) return;
+    try {
+      const rows = await db.entities.CloudConfig.filter({ 
+        owner_username: username,
+        name: SUPPORT_MSG_TYPE 
+      });
+      const parsed = (rows || []).map(r => {
+        try { return { ...JSON.parse(r.content), id: r.id, created_at: r.created_date }; }
+        catch { return null; }
+      }).filter(Boolean);
+      const sorted = parsed.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      
+      // Mark as read if viewing
+      if (!session.is_admin || (session.is_admin && selectedUser?.username === username)) {
+         const unread = sorted.filter(m => !m.is_read && m.sender_type !== (session.is_admin ? 'admin' : 'user'));
+         if (unread.length > 0) {
+            for (const m of unread) {
+              await db.entities.CloudConfig.update(m.id, { content: JSON.stringify({ ...m, is_read: true, id: undefined, created_at: undefined }) });
+            }
+         }
+      }
+
+      if (session.is_admin) {
+        if (selectedUser?.username === username) setMessages(sorted);
+      } else {
+        setMessages(sorted);
+      }
+    } catch (err) { console.error('Support load failed:', err); }
+  }
+
+  async function loadUserList() {
+    try {
+      // Get all Support messages to see who messaged
+      const allMsgs = await db.entities.CloudConfig.filter({ name: SUPPORT_MSG_TYPE });
+      const usersMap = {};
+      (allMsgs || []).forEach(r => {
+        try {
+          const m = JSON.parse(r.content);
+          if (!usersMap[r.owner_username] || new Date(m.created_at) > new Date(usersMap[r.owner_username].last_msg)) {
+            usersMap[r.owner_username] = {
+              username: r.owner_username,
+              last_msg: m.created_at,
+              unread: !m.is_read && m.sender_type === 'user'
+            };
+          } else if (!m.is_read && m.sender_type === 'user') {
+            usersMap[r.owner_username].unread = true;
+          }
+        } catch {}
+      });
+      setUserList(Object.values(usersMap).sort((a, b) => new Date(b.last_msg) - new Date(a.last_msg)));
+    } catch (err) { console.error('User list load failed:', err); }
   }
 
   async function sendMessage(e) {
@@ -76,26 +128,27 @@ export default function SupportTab({ session, accent }) {
     let imageUrl = '';
     try {
       if (pendingImage?.file) {
-        try {
-          const { file_url } = await db.integrations.Core.UploadFile({ file: pendingImage.file });
-          imageUrl = file_url;
-        } catch {
-          imageUrl = pendingImage.previewUrl;
-        }
+        const { file_url } = await db.integrations.Core.UploadFile({ file: pendingImage.file });
+        imageUrl = file_url;
       }
 
+      const isGlobal = activeTab === 'global';
       const payload = {
         username: session.username,
         content: newMessage.trim(),
         image_url: imageUrl,
-        sender_type: 'user',
+        sender_type: session.is_admin ? 'admin' : 'user',
         is_read: false,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        pfp: session.profile_pic || ''
       };
 
+      const targetUser = isGlobal ? GLOBAL_OWNER : (session.is_admin ? selectedUser.username : session.username);
+      const msgType = isGlobal ? GLOBAL_MSG_TYPE : SUPPORT_MSG_TYPE;
+
       await db.entities.CloudConfig.create({
-        owner_username: session.username,
-        name: SUPPORT_MSG_TYPE,
+        owner_username: targetUser,
+        name: msgType,
         content: JSON.stringify(payload)
       });
 
@@ -104,7 +157,7 @@ export default function SupportTab({ session, accent }) {
         URL.revokeObjectURL(pendingImage.previewUrl);
         setPendingImage(null);
       }
-      await loadMessages();
+      await loadAll();
     } catch (err) {
       alert('Failed to send message: ' + (err?.message || 'Unknown error'));
     } finally {
@@ -112,136 +165,193 @@ export default function SupportTab({ session, accent }) {
     }
   }
 
-  function handleKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage(e);
-    }
-  }
+  const filteredUsers = useMemo(() => {
+    return userList.filter(u => u.username.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [userList, searchQuery]);
 
+  const displayMessages = activeTab === 'global' ? globalMessages : messages;
   const sentColor = accent;
   const sentText = isLightColor(accent) ? '#000' : '#fff';
 
   return (
-    <div className="flex flex-col bg-[#111114] border border-zinc-800/60 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300" style={{ height: 'calc(100vh - 160px)', minHeight: '500px' }}>
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-zinc-800/60 flex items-center gap-3 shrink-0">
-        <div className="w-9 h-9 rounded-xl bg-zinc-800/50 flex items-center justify-center border border-zinc-700/30">
-          <Shield size={18} style={{ color: accent }} />
+    <div className="flex bg-[#111114] border border-zinc-800/60 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300" style={{ height: 'calc(100vh - 160px)', minHeight: '600px' }}>
+      
+      {/* Sidebar for Admin or Tabs for User */}
+      <div className="w-64 border-r border-zinc-800/60 flex flex-col bg-[#0c0c0e]">
+        <div className="p-4 space-y-1">
+          <button 
+            onClick={() => setActiveTab('global')}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold tracking-wider transition ${activeTab === 'global' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/40'}`}
+          >
+            <Globe size={14} />
+            GLOBAL CHAT
+          </button>
+          <button 
+            onClick={() => setActiveTab('support')}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold tracking-wider transition ${activeTab === 'support' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/40'}`}
+          >
+            <div className="flex items-center gap-3">
+              <MessageSquare size={14} />
+              {session.is_admin ? 'TICKETS' : 'SUPPORT'}
+            </div>
+            {!session.is_admin && messages.some(m => !m.is_read && m.sender_type === 'admin') && (
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+            )}
+          </button>
         </div>
-        <div>
-          <h3 className="text-white font-bold text-sm tracking-tight">Support</h3>
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-zinc-500 text-[10px]">Staff online</span>
+
+        {session.is_admin && activeTab === 'support' && (
+          <div className="flex-1 flex flex-col min-h-0 border-t border-zinc-800/60">
+            <div className="p-3">
+              <div className="relative">
+                <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-600" />
+                <input 
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full bg-zinc-900/50 border border-zinc-800/60 rounded-lg pl-8 pr-3 py-1.5 text-[10px] text-white focus:outline-none focus:border-zinc-700"
+                />
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+              {filteredUsers.map(u => (
+                <button
+                  key={u.username}
+                  onClick={() => setSelectedUser(u)}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[11px] font-medium transition ${selectedUser?.username === u.username ? 'bg-zinc-800/60 text-white' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/20'}`}
+                >
+                  <span className="truncate">{u.username}</span>
+                  {u.unread && <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 ml-2" />}
+                </button>
+              ))}
+              {filteredUsers.length === 0 && (
+                <p className="text-[10px] text-zinc-600 text-center py-4">No users found</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="w-5 h-5 border-2 border-zinc-800 border-t-white rounded-full animate-spin" />
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col relative bg-[#07070a]">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-zinc-800/60 flex items-center justify-between shrink-0 bg-[#0c0c0e]">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-zinc-800/50 flex items-center justify-center border border-zinc-700/30">
+              {activeTab === 'global' ? <Globe size={14} style={{ color: accent }} /> : <Shield size={14} style={{ color: accent }} />}
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-sm tracking-tight">
+                {activeTab === 'global' ? 'Global Channel' : (session.is_admin ? (selectedUser ? `Ticket: ${selectedUser.username}` : 'Select a user') : 'Staff Support')}
+              </h3>
+              <p className="text-zinc-600 text-[9px] uppercase tracking-widest">
+                {activeTab === 'global' ? 'Public Community' : 'Private Encryption'}
+              </p>
+            </div>
           </div>
-        ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center opacity-30 space-y-3">
-            <Send size={36} />
-            <p className="text-zinc-400 text-sm max-w-[200px]">No messages yet. Start a conversation.</p>
-          </div>
-        ) : (
-          messages.map((m, idx) => {
-            const isUser = m.sender_type === 'user';
-            return (
-              <div key={m.id || idx} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex gap-2.5 max-w-[75%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <div className={`w-7 h-7 rounded-lg shrink-0 flex items-center justify-center border mt-0.5 ${isUser ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-900 border-zinc-700'}`}>
-                    {isUser ? <User size={12} className="text-zinc-400" /> : <Shield size={12} className="text-blue-400" />}
-                  </div>
-                  <div className="space-y-1">
-                    <div
-                      className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm border border-zinc-800'}`}
-                      style={isUser ? { background: sentColor, color: sentText } : { background: '#1a1a1e', color: '#d4d4d8' }}
-                    >
-                      {m.content && <p>{m.content}</p>}
-                      {m.image_url && (
-                        <div className={`${m.content ? 'mt-2' : ''} rounded-xl overflow-hidden`}>
-                          <img
-                            src={m.image_url}
-                            alt="Shared"
-                            className="max-w-full h-auto max-h-64 object-contain cursor-pointer"
-                            onClick={() => window.open(m.image_url, '_blank')}
-                          />
+        </div>
+
+        {/* Messages */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+          {(activeTab === 'support' && session.is_admin && !selectedUser) ? (
+            <div className="flex flex-col items-center justify-center h-full text-center opacity-30 space-y-3">
+              <Search size={36} />
+              <p className="text-zinc-400 text-sm">Select a user to start messaging</p>
+            </div>
+          ) : loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="w-5 h-5 border-2 border-zinc-800 border-t-white rounded-full animate-spin" />
+            </div>
+          ) : displayMessages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center opacity-30 space-y-3">
+              <Send size={36} />
+              <p className="text-zinc-400 text-sm">No messages yet</p>
+            </div>
+          ) : (
+            displayMessages.map((m, idx) => {
+              const isMe = m.username === session.username;
+              return (
+                <div key={m.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`flex gap-3 max-w-[80%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-zinc-800 bg-zinc-900 shrink-0 mt-1">
+                      {m.pfp ? (
+                        <img src={m.pfp} alt="pfp" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-zinc-600">
+                          {m.username.substring(0, 2).toUpperCase()}
                         </div>
                       )}
                     </div>
-                    <div className={`flex items-center gap-1 text-[9px] text-zinc-600 ${isUser ? 'justify-end' : 'justify-start'}`}>
-                      <Clock size={9} />
-                      {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <div className={`space-y-1 ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
+                      <div className="flex items-center gap-2 px-1">
+                        <span className={`text-[10px] font-bold ${m.sender_type === 'admin' ? 'text-blue-400' : 'text-zinc-400'}`}>
+                          {m.username}
+                          {m.sender_type === 'admin' && <span className="ml-1 text-[8px] bg-blue-500/20 px-1 rounded text-blue-300">STAFF</span>}
+                        </span>
+                        <span className="text-[8px] text-zinc-600">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <div
+                        className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isMe ? 'rounded-tr-sm' : 'rounded-tl-sm border border-zinc-800'}`}
+                        style={isMe ? { background: sentColor, color: sentText } : { background: '#1a1a1e', color: '#d4d4d8' }}
+                      >
+                        {m.content && <p className="whitespace-pre-wrap">{m.content}</p>}
+                        {m.image_url && (
+                          <img
+                            src={m.image_url}
+                            alt="Shared"
+                            className="max-w-full h-auto max-h-64 object-contain rounded-xl mt-2 cursor-pointer"
+                            onClick={() => window.open(m.image_url, '_blank')}
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Input Area */}
+        {(!session.is_admin || activeTab === 'global' || selectedUser) && (
+          <div className="px-5 pb-5 pt-4 border-t border-zinc-800/60 shrink-0 bg-[#0c0c0e]">
+            {pendingImage && (
+              <div className="mb-3 relative inline-block">
+                <img src={pendingImage.previewUrl} alt="Preview" className="h-16 rounded-xl object-cover border border-zinc-700" />
+                <button
+                  onClick={() => { URL.revokeObjectURL(pendingImage.previewUrl); setPendingImage(null); }}
+                  className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-zinc-800 border border-zinc-600 rounded-full flex items-center justify-center text-zinc-400 hover:text-white"
+                >
+                  <X size={8} />
+                </button>
               </div>
-            );
-          })
-        )}
-      </div>
-
-      {/* Input Area */}
-      <div className="px-5 pb-5 pt-4 border-t border-zinc-800/60 shrink-0">
-        {pendingImage && (
-          <div className="mb-3 relative inline-block">
-            <img src={pendingImage.previewUrl} alt="Preview" className="h-20 rounded-xl object-cover border border-zinc-700" />
-            <button
-              onClick={() => { URL.revokeObjectURL(pendingImage.previewUrl); setPendingImage(null); }}
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-zinc-800 border border-zinc-600 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition"
-            >
-              <X size={10} />
-            </button>
+            )}
+            <form onSubmit={sendMessage} className="flex items-end gap-3">
+              <div className="flex-1 bg-[#1a1a1e] border border-zinc-800/60 rounded-2xl px-4 py-3 focus-within:border-zinc-500 transition">
+                <textarea
+                  value={newMessage}
+                  onChange={e => setNewMessage(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage(e))}
+                  placeholder="Send a message..."
+                  rows={1}
+                  className="w-full bg-transparent text-white text-sm placeholder-zinc-600 focus:outline-none resize-none"
+                  style={{ maxHeight: '120px' }}
+                />
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) setPendingImage({ file, previewUrl: URL.createObjectURL(file) });
+              }} />
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="w-11 h-11 rounded-2xl flex items-center justify-center bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white transition">
+                <ImagePlus size={18} />
+              </button>
+              <button type="submit" disabled={sending || (!newMessage.trim() && !pendingImage)} className="w-11 h-11 rounded-2xl flex items-center justify-center transition disabled:opacity-40" style={{ background: accent }}>
+                {sending ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" style={{ color: sentText }} /> : <Send size={16} style={{ color: sentText }} />}
+              </button>
+            </form>
           </div>
         )}
-
-        <form onSubmit={sendMessage} className="flex items-end gap-3">
-          <div className="flex-1 bg-[#1a1a1e] border border-zinc-800/60 rounded-2xl px-4 py-3 focus-within:border-zinc-500 transition">
-            <textarea
-              value={newMessage}
-              onChange={e => setNewMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Send a message..."
-              rows={1}
-              className="w-full bg-transparent text-white text-sm placeholder-zinc-600 focus:outline-none resize-none"
-              style={{ maxHeight: '120px', overflowY: 'auto' }}
-            />
-          </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-11 h-11 rounded-2xl flex items-center justify-center bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition shrink-0"
-          >
-            <ImagePlus size={18} />
-          </button>
-
-          <button
-            type="submit"
-            disabled={sending || (!newMessage.trim() && !pendingImage)}
-            className="w-11 h-11 rounded-2xl flex items-center justify-center transition disabled:opacity-40 shrink-0"
-            style={{ background: accent }}
-          >
-            {sending
-              ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" style={{ color: sentText }} />
-              : <Send size={16} style={{ color: sentText }} />
-            }
-          </button>
-        </form>
-        <p className="text-[10px] text-zinc-600 mt-2.5 text-center">Enter to send · Shift+Enter for new line</p>
       </div>
     </div>
   );

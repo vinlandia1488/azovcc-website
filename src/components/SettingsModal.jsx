@@ -11,7 +11,7 @@ const PALETTE = [
 ];
 
 export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
-  const [activeTab, setActiveTab] = useState('redeem');
+  const [activeTab, setActiveTab] = useState('profile');
   
   const [accent, setAccent] = useState(session.accent_color || '#6366f1');
   const [customColor, setCustomColor] = useState(session.accent_color || '#6366f1');
@@ -20,6 +20,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [effectAmount, setEffectAmount] = useState(() => parseInt(localStorage.getItem('azov_effectAmount') || '30'));
   const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('azov_effectSpeed') || '5'));
   const [saving, setSaving] = useState(false);
+  const [profilePic, setProfilePic] = useState(session.profile_pic || '');
   
   const [internalKey, setInternalKey] = useState('');
   const [upgradeError, setUpgradeError] = useState('');
@@ -112,6 +113,32 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
     }
   }
 
+  async function handlePfpUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setSaving(true);
+    try {
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
+      setProfilePic(file_url);
+      
+      if (session?.id) {
+        await db.entities.Account.update(session.id, { profile_pic: file_url });
+      } else {
+        const rows = await db.entities.Account.filter({ username: session?.username });
+        if (rows && rows[0]?.id) {
+          await db.entities.Account.update(rows[0].id, { profile_pic: file_url });
+        }
+      }
+      setSession({ ...session, profile_pic: file_url });
+      await onSaved();
+    } catch (err) {
+      alert('Failed to upload profile picture: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div className="bg-[#111114] border border-zinc-800/60 rounded-3xl w-full max-w-3xl flex shadow-2xl min-h-[500px] overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -123,6 +150,13 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
           </div>
           
           <div className="space-y-1">
+            <button 
+              onClick={() => setActiveTab('profile')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === 'profile' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
+            >
+              <User size={16} />
+              Profile
+            </button>
             <button 
               onClick={() => setActiveTab('redeem')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === 'redeem' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
@@ -159,7 +193,38 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
               <X size={18} />
            </button>
 
-           {activeTab === 'redeem' ? (
+           {activeTab === 'profile' ? (
+             <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
+               <div className="flex flex-col items-center">
+                 <div className="relative group">
+                   <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-zinc-800/60 bg-zinc-900 flex items-center justify-center">
+                     {profilePic ? (
+                       <img src={profilePic} alt="PFP" className="w-full h-full object-cover" />
+                     ) : (
+                       <User size={40} className="text-zinc-700" />
+                     )}
+                   </div>
+                   <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 rounded-full cursor-pointer transition">
+                     <ImagePlus size={20} className="text-white" />
+                     <input type="file" className="hidden" accept="image/*" onChange={handlePfpUpload} disabled={saving} />
+                   </label>
+                 </div>
+                 <h3 className="text-white font-bold mt-4">{session.username}</h3>
+                 <p className="text-zinc-500 text-xs">UID: #{session.unique_identifier || '0'}</p>
+               </div>
+
+               <div className="grid grid-cols-2 gap-4">
+                 <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4">
+                   <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block mb-1">Rank</span>
+                   <span className="text-white text-sm font-medium">{session.is_admin ? 'Administrator' : 'User'}</span>
+                 </div>
+                 <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4">
+                   <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block mb-1">Status</span>
+                   <span className="text-green-500 text-sm font-medium">Active</span>
+                 </div>
+               </div>
+             </div>
+           ) : activeTab === 'redeem' ? (
              <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
                <div>
                  <h3 className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-4">Your Products</h3>

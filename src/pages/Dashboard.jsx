@@ -52,6 +52,7 @@ export default function Dashboard() {
         internal_license: accounts[0].internal_license || s.internal_license || '',
         script_license: accounts[0].script_license || s.script_license || '',
         unique_identifier: accounts[0].unique_identifier ?? s.unique_identifier ?? 0,
+        profile_pic: accounts[0].profile_pic || s.profile_pic || '',
         is_admin: typeof accounts[0].is_admin === 'boolean' ? accounts[0].is_admin : Boolean(s.is_admin),
         accent_color: s.accent_color || accounts[0].accent_color || '#ef4444',
       };

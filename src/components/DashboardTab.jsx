@@ -80,7 +80,9 @@ export default function DashboardTab({ session, onSettings, accent, announcement
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-[#1a1a1e] border border-zinc-700/50 rounded-lg flex items-center justify-center overflow-hidden"
             style={{ boxShadow: `0 0 12px ${accent}30` }}>
-            {session.discord_avatar ? (
+            {session.profile_pic ? (
+              <img src={session.profile_pic} alt="Avatar" className="w-full h-full object-cover" />
+            ) : session.discord_avatar ? (
               <img src={`https://cdn.discordapp.com/avatars/${session.discord_id}/${session.discord_avatar}.png`} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
               <span className="text-white text-xs font-bold tracking-widest">
