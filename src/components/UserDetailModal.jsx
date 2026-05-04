@@ -56,12 +56,12 @@ export default function UserDetailModal({ user, onClose, accent, onUpdate }) {
   const [showAdminConfirm, setShowAdminConfirm] = useState(false);
   const [manualLicenseInput, setManualLicenseInput] = useState('');
 
-  if (!user) return null;
-  const u = normalizeAccountDiscordLink(user);
-
   useEffect(() => {
     loadKeys();
   }, []);
+
+  if (!user) return null;
+  const u = normalizeAccountDiscordLink(user);
 
   async function loadKeys() {
     const all = await getLicenseKeys();
