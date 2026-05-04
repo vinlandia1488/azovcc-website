@@ -31,6 +31,7 @@ export default function Dashboard() {
       );
       setSessionState({ ...cacheMatch, ...s });
       setAnnouncement(await getAnnouncement());
+      refreshSession();
     }
     init();
   }, []);

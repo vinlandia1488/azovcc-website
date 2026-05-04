@@ -61,11 +61,33 @@ export default async function handler(req, res) {
       .map(normalize)
       .filter(Boolean);
 
-    if (activeInternalKeys.length === 0) {
+    // Also fetch all assigned internal keys from user accounts
+    const accountEntity = client.entities.Account;
+    const accounts = 
+      typeof accountEntity.list === "function"
+        ? await accountEntity.list("-created_date", 500)
+        : await accountEntity.filter({});
+        
+    const assignedKeys = (accounts || [])
+      .map(a => {
+        if (a.internal_license) return a.internal_license;
+        if (a.license_key && a.license_key.includes('|+|')) {
+           const parts = a.license_key.split('|+|');
+           // The internal key is usually the first or second part depending on how it was saved.
+           // In UserDetailModal we saved it as: key + '|+|' + script_license + ...
+           return parts[0];
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    const allKeys = [...new Set([...activeInternalKeys, ...assignedKeys])];
+
+    if (allKeys.length === 0) {
       return res.status(200).send("W0VNUFRZXQ==");
     }
 
-    const rawString = activeInternalKeys.join("\n");
+    const rawString = allKeys.join("\n");
     const obfuscated = Buffer.from(rawString).toString("base64");
     return res.status(200).send(obfuscated);
   } catch (err) {

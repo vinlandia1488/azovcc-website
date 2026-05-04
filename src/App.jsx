@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import { getSession, clearSession } from '@/lib/auth';
+import { getSession, clearSession, setSession } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Auth from './pages/Auth';
@@ -46,6 +46,8 @@ const AuthenticatedApp = () => {
         if (!accounts || accounts.length === 0) {
           clearSession();
           navigate('/');
+        } else {
+          setSession({ ...session, ...accounts[0] });
         }
       } catch (err) {
         console.error('Session validation failed:', err);
