@@ -322,36 +322,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     }
   }
 
-  async function handleInlineAssignLicense(keyRecord, username) {
-    if (!username || !keyRecord) return;
-    setPanelWorking(true);
-    try {
-      await upgradeToInternal(username, keyRecord.internal_key);
-      setAssignLicenseTarget(null);
-      setAssignLicenseUser('');
-      await loadData();
-    } catch (err) {
-      setPanelError(err?.message || 'Failed to assign license.');
-    } finally {
-      setPanelWorking(false);
-    }
-  }
 
-  async function handleQuickAssignInternal(account) {
-    if (!availableInternalKeys.length) {
-      setPanelError('No available internal keys. Generate one first in the Keys tab.');
-      return;
-    }
-    setPanelWorking(true);
-    try {
-      await upgradeToInternal(account.username, availableInternalKeys[0].internal_key);
-      await loadData();
-    } catch (err) {
-      setPanelError(err?.message || 'Failed to assign internal license.');
-    } finally {
-      setPanelWorking(false);
-    }
-  }
 
   return (
     <div className="pt-4 space-y-6">
@@ -657,16 +628,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {!a.internal_license && a.username !== 'admin' && (
-                            <button
-                              onClick={() => handleQuickAssignInternal(a)}
-                              disabled={panelWorking}
-                              className="p-2 text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition disabled:opacity-40"
-                              title={availableInternalKeys.length ? 'Assign Internal License' : 'No internal keys available'}
-                            >
-                              <Key size={14} />
-                            </button>
-                          )}
+
                           {a.username !== 'admin' && (
                             <button
                               onClick={() => setConfirmAdminTarget(a)}
@@ -1266,48 +1228,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
         </div>
       )}
 
-      {/* Assign Internal License to User Modal */}
-      {assignLicenseTarget && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={() => setAssignLicenseTarget(null)}>
-          <div className="bg-[#111114] border border-indigo-500/30 rounded-2xl w-full max-w-sm p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                <Key size={18} className="text-indigo-400" />
-              </div>
-              <div>
-                <p className="text-white font-bold text-sm">Assign Internal License</p>
-                <p className="text-zinc-500 text-[11px] font-mono truncate max-w-[200px]">{assignLicenseTarget.internal_key}</p>
-              </div>
-            </div>
-            <p className="text-zinc-500 text-[11px] uppercase font-bold tracking-widest mb-2">Select User</p>
-            <select
-              value={assignLicenseUser}
-              onChange={e => setAssignLicenseUser(e.target.value)}
-              className="w-full bg-[#1a1a1e] border border-zinc-700/60 text-white rounded-xl px-4 py-3 text-sm mb-4 focus:outline-none focus:border-indigo-500/60 transition"
-            >
-              <option value="">— Choose a user —</option>
-              {accounts.filter(a => !a.internal_license && a.username !== 'admin').map(a => (
-                <option key={a.id || a.username} value={a.username}>@{a.username} (#{String(a.unique_identifier || 0).padStart(3, '0')})</option>
-              ))}
-            </select>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleInlineAssignLicense(assignLicenseTarget, assignLicenseUser)}
-                disabled={!assignLicenseUser || panelWorking}
-                className="flex-1 py-2.5 rounded-xl text-[11px] font-bold bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/30 transition disabled:opacity-40"
-              >
-                {panelWorking ? 'ASSIGNING...' : 'ASSIGN LICENSE'}
-              </button>
-              <button
-                onClick={() => { setAssignLicenseTarget(null); setAssignLicenseUser(''); }}
-                className="flex-1 py-2.5 rounded-xl text-[11px] font-bold bg-zinc-800 hover:bg-zinc-700 text-white transition"
-              >
-                CANCEL
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
