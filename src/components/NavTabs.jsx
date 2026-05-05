@@ -18,12 +18,13 @@ const tabs = [
   { id: 'panel', label: 'PANEL', icon: Shield, adminOnly: true },
 ];
 
-export default function NavTabs({ activeTab, setActiveTab, accent, isAdmin }) {
+export default function NavTabs({ activeTab, setActiveTab, accent, isAdmin, orientation = 'horizontal' }) {
   const visibleTabs = tabs.filter(t => !t.adminOnly || isAdmin);
+  const isVertical = orientation === 'vertical';
 
   return (
-    <div className="flex items-center gap-1 bg-[#111114]/90 backdrop-blur-md border border-zinc-800/60 rounded-full px-2 py-1.5 shadow-2xl">
-      <div className="pl-1 pr-0.5 text-zinc-700 hidden md:block">
+    <div className={`flex ${isVertical ? 'flex-col p-3' : 'items-center px-2 py-1.5'} gap-1 bg-[#111114]/90 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] shadow-2xl transition-all duration-300`}>
+      <div className={`text-zinc-700 hidden md:block ${isVertical ? 'mx-auto mb-2 rotate-90' : 'pl-1 pr-0.5'}`}>
         <GripVertical size={14} />
       </div>
 
@@ -34,7 +35,7 @@ export default function NavTabs({ activeTab, setActiveTab, accent, isAdmin }) {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold tracking-wider transition-all duration-200"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold tracking-wider transition-all duration-200 ${isVertical ? 'w-full justify-center lg:justify-start' : ''}`}
             style={isActive ? {
               background: accent,
               color: isLight(accent) ? '#000' : '#fff',
@@ -44,7 +45,9 @@ export default function NavTabs({ activeTab, setActiveTab, accent, isAdmin }) {
             }}
           >
             <TabIcon size={13} />
-            {tab.label}
+            <span className={isVertical ? 'hidden lg:inline' : 'inline'}>
+              {tab.label}
+            </span>
           </button>
         );
       })}

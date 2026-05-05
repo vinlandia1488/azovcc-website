@@ -22,6 +22,8 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showSettings, setShowSettings] = useState(false);
   const [announcement, setAnnouncement] = useState('');
+  const [dock, setDock] = useState({ side: 'top', orientation: 'horizontal' });
+
 
   useEffect(() => {
     async function init() {
@@ -82,16 +84,10 @@ export default function Dashboard() {
       </div>
 
       {/* Top Left Logo */}
-      <div className="fixed top-8 left-8 z-[60] flex items-center gap-3 select-none pointer-events-none md:pointer-events-auto">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md shadow-2xl">
-          <span className="text-xl font-black text-white italic tracking-tighter" style={{ textShadow: `0 0 15px ${accent}` }}>A</span>
-        </div>
-        <div className="flex flex-col">
-          <h1 className="text-xl font-black tracking-[0.3em] text-white uppercase leading-none">
-            AZOV
-          </h1>
-          <span className="text-[8px] text-zinc-500 tracking-[0.4em] font-bold mt-1">INTERNAL</span>
-        </div>
+      <div className="fixed top-8 left-8 z-[60] flex items-center select-none pointer-events-none md:pointer-events-auto">
+        <h1 className="text-2xl font-black tracking-[0.3em] text-white uppercase leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+          AZOV
+        </h1>
       </div>
 
       {/* Movable Bar */}
@@ -99,13 +95,26 @@ export default function Dashboard() {
         drag
         dragMomentum={false}
         dragElastic={0.05}
-        className="fixed z-50 top-8 left-1/2 -translate-x-1/2 cursor-grab active:cursor-grabbing group hidden md:block"
+        onDrag={(e, info) => {
+          const { x, y } = info.point;
+          const w = window.innerWidth;
+          const h = window.innerHeight;
+          if (x < 160) setDock({ side: 'left', orientation: 'vertical' });
+          else if (x > w - 160) setDock({ side: 'right', orientation: 'vertical' });
+          else if (y < 160) setDock({ side: 'top', orientation: 'horizontal' });
+          else if (y > h - 160) setDock({ side: 'bottom', orientation: 'horizontal' });
+          else setDock({ side: 'top', orientation: 'horizontal' }); // Default back to top if in middle-ish
+        }}
+        layout
+        className={`fixed z-50 transition-all duration-500 cursor-grab active:cursor-grabbing group hidden md:block ${
+          dock.side === 'left' ? 'top-1/2 left-6 -translate-y-1/2' :
+          dock.side === 'right' ? 'top-1/2 right-6 -translate-y-1/2' :
+          dock.side === 'bottom' ? 'bottom-8 left-1/2 -translate-x-1/2' :
+          'top-8 left-1/2 -translate-x-1/2'
+        }`}
         style={{ touchAction: 'none' }}
       >
-        <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-900/80 backdrop-blur-sm text-[8px] px-2 py-0.5 rounded uppercase tracking-[0.2em] text-zinc-500 border border-zinc-800/50 whitespace-nowrap pointer-events-none">
-          Drag to Reposition
-        </div>
-        <NavTabs activeTab={activeTab} setActiveTab={setActiveTab} accent={accent} isAdmin={session.is_admin} />
+        <NavTabs activeTab={activeTab} setActiveTab={setActiveTab} accent={accent} isAdmin={session.is_admin} orientation={dock.orientation} />
       </motion.div>
 
       {/* Mobile Nav (Static) */}
@@ -113,37 +122,46 @@ export default function Dashboard() {
         <NavTabs activeTab={activeTab} setActiveTab={setActiveTab} accent={accent} isAdmin={session.is_admin} />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 pb-16 pt-12 md:pt-24">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === 'dashboard' && (
-              <DashboardTab session={session} onSettings={() => setShowSettings(true)} accent={accent} announcement={announcement} />
-            )}
-            {activeTab === 'downloads' && (
-              <DownloadsTab accent={accent} session={session} />
-            )}
-            {activeTab === 'cloud-configs' && (
-              <CloudConfigsTab session={session} accent={accent} />
-            )}
-            {activeTab === 'chat' && (
-              <SupportTab session={session} accent={accent} />
-            )}
-            {activeTab === 'panel' && session.is_admin && (
-              <PanelTab
-                accent={accent}
-                session={session}
-                onAnnouncementSaved={async () => setAnnouncement(await getAnnouncement())}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
+      <div className={`relative z-10 transition-all duration-700 ease-in-out ${
+        dock.side === 'left' ? 'md:pl-20' : 
+        dock.side === 'right' ? 'md:pr-20' : 
+        ''
+      }`}>
+        <div className={`max-w-5xl mx-auto px-4 pb-16 transition-all duration-700 ${
+          dock.orientation === 'vertical' ? 'pt-12' : 'pt-12 md:pt-32'
+        }`}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {activeTab === 'dashboard' && (
+                <DashboardTab session={session} onSettings={() => setShowSettings(true)} accent={accent} announcement={announcement} />
+              )}
+              {activeTab === 'downloads' && (
+                <DownloadsTab accent={accent} session={session} />
+              )}
+              {activeTab === 'cloud-configs' && (
+                <CloudConfigsTab session={session} accent={accent} />
+              )}
+              {activeTab === 'chat' && (
+                <SupportTab session={session} accent={accent} />
+              )}
+              {activeTab === 'panel' && session.is_admin && (
+                <PanelTab
+                  accent={accent}
+                  session={session}
+                  onAnnouncementSaved={async () => setAnnouncement(await getAnnouncement())}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
+
 
 
       {showSettings && (
