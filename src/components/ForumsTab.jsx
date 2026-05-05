@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ImagePlus, Send, X, MessagesSquare, Search, MessageCircle } from 'lucide-react';
+import { ImagePlus, Send, X, MessagesSquare, Search, MessageCircle, Trash2, ChevronDown } from 'lucide-react';
 import { getBackendDb } from '@/lib/backend';
 
 const db = getBackendDb();
@@ -24,6 +24,7 @@ export default function ForumsTab({ session, accent }) {
   const [body, setBody] = useState('');
   const [pendingImage, setPendingImage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [openPostId, setOpenPostId] = useState(null);
   const fileInputRef = useRef(null);
   const replyTextByPostRef = useRef({});
   const replyImageByPostRef = useRef({});
@@ -176,6 +177,29 @@ export default function ForumsTab({ session, accent }) {
     }
   }
 
+  async function deletePost(postId) {
+    if (!session?.is_admin) return;
+    try {
+      const related = commentsByPost[postId] || [];
+      await Promise.allSettled(related.map((c) => db.entities.CloudConfig.delete(c.id)));
+      await db.entities.CloudConfig.delete(postId);
+      if (openPostId === postId) setOpenPostId(null);
+      await loadPosts();
+    } catch (err) {
+      alert('Failed to delete post: ' + (err?.message || 'Unknown error'));
+    }
+  }
+
+  async function deleteComment(commentId) {
+    if (!session?.is_admin) return;
+    try {
+      await db.entities.CloudConfig.delete(commentId);
+      await loadPosts();
+    } catch (err) {
+      alert('Failed to delete reply: ' + (err?.message || 'Unknown error'));
+    }
+  }
+
   return (
     <div className="space-y-4 animate-in fade-in zoom-in duration-300">
       {/* Create post */}
@@ -288,7 +312,12 @@ export default function ForumsTab({ session, accent }) {
             </div>
           ) : (
             filteredPosts.map((p) => (
-              <div key={p.id} className="bg-[#111114] border border-zinc-800/60 rounded-3xl p-5">
+              <div
+                key={p.id}
+                className={`bg-[#111114] border border-zinc-800/60 rounded-3xl p-5 transition ${
+                  openPostId === p.id ? 'border-zinc-700/80' : 'hover:border-zinc-700/60'
+                }`}
+              >
                 <div className="flex items-start gap-3">
                   <div className="w-9 h-9 rounded-full overflow-hidden border border-zinc-800 bg-zinc-900 shrink-0">
                     {p.pfp ? (
@@ -300,22 +329,51 @@ export default function ForumsTab({ session, accent }) {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-white text-sm font-bold truncate">{p.title || 'Untitled'}</p>
-                        <p className="text-zinc-500 text-[10px] uppercase tracking-widest">
-                          {p.username} • {new Date(p.created_at).toLocaleString()}
-                        </p>
+                    <button
+                      type="button"
+                      onClick={() => setOpenPostId((cur) => (cur === p.id ? null : p.id))}
+                      className="w-full text-left"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-white text-sm font-bold truncate">{p.title || 'Untitled'}</p>
+                          <p className="text-zinc-500 text-[10px] uppercase tracking-widest">
+                            {p.username} • {new Date(p.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex items-center gap-2 text-zinc-500 text-[10px] uppercase tracking-widest font-bold">
+                            <MessageCircle size={12} />
+                            {(commentsByPost[p.id]?.length || 0)}
+                          </div>
+                          <ChevronDown
+                            size={16}
+                            className={`text-zinc-500 transition ${openPostId === p.id ? 'rotate-180' : ''}`}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    </button>
 
-                    {p.body && (
+                    {session?.is_admin && (
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => deletePost(p.id)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/15 transition text-[11px] font-bold"
+                        >
+                          <Trash2 size={14} />
+                          Delete post
+                        </button>
+                      </div>
+                    )}
+
+                    {openPostId === p.id && p.body && (
                       <p className="text-zinc-300 text-sm mt-3 whitespace-pre-wrap">
                         {p.body}
                       </p>
                     )}
 
-                    {p.image_url && (
+                    {openPostId === p.id && p.image_url && (
                       <img
                         src={p.image_url}
                         alt="Attachment"
@@ -325,14 +383,17 @@ export default function ForumsTab({ session, accent }) {
                     )}
 
                     {/* Comments */}
-                    <div className="mt-5 pt-4 border-t border-zinc-800/60 space-y-3">
-                      <div className="flex items-center gap-2 text-zinc-500 text-[10px] uppercase tracking-widest font-bold">
-                        <MessageCircle size={12} />
-                        {(commentsByPost[p.id]?.length || 0)} Replies
-                      </div>
+                    {openPostId === p.id && (
+                      <div className="mt-5 pt-4 border-t border-zinc-800/60 space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 text-zinc-500 text-[10px] uppercase tracking-widest font-bold">
+                            <MessageCircle size={12} />
+                            {(commentsByPost[p.id]?.length || 0)} Replies
+                          </div>
+                        </div>
 
-                      {(commentsByPost[p.id] || []).map((c) => (
-                        <div key={c.id} className="flex items-start gap-3 bg-[#0c0c0e] border border-zinc-800/60 rounded-2xl p-3">
+                        {(commentsByPost[p.id] || []).map((c) => (
+                          <div key={c.id} className="flex items-start gap-3 bg-[#0c0c0e] border border-zinc-800/60 rounded-2xl p-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden border border-zinc-800 bg-zinc-900 shrink-0">
                             {c.pfp ? (
                               <img src={c.pfp} alt="pfp" className="w-full h-full object-cover" />
@@ -345,7 +406,19 @@ export default function ForumsTab({ session, accent }) {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-3">
                               <p className="text-zinc-300 text-[11px] font-bold truncate">{c.username}</p>
-                              <p className="text-zinc-600 text-[9px] shrink-0">{new Date(c.created_at).toLocaleString()}</p>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <p className="text-zinc-600 text-[9px]">{new Date(c.created_at).toLocaleString()}</p>
+                                {session?.is_admin && (
+                                  <button
+                                    type="button"
+                                    onClick={() => deleteComment(c.id)}
+                                    className="p-1.5 rounded-lg text-zinc-500 hover:text-red-300 hover:bg-red-500/10 transition"
+                                    aria-label="Delete reply"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                             {c.content && (
                               <p className="text-zinc-300 text-sm mt-2 whitespace-pre-wrap">{c.content}</p>
@@ -359,11 +432,11 @@ export default function ForumsTab({ session, accent }) {
                               />
                             )}
                           </div>
-                        </div>
-                      ))}
+                          </div>
+                        ))}
 
-                      {/* Reply box */}
-                      <div className="bg-[#0c0c0e] border border-zinc-800/60 rounded-2xl p-3">
+                        {/* Reply box */}
+                        <div className="bg-[#0c0c0e] border border-zinc-800/60 rounded-2xl p-3">
                         {replyImageByPostRef.current[p.id]?.previewUrl && (
                           <div className="mb-3 relative inline-block">
                             <img
@@ -441,8 +514,9 @@ export default function ForumsTab({ session, accent }) {
                             <Send size={16} />
                           </button>
                         </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
