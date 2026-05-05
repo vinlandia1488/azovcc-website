@@ -14,7 +14,6 @@ import SupportTab from '@/components/SupportTab';
 import ForumsTab from '@/components/ForumsTab';
 import MusicWidget from '@/components/MusicWidget';
 import SettingsModal from '@/components/SettingsModal';
-import BrandingMark from '@/components/BrandingMark';
 
 
 import SeasonalEffects from '@/components/SeasonalEffects';
@@ -30,8 +29,6 @@ export default function Dashboard() {
   const [announcement, setAnnouncement] = useState('');
   const [feedbackActive, setFeedbackActive] = useState(false);
   const [dock, setDock] = useState({ side: 'left', orientation: 'vertical' });
-  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
-  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') !== 'false');
 
 
   const constraintsRef = useRef(null);
@@ -63,16 +60,6 @@ export default function Dashboard() {
     }
     init();
   }, []);
-
-  useEffect(() => {
-    const onStorage = () => {
-      setBrandingAnimation(localStorage.getItem('azov_brandingAnimation') || 'slide');
-      setBrandingShowCc(localStorage.getItem('azov_brandingShowCc') !== 'false');
-    };
-    window.addEventListener('storage', onStorage);
-    onStorage();
-    return () => window.removeEventListener('storage', onStorage);
-  }, [showSettings]);
 
   function handleLogout() {
     clearSession();
@@ -125,7 +112,7 @@ export default function Dashboard() {
 
       <div className="fixed top-8 left-8 z-[60] flex items-center select-none pointer-events-none md:pointer-events-auto">
         <h1 className="text-2xl font-black tracking-[0.3em] text-white uppercase leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-          <BrandingMark animation={brandingAnimation} showCc={brandingShowCc} compact className="inline-block" />
+          AZOV
         </h1>
       </div>
 
