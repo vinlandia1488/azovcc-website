@@ -36,6 +36,20 @@ function badgeStyle(status, accent) {
   };
 }
 
+function detectionBadge(value) {
+  const v = String(value || '').toLowerCase();
+  if (v === 'detected') {
+    return { label: 'DETECTED', color: '#22c55e', border: 'rgba(34,197,94,0.35)', bg: 'rgba(34,197,94,0.10)' };
+  }
+  if (v === 'undetected') {
+    return { label: 'UNDETECTED', color: '#ef4444', border: 'rgba(239,68,68,0.35)', bg: 'rgba(239,68,68,0.10)' };
+  }
+  if (v === 'unsure') {
+    return { label: 'UNSURE', color: '#f59e0b', border: 'rgba(245,158,11,0.35)', bg: 'rgba(245,158,11,0.10)' };
+  }
+  return null;
+}
+
 export default function DownloadsTab({ accent, session }) {
   const [items, setItems] = useState([]);
 
@@ -88,6 +102,7 @@ export default function DownloadsTab({ accent, session }) {
         const isRestricted = isInternal && !hasInternalLicense;
 
         const badge = badgeStyle(item.status, accent);
+        const det = isInternal ? detectionBadge(item.detection_status || 'unsure') : null;
         const disabledPrimary = item.status !== "stable" || !item.file_url || isRestricted;
         const accentText = isLightColor(accent) ? "#000" : "#fff";
         const accentBorder = isLightColor(accent) ? "1px solid #444" : "none";
@@ -119,7 +134,18 @@ export default function DownloadsTab({ accent, session }) {
                   </span>
                 )}
               </div>
-              <p className="text-zinc-600 text-xs">{item.version}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-zinc-600 text-xs">{item.version}</p>
+                {det && !isRestricted && (
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider"
+                    style={{ color: det.color, borderColor: det.border, background: det.bg }}
+                    title="Detection Status (Internal)"
+                  >
+                    {det.label}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {isRestricted ? (

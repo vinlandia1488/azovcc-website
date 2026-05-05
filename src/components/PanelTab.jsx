@@ -15,6 +15,7 @@ import { createLicenseKeyRecord, deleteLicenseKeyRecord, getLicenseKeys } from '
 import {
   createDownloadItem,
   deleteDownloadItem,
+  DETECTION_STATUSES,
   DOWNLOAD_STATUSES,
   getDownloadItems,
   updateDownloadItem,
@@ -75,6 +76,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     name: '',
     version: 'Version 1.0.0',
     status: 'stable',
+    detection_status: '',
     action_label: 'DOWNLOAD',
     file_url: '',
     open_url: '',
@@ -266,6 +268,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
         name: '',
         version: 'Version 1.0.0',
         status: 'stable',
+        detection_status: '',
         action_label: 'DOWNLOAD',
         file_url: '',
         open_url: '',
@@ -782,6 +785,22 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                 </option>
               ))}
             </select>
+            {(newDownload.name || '').toLowerCase().includes('internal') ? (
+              <select
+                value={newDownload.detection_status || 'unsure'}
+                onChange={(e) => setNewDownload((prev) => ({ ...prev, detection_status: e.target.value }))}
+                className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-zinc-500 transition"
+                title="Detection Status (Internal)"
+              >
+                {DETECTION_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="hidden md:block" />
+            )}
             <input
               value={newDownload.action_label}
               onChange={(e) => setNewDownload((prev) => ({ ...prev, action_label: e.target.value }))}
@@ -841,6 +860,22 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                       </option>
                     ))}
                   </select>
+                  {String(item.name || '').toLowerCase().includes('internal') ? (
+                    <select
+                      value={item.detection_status || 'unsure'}
+                      onChange={(e) => updateLocalDownload(item.id, { detection_status: e.target.value })}
+                      className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
+                      title="Detection Status (Internal)"
+                    >
+                      {DETECTION_STATUSES.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="hidden md:block" />
+                  )}
                   <input
                     value={item.action_label || ''}
                     onChange={(e) => updateLocalDownload(item.id, { action_label: e.target.value })}

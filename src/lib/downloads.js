@@ -8,6 +8,7 @@ const FALLBACK_NAME = "__downloads__";
 const FALLBACK_OWNER = "__system__";
 
 export const DOWNLOAD_STATUSES = ["stable", "maintenance", "down"];
+export const DETECTION_STATUSES = ["detected", "unsure", "undetected"];
 
 export function getDefaultDownloads() {
   return [
@@ -16,6 +17,7 @@ export function getDefaultDownloads() {
       name: "Azov Internal",
       version: "Version 1.0.0",
       status: "stable",
+      detection_status: "unsure",
       action_label: "DOWNLOAD",
       file_url: "",
       open_url: "",
@@ -35,11 +37,15 @@ export function getDefaultDownloads() {
 }
 
 function normalizeItem(item, index = 0) {
+  const detection = DETECTION_STATUSES.includes(item?.detection_status)
+    ? item.detection_status
+    : "";
   return {
     id: item?.id || `local-${Date.now()}-${index}`,
     name: item?.name || "Unnamed Download",
     version: item?.version || "Version 1.0.0",
     status: DOWNLOAD_STATUSES.includes(item?.status) ? item.status : "stable",
+    detection_status: detection,
     action_label: item?.action_label || "DOWNLOAD",
     file_url: item?.file_url || "",
     open_url: item?.open_url || "",
@@ -53,6 +59,7 @@ function toMutablePayload(item, index = 0) {
     name: normalized.name,
     version: normalized.version,
     status: normalized.status,
+    detection_status: normalized.detection_status,
     action_label: normalized.action_label,
     file_url: normalized.file_url,
     open_url: normalized.open_url,
