@@ -94,33 +94,18 @@ export default function CloudConfigsTab({ session, accent }) {
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 text-center space-y-8"
+          className="relative z-10 text-center space-y-4"
         >
-          <div className="flex justify-center">
-            <div className="w-24 h-24 rounded-3xl bg-zinc-900/80 border border-white/5 flex items-center justify-center shadow-[0_24px_48px_rgba(0,0,0,0.5)]">
-              <Wrench size={40} className="text-white" />
-            </div>
-          </div>
-          
-          <div className="space-y-3">
+          <div className="space-y-2">
             <h2 className="text-white text-5xl font-black tracking-tighter uppercase italic drop-shadow-2xl">
               Cloud Configs
             </h2>
-            <p className="text-zinc-500 text-[10px] font-black tracking-[0.6em] uppercase">
+            <p className="text-zinc-500 text-xs font-black tracking-[0.4em] uppercase">
               Are Work In Progress
             </p>
           </div>
-
-          <div className="pt-4 flex flex-col items-center gap-4">
-            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl">
-              <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
-              <span className="text-[9px] text-zinc-300 font-bold tracking-widest uppercase">System Under Development</span>
-            </div>
-            <p className="text-zinc-600 text-[9px] font-medium max-w-[280px] leading-relaxed">
-              We are currently overhauling the cloud synchronization engine. This feature will be available in the next major update.
-            </p>
-          </div>
         </motion.div>
+
       </div>
     </div>
   );
