@@ -4,6 +4,7 @@ import { loginUser, registerUser, getSession, ensureAdminExists, getDiscordAuthU
 import { Eye, EyeOff, MessageSquare, CheckCircle2 } from 'lucide-react';
 import PreviewTablesModal from '@/components/PreviewTablesModal';
 import { motion } from 'framer-motion';
+import BrandingMark from '@/components/BrandingMark';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ export default function Auth() {
 
   const [showIntro, setShowIntro] = useState(true);
   const [redirectToDashboard, setRedirectToDashboard] = useState(false);
+  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
+  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') !== 'false');
 
   useEffect(() => {
     const session = getSession();
@@ -55,6 +58,15 @@ export default function Auth() {
     }
 
     return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    const onStorage = () => {
+      setBrandingAnimation(localStorage.getItem('azov_brandingAnimation') || 'slide');
+      setBrandingShowCc(localStorage.getItem('azov_brandingShowCc') !== 'false');
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
   async function handleSubmit(e) {
@@ -98,22 +110,11 @@ export default function Auth() {
             transition={{ duration: 1.4, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
             className="text-center px-6"
           >
-            <div className="text-white font-black tracking-[0.22em] uppercase text-5xl md:text-6xl">
-              <span style={{ textShadow: '0 0 14px rgba(255,255,255,0.08)' }}>AZOV</span>
-              <motion.span
-                className="inline-block text-[#ef4444]"
-                animate={{
-                  filter: [
-                    'drop-shadow(0 0 0 rgba(239,68,68,0))',
-                    'drop-shadow(0 0 16px rgba(239,68,68,0.7))',
-                    'drop-shadow(0 0 30px rgba(239,68,68,0.35))',
-                  ],
-                }}
-                transition={{ duration: 1.3, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                .CC
-              </motion.span>
-            </div>
+            <BrandingMark
+              animation={brandingAnimation}
+              showCc={brandingShowCc}
+              className="text-white font-black tracking-[0.22em] uppercase text-5xl md:text-6xl inline-block"
+            />
           </motion.div>
         </div>
       )}

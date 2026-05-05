@@ -19,6 +19,8 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [currentPreset, setPreset] = useState(() => localStorage.getItem('azov_preset') || 'NONE');
   const [effectAmount, setEffectAmount] = useState(() => parseInt(localStorage.getItem('azov_effectAmount') || '30'));
   const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('azov_effectSpeed') || '5'));
+  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
+  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') !== 'false');
   const [saving, setSaving] = useState(false);
   const [profilePic, setProfilePic] = useState(session.profile_pic || '');
   
@@ -47,6 +49,14 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   useEffect(() => {
     localStorage.setItem('azov_effectSpeed', effectSpeed);
   }, [effectSpeed]);
+
+  useEffect(() => {
+    localStorage.setItem('azov_brandingAnimation', brandingAnimation);
+  }, [brandingAnimation]);
+
+  useEffect(() => {
+    localStorage.setItem('azov_brandingShowCc', brandingShowCc);
+  }, [brandingShowCc]);
 
   async function saveColor() {
     setSaving(true);
@@ -369,6 +379,44 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                     </div>
                   </div>
                 </div>
+               <div className="h-px bg-zinc-800/60" />
+               <div>
+                 <h3 className="text-white text-sm font-semibold mb-4">Branding Animation</h3>
+                 <div className="space-y-4">
+                   <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4 grid grid-cols-2 gap-3">
+                     <div>
+                       <label className="text-zinc-400 text-[10px] uppercase tracking-widest block mb-2">Style</label>
+                       <select
+                         value={brandingAnimation}
+                         onChange={(e) => setBrandingAnimation(e.target.value)}
+                         className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-zinc-500 transition"
+                       >
+                         <option value="off">Off</option>
+                         <option value="slide">Slide (A -&gt; ZOV)</option>
+                         <option value="pulse">Pulse</option>
+                         <option value="wave">Wave</option>
+                         <option value="glitch">Glitch</option>
+                       </select>
+                     </div>
+                     <div className="flex items-end">
+                       <button
+                         type="button"
+                         onClick={() => setBrandingShowCc(!brandingShowCc)}
+                         className={`w-full h-[38px] rounded-xl border text-xs font-bold uppercase tracking-widest transition ${
+                           brandingShowCc
+                             ? 'bg-red-500/10 border-red-500/30 text-red-300'
+                             : 'bg-zinc-900/60 border-zinc-800 text-zinc-500'
+                         }`}
+                       >
+                         {brandingShowCc ? 'With .CC' : 'Without .CC'}
+                       </button>
+                     </div>
+                   </div>
+                   <p className="text-zinc-500 text-[10px]">
+                     Controls AZOV branding animation. Choose Off to disable animation.
+                   </p>
+                 </div>
+               </div>
                <div className="h-px bg-zinc-800/60" />
                <div>
                  <div className="flex items-center justify-between mb-4">
