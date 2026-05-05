@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, LogOut, Check, Lock, ZapOff, Ban, Snowflake, Ghost, Leaf, CreditCard, Palette, Shield, User, ImagePlus } from 'lucide-react';
 import { setSession, upgradeToInternal, changePassword } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
+import BrandingMark from '@/components/BrandingMark';
 
 const db = getBackendDb();
 
@@ -415,6 +416,28 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                    <p className="text-zinc-500 text-[10px]">
                      Controls AZOV branding animation. Choose Off to disable animation.
                    </p>
+                   <div className="grid grid-cols-2 gap-3">
+                     {['off', 'slide', 'pulse', 'wave', 'glitch'].map((style) => (
+                       <button
+                         key={style}
+                         type="button"
+                         onClick={() => setBrandingAnimation(style)}
+                         className={`bg-[#111114] border rounded-2xl p-3 transition text-left ${
+                           brandingAnimation === style
+                             ? 'border-zinc-500'
+                             : 'border-zinc-800/60 hover:border-zinc-700/70'
+                         }`}
+                       >
+                         <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">{style}</p>
+                         <BrandingMark
+                           animation={style}
+                           showCc={brandingShowCc}
+                           className="text-white text-sm font-black tracking-[0.16em] uppercase"
+                           compact
+                         />
+                       </button>
+                     ))}
+                   </div>
                  </div>
                </div>
                <div className="h-px bg-zinc-800/60" />

@@ -14,6 +14,7 @@ import SupportTab from '@/components/SupportTab';
 import ForumsTab from '@/components/ForumsTab';
 import MusicWidget from '@/components/MusicWidget';
 import SettingsModal from '@/components/SettingsModal';
+import BrandingMark from '@/components/BrandingMark';
 
 
 import SeasonalEffects from '@/components/SeasonalEffects';
@@ -29,6 +30,9 @@ export default function Dashboard() {
   const [announcement, setAnnouncement] = useState('');
   const [feedbackActive, setFeedbackActive] = useState(false);
   const [dock, setDock] = useState({ side: 'left', orientation: 'vertical' });
+  const [showIntro, setShowIntro] = useState(true);
+  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
+  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') !== 'false');
 
 
   const constraintsRef = useRef(null);
@@ -60,6 +64,15 @@ export default function Dashboard() {
     }
     init();
   }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    setBrandingAnimation(localStorage.getItem('azov_brandingAnimation') || 'slide');
+    setBrandingShowCc(localStorage.getItem('azov_brandingShowCc') !== 'false');
+    setShowIntro(true);
+    const timeout = setTimeout(() => setShowIntro(false), 1800);
+    return () => clearTimeout(timeout);
+  }, [session]);
 
   function handleLogout() {
     clearSession();
@@ -104,6 +117,15 @@ export default function Dashboard() {
 
   return (
     <div ref={constraintsRef} className="min-h-screen bg-[#07070a] text-white relative overflow-hidden">
+      {showIntro && (
+        <div className="fixed inset-0 z-[220] flex items-center justify-center bg-[#07070a]">
+          <BrandingMark
+            animation={brandingAnimation}
+            showCc={brandingShowCc}
+            className="text-white font-black tracking-[0.22em] uppercase text-5xl md:text-6xl"
+          />
+        </div>
+      )}
       <SeasonalEffects />
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-20 blur-3xl rounded-full"
