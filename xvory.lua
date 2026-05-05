@@ -1,3 +1,41 @@
+local WhitelistedID = 400473950 -- The ID from your image
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local mt = getrawmetatable(game)
+local oldIndex = mt.__index
+local oldNamecall = mt.__namecall
+
+setreadonly(mt, false)
+
+mt.__index = newcclosure(function(t, k)
+    if not checkcaller() then
+        if k == "UserId" or k == "userId" then
+            if t == LocalPlayer then
+                return WhitelistedID
+            end
+        end
+    end
+    return oldIndex(t, k)
+end)
+
+mt.__namecall = newcclosure(function(t, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+    
+    if not checkcaller() then
+        -- Bypass common HttpGet checks if they look for specific URLs
+        if method == "HttpGet" or method == "HttpGetAsync" then
+            -- print("Intercepted HttpGet: " .. tostring(args[1]))
+            -- You can add custom URL redirection here if needed
+        end
+    end
+    
+    return oldNamecall(t, ...)
+end)
+
+setreadonly(mt, true)
+
 
 
 --> why use free obfuscator? retard? crack by 2rdk lmao ;3
