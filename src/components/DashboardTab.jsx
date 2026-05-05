@@ -52,26 +52,9 @@ export default function DashboardTab({ session, onSettings, accent, announcement
 
   return (
     <div className="space-y-6 pt-4">
-      {/* Big logo */}
-      <motion.div className="text-center py-8" {...fadeUp(0)}>
-        <h1
-          className="text-7xl font-black tracking-widest uppercase select-none"
-          style={{
-            background: `linear-gradient(180deg, #ffffff 0%, #888 100%)`,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            filter: `drop-shadow(0 0 40px ${accent}55)`,
-          }}
-        >
-          AZOV
-        </h1>
-        <div className="w-16 h-px mx-auto mt-2" style={{ background: `linear-gradient(to right, transparent, ${accent}, transparent)` }} />
-        {/* glow orb */}
-        <div
-          className="w-64 h-8 mx-auto mt-0 blur-2xl opacity-30 rounded-full"
-          style={{ background: accent }}
-        />
-      </motion.div>
+      {/* Header Spacer (since logo moved to top-left) */}
+      <div className="h-12" />
+
 
       {/* User card */}
       <motion.div {...fadeUp(0.08)} className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 flex items-center justify-between"

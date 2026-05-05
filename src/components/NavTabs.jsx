@@ -1,4 +1,5 @@
-import { Home, CloudUpload, Shield, Download, MessageSquare } from 'lucide-react';
+import { Home, CloudUpload, Shield, Download, MessageSquare, GripVertical } from 'lucide-react';
+
 
 function isLight(hex) {
   const h = (hex || '').replace('#', '');
@@ -21,7 +22,11 @@ export default function NavTabs({ activeTab, setActiveTab, accent, isAdmin }) {
   const visibleTabs = tabs.filter(t => !t.adminOnly || isAdmin);
 
   return (
-    <div className="flex items-center gap-1 bg-[#111114]/80 backdrop-blur border border-zinc-800/60 rounded-full px-2 py-1.5">
+    <div className="flex items-center gap-1 bg-[#111114]/90 backdrop-blur-md border border-zinc-800/60 rounded-full px-2 py-1.5 shadow-2xl">
+      <div className="pl-1 pr-0.5 text-zinc-700 hidden md:block">
+        <GripVertical size={14} />
+      </div>
+
       {visibleTabs.map((tab) => {
         const isActive = activeTab === tab.id;
         const TabIcon = tab.icon;
