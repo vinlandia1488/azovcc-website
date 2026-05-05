@@ -206,7 +206,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
       setManualScriptKey('');
       setNote('');
       await loadData();
+      if (typeof onAction === 'function') onAction();
     } catch (err) {
+
       console.error("Key generation failed:", err);
       setPanelError(err?.message || 'Failed to generate key(s).');
     } finally {
@@ -217,7 +219,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   async function removeLicenseKey(id) {
     await deleteLicenseKeyRecord(id);
     await loadData();
+    if (typeof onAction === 'function') onAction();
   }
+
 
   function toggleReveal(id) {
     setRevealedKeys(prev => ({ ...prev, [id]: !prev[id] }));
@@ -258,7 +262,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
       });
       setPanelError('');
       await loadData();
+      if (typeof onAction === 'function') onAction();
     } catch (error) {
+
       setPanelError(error?.message || 'Failed to create download item.');
     }
   }
@@ -268,7 +274,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
       await updateDownloadItem(item.id, item);
       setPanelError('');
       await loadData();
+      if (typeof onAction === 'function') onAction();
     } catch (error) {
+
       setPanelError(error?.message || 'Failed to save download item.');
     }
   }
@@ -278,7 +286,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
       await deleteDownloadItem(id);
       setPanelError('');
       await loadData();
+      if (typeof onAction === 'function') onAction();
     } catch (error) {
+
       setPanelError(error?.message || 'Failed to delete download item.');
     }
   }
@@ -292,7 +302,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     if (typeof onAnnouncementSaved === 'function') {
       await onAnnouncementSaved();
     }
+    if (typeof onAction === 'function') onAction();
   }
+
 
   function saveConfigTemplates() {
     (async () => {
@@ -302,7 +314,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
           previewConfig,
         });
         setPanelError('');
+        if (typeof onAction === 'function') onAction();
       } catch (error) {
+
         setPanelError(error?.message || 'Failed to save config templates.');
       }
     })();
@@ -313,7 +327,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     if (account.username === 'admin') return;
     await deleteUserAccount(account);
     await loadData();
+    if (typeof onAction === 'function') onAction();
   }
+
 
   async function handleInlineToggleAdmin(account) {
     if (!account?.id) return;
@@ -322,7 +338,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
       await db.entities.Account.update(account.id, { is_admin: !account.is_admin });
       setConfirmAdminTarget(null);
       await loadData();
+      if (typeof onAction === 'function') onAction();
     } catch (err) {
+
       setPanelError(err?.message || 'Failed to update admin status.');
     } finally {
       setPanelWorking(false);
@@ -882,11 +900,12 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
       {tab === 'maintenance' && (() => {
         const isActive = maintenance.active;
-        async function saveMaintenance(patch) {
-          const next = { ...maintenance, ...patch };
-          setMaintenanceState(next);
-          try { await setMaintenance(next); } catch (err) { setPanelError(err?.message || 'Failed to save maintenance settings.'); }
+          try { 
+            await setMaintenance(next); 
+            if (typeof onAction === 'function') onAction();
+          } catch (err) { setPanelError(err?.message || 'Failed to save maintenance settings.'); }
         }
+
         return (
           <div className="space-y-6">
             {/* Status Banner */}

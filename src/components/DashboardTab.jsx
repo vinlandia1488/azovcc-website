@@ -97,9 +97,34 @@ export default function DashboardTab({ session, onSettings, accent, announcement
         style={{ boxShadow: `0 0 0 1px rgba(255,255,255,0.03)` }}
       >
         <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-2">Announcement</p>
-        <p className="text-white text-lg font-semibold">{announcement || 'No announcement yet.'}</p>
-        <div className="mt-3 h-px w-full" style={{ background: `linear-gradient(to right, ${accent}80, transparent)` }} />
+        <div className="text-white text-base font-medium leading-relaxed">
+          {(() => {
+            if (!announcement) return <p className="text-zinc-500 italic">No announcement yet.</p>;
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            const parts = announcement.split(urlRegex);
+            return parts.map((part, i) => {
+              if (part.match(urlRegex)) {
+                const isImage = part.match(/\.(png|jpg|jpeg|gif|webp|svg)(\?.*)?$/i);
+                if (isImage) {
+                  return (
+                    <div key={i} className="my-3 rounded-xl overflow-hidden border border-zinc-800/80 shadow-2xl max-w-lg">
+                      <img src={part} alt="Announcement Image" className="w-full h-auto object-cover" />
+                    </div>
+                  );
+                }
+                return (
+                  <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline break-all">
+                    {part}
+                  </a>
+                );
+              }
+              return <span key={i} className="whitespace-pre-wrap">{part}</span>;
+            });
+          })()}
+        </div>
+        <div className="mt-4 h-px w-full" style={{ background: `linear-gradient(to right, ${accent}80, transparent)` }} />
       </motion.div>
+
 
       {/* Licenses */}
       <motion.div {...fadeUp(0.2)} className="flex flex-col sm:flex-row gap-4">

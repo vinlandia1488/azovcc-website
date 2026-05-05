@@ -23,7 +23,9 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showSettings, setShowSettings] = useState(false);
   const [announcement, setAnnouncement] = useState('');
+  const [feedbackActive, setFeedbackActive] = useState(false);
   const [dock, setDock] = useState({ side: 'left', orientation: 'vertical' });
+
 
   const constraintsRef = useRef(null);
   const barRef = useRef(null);
@@ -81,8 +83,14 @@ export default function Dashboard() {
       setSessionState(updated);
     }
   }
+  
+  function triggerFeedback() {
+    setFeedbackActive(true);
+    setTimeout(() => setFeedbackActive(false), 2000);
+  }
 
   if (!session) return null;
+
 
   if (activeTab === 'panel' && !session.is_admin) {
     setActiveTab('dashboard');
@@ -188,10 +196,10 @@ export default function Dashboard() {
                 <DashboardTab session={session} onSettings={() => setShowSettings(true)} accent={accent} announcement={announcement} />
               )}
               {activeTab === 'downloads' && (
-                <DownloadsTab accent={accent} session={session} />
+                <DownloadsTab accent={accent} session={session} onAction={triggerFeedback} />
               )}
               {activeTab === 'cloud-configs' && (
-                <CloudConfigsTab session={session} accent={accent} />
+                <CloudConfigsTab session={session} accent={accent} onAction={triggerFeedback} />
               )}
               {activeTab === 'chat' && (
                 <SupportTab session={session} accent={accent} />
@@ -200,7 +208,11 @@ export default function Dashboard() {
                 <PanelTab
                   accent={accent}
                   session={session}
-                  onAnnouncementSaved={async () => setAnnouncement(await getAnnouncement())}
+                  onAnnouncementSaved={async () => {
+                    setAnnouncement(await getAnnouncement());
+                    triggerFeedback();
+                  }}
+                  onAction={triggerFeedback}
                 />
               )}
             </motion.div>
@@ -208,16 +220,30 @@ export default function Dashboard() {
         </div>
       </div>
 
-
+      {/* Global Feedback Toast */}
+      <AnimatePresence>
+        {feedbackActive && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 20, x: '-50%' }}
+            className="fixed bottom-12 left-1/2 z-[100] bg-zinc-900/90 border border-zinc-800/60 backdrop-blur-md px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3"
+          >
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-white text-xs font-bold tracking-widest uppercase">Change applied!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {showSettings && (
         <SettingsModal
           session={session}
           onClose={() => setShowSettings(false)}
-          onSaved={refreshSession}
+          onSaved={() => { refreshSession(); triggerFeedback(); }}
           onLogout={handleLogout}
         />
       )}
+
     </div>
   );
 }
