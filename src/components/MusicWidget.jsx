@@ -51,7 +51,9 @@ export default function MusicWidget({ accent }) {
         <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5 cursor-grab active:cursor-grabbing">
           <div className="flex items-center gap-2">
             <GripHorizontal size={14} className="text-zinc-600" />
-            <span className="text-[10px] font-black tracking-[0.2em] text-zinc-500 uppercase">Music Player</span>
+            {!isExpanded && (
+              <span className="text-[10px] font-black tracking-[0.2em] text-zinc-500 uppercase">Music Player</span>
+            )}
           </div>
 
           <div className="flex items-center gap-1">

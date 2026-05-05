@@ -83,7 +83,7 @@ export async function getSpotifyUrl() {
   });
   const row = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
   // Default playlist to avoid "No tracks linked" on first load
-  return String(row?.content || "https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM3M");
+  return String(row?.content || "https://open.spotify.com/playlist/3CZnfcDJ9k7haY23nZKON6?si=RYq1WRCXRUGeMoYXrYf7tA");
 }
 
 
