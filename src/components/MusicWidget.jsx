@@ -6,12 +6,14 @@ import {
   Volume2, X, GripHorizontal, Search, List
 } from 'lucide-react';
 import { getSpotifyUrl } from '@/lib/app-settings';
+import { useNavigate } from 'react-router-dom';
 
 export default function MusicWidget({ accent }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [spotifyUrl, setSpotifyUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const widgetRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function load() {
@@ -98,27 +100,27 @@ export default function MusicWidget({ accent }) {
         {/* Mini Controls (Visible only when collapsed) */}
         {!isExpanded && !loading && spotifyUrl && (
           <div className="absolute inset-0 top-8 pointer-events-none flex items-center px-4">
-            <div className="flex items-center justify-between w-full">
+            <div className="w-full">
+              <div className="w-full bg-black/35 border border-white/5 rounded-2xl px-3 py-2 flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-                  <a 
-                    href={spotifyUrl.replace('/embed/', '/')} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => navigate('/add-track')}
                     className="text-zinc-400 hover:text-white text-[10px] font-black uppercase tracking-[0.1em] transition"
                   >
                     ADD TRACK
-                  </a>
+                  </button>
                 </div>
               </div>
               <div className="flex items-center gap-2 pointer-events-auto">
                 <button
                   onClick={() => setIsExpanded(true)}
-                  className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-lg"
+                  className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-lg"
                 >
                   <Play size={16} className="ml-0.5" fill="currentColor" />
                 </button>
+              </div>
               </div>
             </div>
           </div>

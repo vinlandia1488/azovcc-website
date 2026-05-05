@@ -10,6 +10,7 @@ import { getBackendDb } from '@/lib/backend';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
+import AddTrack from './pages/AddTrack';
 import MaintenanceScreen from '@/components/MaintenanceScreen';
 import { getMaintenance } from '@/lib/app-settings';
 // Add page imports here
@@ -86,6 +87,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<Auth />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/add-track" element={<AddTrack />} />
       {/* Hidden route /dist/v1/auth/0x7b2a9f4c3d8e1a6b is handled by vercel.json -> api/auth.js */}
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
