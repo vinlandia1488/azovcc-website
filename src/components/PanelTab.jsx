@@ -896,12 +896,17 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
             className="w-full min-h-[120px] bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition resize-none"
           />
           <button
-            onClick={saveAnnouncementValue}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg"
+            onClick={async () => {
+              setPanelWorking(true);
+              await saveAnnouncementValue();
+              setPanelWorking(false);
+            }}
+            disabled={panelWorking}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg disabled:opacity-50"
             style={{ background: accent, color: accentText, border: accentBorder }}
           >
             <Save size={13} />
-            Save Announcement
+            {panelWorking ? 'SAVING...' : 'Save Announcement'}
           </button>
         </div>
       )}
@@ -928,12 +933,17 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
 
           <button
-            onClick={saveConfigTemplates}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg"
+            onClick={async () => {
+              setPanelWorking(true);
+              await saveConfigTemplates();
+              setPanelWorking(false);
+            }}
+            disabled={panelWorking}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg disabled:opacity-50"
             style={{ background: accent, color: accentText, border: accentBorder }}
           >
             <Save size={13} />
-            Save Config Templates
+            {panelWorking ? 'SAVING...' : 'Save Config Templates'}
           </button>
         </div>
       )}
@@ -953,12 +963,17 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
             <p className="text-zinc-500 text-[10px] mt-2">Paste a Spotify Playlist, Album, or Track link. It will automatically convert to an embed.</p>
           </div>
           <button
-            onClick={saveConfigTemplates}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg"
+            onClick={async () => {
+              setPanelWorking(true);
+              await saveConfigTemplates();
+              setPanelWorking(false);
+            }}
+            disabled={panelWorking}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg disabled:opacity-50"
             style={{ background: accent, color: accentText, border: accentBorder }}
           >
             <Save size={13} />
-            Update Player
+            {panelWorking ? 'SAVING...' : 'Update Player'}
           </button>
         </div>
       )}

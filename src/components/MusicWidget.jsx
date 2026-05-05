@@ -52,7 +52,7 @@ export default function MusicWidget({ accent }) {
           <div className="flex items-center gap-2">
             <GripHorizontal size={14} className="text-zinc-600" />
             {!isExpanded && (
-              <span className="text-[10px] font-black tracking-[0.2em] text-zinc-500 uppercase">Music Player</span>
+              <span className="text-[10px] font-black tracking-[0.2em] text-zinc-500 uppercase">Music</span>
             )}
           </div>
 
@@ -102,7 +102,14 @@ export default function MusicWidget({ accent }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-                  <p className="text-white text-[11px] font-bold truncate">Player</p>
+                  <a 
+                    href={spotifyUrl.replace('/embed/', '/')} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-zinc-400 hover:text-white text-[9px] font-bold uppercase tracking-widest transition"
+                  >
+                    Open Spotify
+                  </a>
                 </div>
               </div>
               <div className="flex items-center gap-2 pointer-events-auto">
