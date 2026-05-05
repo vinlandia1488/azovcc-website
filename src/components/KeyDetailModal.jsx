@@ -38,9 +38,11 @@ export default function KeyDetailModal({ keyRecord, onClose, accent, onUpdate, a
             if (parts.length >= 5)
               discordInfoPacked = '|+|' + (parts[2] || '') + '|+|' + (parts[3] || '') + '|+|' + (parts[4] || '');
           }
+          const scriptLicense = user.script_license || '';
           await db.entities.Account.update(user.id, {
             internal_license: newInternal,
-            license_key: newInternal + '|+|' + (user.script_license || '') + discordInfoPacked,
+            script_license: scriptLicense,
+            license_key: newInternal + '|+|' + scriptLicense + discordInfoPacked,
           });
         }
       }

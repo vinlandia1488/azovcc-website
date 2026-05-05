@@ -102,9 +102,11 @@ export default function UserDetailModal({ user, onClose, accent, onUpdate }) {
         if (parts.length >= 5)
           discordInfoPacked = '|+|' + (parts[2] || '') + '|+|' + (parts[3] || '') + '|+|' + (parts[4] || '');
       }
+      const scriptLicense = u.script_license || '';
       await db.entities.Account.update(u.id, {
         internal_license: key,
-        license_key: key + '|+|' + (u.script_license || '') + discordInfoPacked,
+        script_license: scriptLicense,
+        license_key: key + '|+|' + scriptLicense + discordInfoPacked,
       });
       setManualLicenseInput('');
       if (onUpdate) await onUpdate();

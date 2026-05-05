@@ -59,12 +59,12 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   const [tab, setTab] = useState('keys'); // 'keys' | 'users' | 'downloads' | 'announcement' | 'support'
   const [revealedKeys, setRevealedKeys] = useState({});
   const [downloads, setDownloads] = useState([]);
-  const [supportMessages, setSupportMessages] = useState([]);
+  const [downloads, setDownloads] = useState([]);
   const [announcement, setAnnouncementState] = useState('');
   const [defaultCloudConfig, setDefaultCloudConfigState] = useState('');
   const [previewConfig, setPreviewConfigState] = useState('');
   const [selectedUser, setSelectedUser] = useState(null); // For detail modal
-  const [activeSupportUser, setActiveSupportUser] = useState(null); // For support chat
+  const [selectedUser, setSelectedUser] = useState(null); // For detail modal
   const [note, setNote] = useState('');
   const [newKeyType, setNewKeyType] = useState('script');
   const [manualInternalKey, setManualInternalKey] = useState('');
@@ -149,22 +149,6 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     setDownloads(downloadsResult.status === 'fulfilled' ? (downloadsResult.value || []) : []);
     setAnnouncementState(announcementResult.status === 'fulfilled' ? announcementResult.value : '');
     try { const m = await getMaintenance(); setMaintenanceState(m); } catch {}
-    
-    // Fetch support messages from CloudConfig
-    try {
-      const supportRows = await db.entities.CloudConfig.filter({ name: "__SUPPORT_MSG__" });
-      const parsed = (supportRows || []).map(r => {
-        try {
-          return { ...JSON.parse(r.content), id: r.id, owner_username: r.owner_username, created_at: r.created_date };
-        } catch {
-          return null;
-        }
-      }).filter(Boolean);
-      setSupportMessages(parsed);
-    } catch (e) {
-      console.error("Failed to load support messages from CloudConfig", e);
-      setSupportMessages([]);
-    }
 
     const templates = await getConfigTemplatesShared();
     setDefaultCloudConfigState(String(templates.defaultCloudConfig || getDefaultCloudConfig()));
@@ -205,11 +189,11 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
         setBulkScriptKeys('');
       } else {
-        const internalKey = newKeyType === 'internal' ? (manualInternalKey || generateInternalLicense()).trim() : '';
-        const scriptKey = (manualScriptKey || generateScriptLicense()).trim();
+        const internalKey = (newKeyType === 'internal' || newKeyType === 'internal_only') ? (manualInternalKey || generateInternalLicense()).trim() : '';
+        const scriptKey = newKeyType === 'internal_only' ? internalKey : (manualScriptKey || generateScriptLicense()).trim();
         
         const payload = {
-          type: newKeyType,
+          type: (newKeyType === 'internal' || newKeyType === 'internal_only') ? 'internal' : 'script',
           internal_key: internalKey,
           script_key: scriptKey,
           key: scriptKey,
@@ -369,7 +353,6 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
           {id: 'downloads', label: 'Downloads', icon: Download },
           { id: 'announcement', label: 'Announcement', icon: Megaphone },
           { id: 'configs', label: 'Configs', icon: FileText },
-          { id: 'support', label: 'Support', icon: MessageSquare },
           { id: 'maintenance', label: 'Maintenance', icon: Wrench },
         ].map(t => (
           <button
@@ -397,6 +380,12 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                   className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${newKeyType === 'script' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:bg-zinc-800/40'}`}
                 >
                   SCRIPT ONLY
+                </button>
+                <button 
+                  onClick={() => setNewKeyType('internal_only')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${newKeyType === 'internal_only' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:bg-zinc-800/40'}`}
+                >
+                  INTERNAL ONLY
                 </button>
                 <button 
                   onClick={() => setNewKeyType('internal')}
@@ -438,7 +427,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                     disabled={newKeyType === 'script'}
                     className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm disabled:opacity-30 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
                   />
-                  {newKeyType === 'internal' && (
+                  {(newKeyType === 'internal' || newKeyType === 'internal_only') && (
                     <button
                       onClick={() => setManualInternalKey(generateInternalLicense())}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white"
@@ -452,14 +441,17 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                     value={manualScriptKey}
                     onChange={(e) => setManualScriptKey(e.target.value)}
                     placeholder="Script Key (Auto)"
-                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                    disabled={newKeyType === 'internal_only'}
+                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 disabled:opacity-30"
                   />
-                  <button
-                    onClick={() => setManualScriptKey(generateScriptLicense())}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white"
-                  >
-                    <Shuffle size={14} />
-                  </button>
+                  {newKeyType !== 'internal_only' && (
+                    <button
+                      onClick={() => setManualScriptKey(generateScriptLicense())}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white"
+                    >
+                      <Shuffle size={14} />
+                    </button>
+                  )}
                 </div>
                 <div className="col-span-4">
                   <input
@@ -887,213 +879,6 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
             <Save size={13} />
             Save Config Templates
           </button>
-        </div>
-      )}
-      {tab === 'support' && (
-        <div className="flex bg-[#111114] border border-zinc-800/60 rounded-2xl overflow-hidden h-[600px] shadow-2xl">
-          
-          <div className="w-72 border-r border-zinc-800/60 flex flex-col bg-[#0c0c0e]/50">
-            <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20">
-              <h3 className="text-white text-[10px] font-bold uppercase tracking-widest text-zinc-500">Active Support</h3>
-            </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
-              {Array.from(new Set(supportMessages.map(m => m.owner_username))).map(uid => {
-                const userMsgs = supportMessages.filter(m => m.owner_username === uid);
-                const lastMsg = userMsgs[userMsgs.length - 1];
-                const unreadCount = userMsgs.filter(m => !m.is_read && m.sender_type === 'user').length;
-                const isActive = activeSupportUser?.username === uid;
-                const userData = accounts.find(a => String(a.username) === uid);
-                
-                return (
-                  <button 
-                    key={uid}
-                    onClick={() => setActiveSupportUser(userData || { username: uid })}
-                    className={`w-full p-4 text-left border-b border-zinc-800/20 transition group relative ${isActive ? 'bg-zinc-800/40' : 'hover:bg-zinc-800/20'}`}
-                  >
-                    {isActive && <div className="absolute left-0 top-2 bottom-2 w-1 bg-white rounded-r-full" style={{ background: accent }} />}
-                    <div className="flex justify-between items-center mb-1">
-                      <span className={`text-sm font-bold truncate ${isActive ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'}`}>
-                        @{uid} <span className="text-[9px] opacity-40 ml-1">#{String(userData?.unique_identifier || 0).padStart(3, '0')}</span>
-                      </span>
-                      {unreadCount > 0 && (
-                        <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <p className="text-zinc-500 text-[10px] truncate max-w-[140px]">
-                        {lastMsg?.content || (lastMsg?.image_url ? 'Sent an image' : 'Empty message')}
-                      </p>
-                      <span className="text-[9px] text-zinc-600 shrink-0">
-                        {new Date(lastMsg?.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-              {supportMessages.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full p-8 text-center opacity-20">
-                  <MessageSquare size={32} className="mb-2" />
-                  <p className="text-xs italic">No support tickets.</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          
-          <div className="flex-1 flex flex-col bg-[#0c0c0e]/30 relative">
-            {activeSupportUser ? (
-              <>
-                <div className="p-4 border-b border-zinc-800/60 flex items-center justify-between bg-zinc-900/40 backdrop-blur-md">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 border border-zinc-700/50">
-                      <User size={16} />
-                    </div>
-                    <div>
-                      <span className="text-white text-sm font-bold">Support: {activeSupportUser.username}</span>
-                      <p className="text-green-500 text-[9px] font-medium tracking-wide uppercase">Active Conversation</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button 
-                      onClick={() => openUserDetails(activeSupportUser)}
-                      className="text-zinc-500 hover:text-white transition p-2 bg-zinc-800/50 rounded-lg border border-zinc-700/50"
-                      title="View User Profile"
-                    >
-                      <ExternalLink size={16} />
-                    </button>
-                    <button onClick={() => setActiveSupportUser(null)} className="text-zinc-500 hover:text-white transition p-2">
-                      <X size={16} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar scroll-smooth">
-                  {supportMessages
-                    .filter(m => m.owner_username === activeSupportUser.username)
-                    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-                    .map((m, idx) => {
-                      const isAdminMsg = m.sender_type === 'admin';
-                      return (
-                        <div key={m.id || idx} className={`flex ${isAdminMsg ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`flex gap-3 max-w-[80%] ${isAdminMsg ? 'flex-row-reverse' : 'flex-row'}`}>
-                            <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center border ${isAdminMsg ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-900 border-zinc-800'}`}>
-                              {isAdminMsg ? <Shield size={14} className="text-blue-400" /> : <User size={14} className="text-zinc-400" />}
-                            </div>
-                            <div className="space-y-1.5">
-                              <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-                                isAdminMsg 
-                                  ? 'bg-zinc-800 text-white rounded-tr-none shadow-lg' 
-                                  : 'bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-tl-none'
-                              }`}>
-                                {m.content && <p>{m.content}</p>}
-                                {m.image_url && (
-                                  <div className="mt-2 rounded-xl overflow-hidden border border-zinc-700/50 shadow-inner">
-                                    <img 
-                                      src={m.image_url} 
-                                      className="max-w-full max-h-80 object-contain cursor-pointer hover:opacity-90 transition" 
-                                      onClick={() => window.open(m.image_url, '_blank')}
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                              <div className={`flex items-center gap-1.5 text-[9px] text-zinc-600 ${isAdminMsg ? 'justify-end' : 'justify-start'}`}>
-                                <Clock size={10} />
-                                {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-
-                <div className="p-6 border-t border-zinc-800/60 bg-zinc-900/60 backdrop-blur-sm">
-                  <form 
-                    onSubmit={async (e) => {
-                      e.preventDefault();
-                      const form = e.target;
-                      const msgInput = form.reply;
-                      const fileInput = form.file;
-                      const content = msgInput.value.trim();
-                      const file = fileInput.files[0];
-
-                      if (!content && !file) return;
-
-                      let imageUrl = '';
-                      if (file) {
-                        try {
-                          const upload = await db.integrations.Core.UploadFile({ file });
-                          imageUrl = upload.file_url;
-                        } catch (err) {
-                          alert("Upload failed, but sending message...");
-                        }
-                      }
-
-                      const payload = {
-                        username: 'Staff',
-                        content,
-                        image_url: imageUrl,
-                        sender_type: 'admin',
-                        is_read: true,
-                        created_at: new Date().toISOString()
-                      };
-
-                      await db.entities.CloudConfig.create({
-                        owner_username: activeSupportUser.username,
-                        name: "__SUPPORT_MSG__",
-                        content: JSON.stringify(payload)
-                      });
-                      
-                      form.reset();
-                      await loadData();
-                    }}
-                    className="flex flex-col gap-3"
-                  >
-                    <div className="flex gap-3">
-                      <div className="relative flex-1">
-                        <textarea 
-                          name="reply"
-                          rows="1"
-                          placeholder={`Message @${activeSupportUser.username}`}
-                          className="w-full bg-[#111114] border border-zinc-800/60 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition resize-none"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              e.target.form.requestSubmit();
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <label className="w-12 h-12 bg-zinc-800 border border-zinc-700 rounded-xl flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-500 cursor-pointer transition">
-                          <ImageIcon size={20} />
-                          <input type="file" name="file" className="hidden" accept="image/*" />
-                        </label>
-                        <button 
-                          type="submit"
-                          className="w-12 h-12 rounded-xl flex items-center justify-center transition shadow-lg"
-                          style={{ background: accent }}
-                        >
-                          <Send size={18} style={{ color: isLightColor(accent) ? '#000' : '#fff' }} />
-                        </button>
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-zinc-600 text-center">Images are uploaded directly to the server.</p>
-                  </form>
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center opacity-20">
-                <div className="w-24 h-24 rounded-full bg-zinc-800/50 flex items-center justify-center mb-6">
-                  <MessageSquare size={48} />
-                </div>
-                <h4 className="text-white text-lg font-bold mb-2">Support Center</h4>
-                <p className="text-zinc-400 text-sm">Select a user conversation from the left to begin.</p>
-              </div>
-            )}
-          </div>
         </div>
       )}
 

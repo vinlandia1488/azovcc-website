@@ -192,12 +192,10 @@ export function normalizeAccountDiscordLink(account) {
     }
     raw.internal_license = parts[0] || raw.internal_license;
     raw.script_license = parts[1] || raw.script_license;
-    raw.license_key = raw.internal_license || raw.script_license;
   } else if (rawLicense.includes("|")) {
     const parts = rawLicense.split("|");
     raw.internal_license = parts[0] || raw.internal_license;
     raw.script_license = parts[1] || raw.script_license;
-    raw.license_key = raw.internal_license || raw.script_license;
   }
 
   const discord_id = packedId !== undefined && packedId !== null && packedId !== "" ? String(packedId) : "";
@@ -262,10 +260,15 @@ export async function upgradeToInternal(username, internalKey) {
   const updated = {
     ...account,
     internal_license: row.internal_key,
-    license_key: row.internal_key + "|+|" + (account.script_license || "") + discordInfoPacked,
+    script_license: row.script_key || account.script_license,
+    license_key: row.internal_key + "|+|" + (row.script_key || account.script_license || "") + discordInfoPacked,
   };
 
-  await db.entities.Account.update(account.id, updated);
+  await db.entities.Account.update(account.id, {
+    internal_license: updated.internal_license,
+    script_license: updated.script_license,
+    license_key: updated.license_key
+  });
   setSession(normalizeSessionAccount(updated));
   return updated;
 }
