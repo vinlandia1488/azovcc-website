@@ -8,7 +8,7 @@ const FALLBACK_NAME = "__downloads__";
 const FALLBACK_OWNER = "__system__";
 
 export const DOWNLOAD_STATUSES = ["stable", "maintenance", "down"];
-export const DETECTION_STATUSES = ["detected", "unsure", "undetected"];
+export const DETECTION_STATUSES = ["UNSURE", "DETECTED", "UNDETECTED"];
 
 export function getDefaultDownloads() {
   return [
@@ -17,7 +17,7 @@ export function getDefaultDownloads() {
       name: "Azov Internal",
       version: "Version 1.0.0",
       status: "stable",
-      detection_status: "unsure",
+      detection_status: "UNSURE",
       action_label: "DOWNLOAD",
       file_url: "",
       open_url: "",
@@ -36,10 +36,8 @@ export function getDefaultDownloads() {
   ];
 }
 
-function normalizeItem(item, index = 0) {
-  const detection = DETECTION_STATUSES.includes(item?.detection_status)
-    ? item.detection_status
-    : "";
+  const rawDet = String(item?.detection_status || '').toUpperCase();
+  const detection = DETECTION_STATUSES.includes(rawDet) ? rawDet : DETECTION_STATUSES[0];
   return {
     id: item?.id || `local-${Date.now()}-${index}`,
     name: item?.name || "Unnamed Download",

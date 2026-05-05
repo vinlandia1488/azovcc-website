@@ -37,15 +37,15 @@ function badgeStyle(status, accent) {
 }
 
 function detectionBadge(value) {
-  const v = String(value || '').toLowerCase();
-  if (v === 'detected') {
-    return { label: 'Detection status: detected', color: '#22c55e', border: 'rgba(34,197,94,0.35)', bg: 'rgba(34,197,94,0.10)' };
+  const v = String(value || '').toUpperCase();
+  if (v === 'DETECTED') {
+    return { label: 'DETECTION STATUS: DETECTED', color: '#22c55e', border: 'rgba(34,197,94,0.35)', bg: 'rgba(34,197,94,0.10)' };
   }
-  if (v === 'undetected') {
-    return { label: 'Detection status: undetected', color: '#ef4444', border: 'rgba(239,68,68,0.35)', bg: 'rgba(239,68,68,0.10)' };
+  if (v === 'UNDETECTED') {
+    return { label: 'DETECTION STATUS: UNDETECTED', color: '#ef4444', border: 'rgba(239,68,68,0.35)', bg: 'rgba(239,68,68,0.10)' };
   }
-  if (v === 'unsure') {
-    return { label: 'Detection status: unsure', color: '#f59e0b', border: 'rgba(245,158,11,0.35)', bg: 'rgba(245,158,11,0.10)' };
+  if (v === 'UNSURE') {
+    return { label: 'DETECTION STATUS: UNSURE', color: '#f59e0b', border: 'rgba(245,158,11,0.35)', bg: 'rgba(245,158,11,0.10)' };
   }
   return null;
 }
