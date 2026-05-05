@@ -138,13 +138,13 @@ export default function MusicWidget({ accent }) {
           const rect = el.getBoundingClientRect();
           const vw = window.innerWidth;
           const vh = window.innerHeight;
-          const threshold = 90; // how close to edge before hiding (more forgiving)
+          const threshold = 120; // how close to edge before hiding (very forgiving)
 
           let edge = null;
-          if (rect.right < threshold) edge = 'left';
-          else if (rect.left > vw - threshold) edge = 'right';
-          else if (rect.bottom < threshold) edge = 'top';
-          else if (rect.top > vh - threshold) edge = 'bottom';
+          if (rect.left < threshold) edge = 'left';
+          else if (rect.right > vw - threshold) edge = 'right';
+          else if (rect.top < threshold) edge = 'top';
+          else if (rect.bottom > vh - threshold) edge = 'bottom';
 
           if (edge) {
             setHiddenEdge(edge);
