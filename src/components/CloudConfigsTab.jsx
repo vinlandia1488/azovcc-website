@@ -241,5 +241,6 @@ export default function CloudConfigsTab({ session, accent }) {
         </div>
       </div>
     </div>
+    </div>
   );
 }
