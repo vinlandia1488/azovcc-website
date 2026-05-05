@@ -126,7 +126,7 @@ export default function Auth() {
         discord
       </a>
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] h-[640px] bg-red-500/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] h-[640px] bg-black/40 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full max-w-[420px] mx-4">
