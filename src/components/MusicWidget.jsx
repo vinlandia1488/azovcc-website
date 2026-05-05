@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion';
 import {
   Play, Pause, SkipBack, SkipForward,
   Maximize2, Minimize2, Music,
@@ -12,6 +12,48 @@ export default function MusicWidget({ accent }) {
   const [spotifyUrl, setSpotifyUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const widgetRef = useRef(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const [isHidden, setIsHidden] = useState(false);
+  const [hiddenEdge, setHiddenEdge] = useState('right'); // 'left' | 'right' | 'top' | 'bottom'
+
+  function snapIntoView(edge) {
+    const el = widgetRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const margin = 16;
+
+    let dx = 0;
+    let dy = 0;
+    if (edge === 'left') dx = (margin - rect.left);
+    if (edge === 'right') dx = (vw - margin - rect.right);
+    if (edge === 'top') dy = (margin - rect.top);
+    if (edge === 'bottom') dy = (vh - margin - rect.bottom);
+
+    animate(x, x.get() + dx, { type: 'spring', stiffness: 380, damping: 34 });
+    animate(y, y.get() + dy, { type: 'spring', stiffness: 380, damping: 34 });
+  }
+
+  function snapHidden(edge) {
+    const el = widgetRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const visibleHandle = 14;
+
+    let dx = 0;
+    let dy = 0;
+    if (edge === 'left') dx = (visibleHandle - rect.right);
+    if (edge === 'right') dx = ((vw - visibleHandle) - rect.left);
+    if (edge === 'top') dy = (visibleHandle - rect.bottom);
+    if (edge === 'bottom') dy = ((vh - visibleHandle) - rect.top);
+
+    animate(x, x.get() + dx, { type: 'spring', stiffness: 420, damping: 38 });
+    animate(y, y.get() + dy, { type: 'spring', stiffness: 420, damping: 38 });
+  }
 
   useEffect(() => {
     async function load() {
@@ -36,13 +78,81 @@ export default function MusicWidget({ accent }) {
   }, []);
 
   return (
-    <motion.div
-      drag
-      dragMomentum={false}
-      initial={{ x: 0, y: 0 }}
-      className="fixed top-8 right-8 z-[100] cursor-default pointer-events-auto"
-      style={{ touchAction: 'none' }}
-    >
+    <>
+      {/* Edge handle shown when player is hidden off-screen */}
+      {isHidden && (
+        <div
+          className="fixed z-[120]"
+          style={{
+            left: hiddenEdge === 'left' ? 0 : undefined,
+            right: hiddenEdge === 'right' ? 0 : undefined,
+            top: hiddenEdge === 'top' ? 0 : hiddenEdge === 'bottom' ? undefined : '50%',
+            bottom: hiddenEdge === 'bottom' ? 0 : undefined,
+            transform:
+              hiddenEdge === 'left' || hiddenEdge === 'right'
+                ? 'translateY(-50%)'
+                : undefined,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setIsHidden(false);
+              snapIntoView(hiddenEdge);
+            }}
+            className={`pointer-events-auto ${
+              hiddenEdge === 'left' || hiddenEdge === 'right'
+                ? 'w-[14px] h-[84px]'
+                : 'h-[14px] w-[84px]'
+            } bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-xl transition`}
+            style={{
+              borderRadius: 0,
+              ...(hiddenEdge === 'left'
+                ? { borderTopRightRadius: 14, borderBottomRightRadius: 14 }
+                : {}),
+              ...(hiddenEdge === 'right'
+                ? { borderTopLeftRadius: 14, borderBottomLeftRadius: 14 }
+                : {}),
+              ...(hiddenEdge === 'top'
+                ? { borderBottomLeftRadius: 14, borderBottomRightRadius: 14 }
+                : {}),
+              ...(hiddenEdge === 'bottom'
+                ? { borderTopLeftRadius: 14, borderTopRightRadius: 14 }
+                : {}),
+            }}
+            aria-label="Show music player"
+          />
+        </div>
+      )}
+
+      <motion.div
+        ref={widgetRef}
+        drag
+        dragMomentum={false}
+        initial={{ x: 0, y: 0 }}
+        className="fixed top-8 right-8 z-[100] cursor-default pointer-events-auto"
+        style={{ touchAction: 'none', x, y, opacity: isHidden ? 0 : 1, pointerEvents: isHidden ? 'none' : 'auto' }}
+        onDragEnd={() => {
+          const el = widgetRef.current;
+          if (!el) return;
+          const rect = el.getBoundingClientRect();
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          const threshold = 24; // how far off-screen before hiding
+
+          let edge = null;
+          if (rect.right < threshold) edge = 'left';
+          else if (rect.left > vw - threshold) edge = 'right';
+          else if (rect.bottom < threshold) edge = 'top';
+          else if (rect.top > vh - threshold) edge = 'bottom';
+
+          if (edge) {
+            setHiddenEdge(edge);
+            setIsHidden(true);
+            snapHidden(edge);
+          }
+        }}
+      >
 
 
       <div className={`relative flex flex-col bg-[#111114]/90 backdrop-blur-xl border border-zinc-800/60 rounded-[2rem] shadow-2xl overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'w-[400px] h-[600px]' : 'w-[280px] h-[92px]'}`}>
@@ -80,7 +190,7 @@ export default function MusicWidget({ accent }) {
                 width="100%"
                 height="100%"
                 frameBorder="0"
-                allowFullScreen=""
+                allowFullScreen
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                 loading="lazy"
                 className="rounded-2xl"
@@ -122,6 +232,7 @@ export default function MusicWidget({ accent }) {
 
 
       </div>
-    </motion.div>
+      </motion.div>
+    </>
   );
 }
