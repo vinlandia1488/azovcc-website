@@ -18,7 +18,7 @@ import {
   getDownloadItems,
   updateDownloadItem,
 } from '@/lib/downloads';
-import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, MessageSquare, Send, Image as ImageIcon, X, Clock, Shield, User, Search, Wrench, AlertTriangle, CalendarClock, StopCircle } from 'lucide-react';
+import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, Shield, User, Search, Wrench, CalendarClock, StopCircle } from 'lucide-react';
 import UserDetailModal from '@/components/UserDetailModal';
 import KeyDetailModal from '@/components/KeyDetailModal';
 
@@ -59,11 +59,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   const [tab, setTab] = useState('keys'); // 'keys' | 'users' | 'downloads' | 'announcement' | 'support'
   const [revealedKeys, setRevealedKeys] = useState({});
   const [downloads, setDownloads] = useState([]);
-  const [downloads, setDownloads] = useState([]);
   const [announcement, setAnnouncementState] = useState('');
   const [defaultCloudConfig, setDefaultCloudConfigState] = useState('');
   const [previewConfig, setPreviewConfigState] = useState('');
-  const [selectedUser, setSelectedUser] = useState(null); // For detail modal
   const [selectedUser, setSelectedUser] = useState(null); // For detail modal
   const [note, setNote] = useState('');
   const [newKeyType, setNewKeyType] = useState('script');
