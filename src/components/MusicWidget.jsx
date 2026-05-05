@@ -98,7 +98,7 @@ export default function MusicWidget({ accent }) {
         {/* Mini Controls (Visible only when collapsed) */}
         {!isExpanded && !loading && spotifyUrl && (
           <div className="absolute inset-0 top-8 flex items-center px-4">
-            <div className="w-full h-12 rounded-2xl bg-black/30 border border-white/5 flex items-center justify-between pl-4 pr-2">
+            <div className="w-full flex items-center justify-between">
               <a
                 href="https://open.spotify.com/playlist/3CZnfcDJ9k7haY23nZKON6?si=dade772f4e1a4586&pt=b3a41fb566f63047d094a2d96dc3c43b"
                 target="_blank"
@@ -111,10 +111,10 @@ export default function MusicWidget({ accent }) {
               <button
                 type="button"
                 onClick={() => setIsExpanded(true)}
-                className="shrink-0 w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-lg"
+                className="shrink-0 p-2 text-zinc-300 hover:text-white transition"
                 aria-label="Open player"
               >
-                <Play size={16} className="ml-0.5" fill="currentColor" />
+                <Play size={18} className="translate-x-[1px]" />
               </button>
             </div>
           </div>

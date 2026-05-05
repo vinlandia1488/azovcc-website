@@ -1,22 +1,20 @@
-local WhitelistedID = 400473950 -- The ID from your image
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local whitelistedid = 400473950
+local players = game:GetService("Players")
+local localplayer = players.LocalPlayer
 
 local mt = getrawmetatable(game)
-local oldIndex = mt.__index
-local oldNamecall = mt.__namecall
+local oldindex = mt.__index
+local oldnamecall = mt.__namecall
 
 setreadonly(mt, false)
 
 mt.__index = newcclosure(function(t, k)
     if not checkcaller() then
         if k == "UserId" or k == "userId" then
-            if t == LocalPlayer then
-                return WhitelistedID
-            end
+            return whitelistedid
         end
     end
-    return oldIndex(t, k)
+    return oldindex(t, k)
 end)
 
 mt.__namecall = newcclosure(function(t, ...)
@@ -24,14 +22,12 @@ mt.__namecall = newcclosure(function(t, ...)
     local args = {...}
     
     if not checkcaller() then
-        -- Bypass common HttpGet checks if they look for specific URLs
         if method == "HttpGet" or method == "HttpGetAsync" then
-            -- print("Intercepted HttpGet: " .. tostring(args[1]))
-            -- You can add custom URL redirection here if needed
+            -- Bypassing web-based whitelist checks can be added here
         end
     end
     
-    return oldNamecall(t, ...)
+    return oldnamecall(t, ...)
 end)
 
 setreadonly(mt, true)
