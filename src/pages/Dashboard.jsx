@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+
 
 import { useNavigate } from 'react-router-dom';
 import { getSession, clearSession, setSession, getCachedAccounts } from '@/lib/auth';
@@ -23,6 +24,13 @@ export default function Dashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const [dock, setDock] = useState({ side: 'top', orientation: 'horizontal' });
+  const constraintsRef = useRef(null);
+  const navControls = useAnimation();
+
+  useEffect(() => {
+    // Initial position: Top Center
+    navControls.set({ x: window.innerWidth / 2 - 200, y: 32 });
+  }, []);
 
 
   useEffect(() => {
@@ -76,7 +84,7 @@ export default function Dashboard() {
   const accent = session.accent_color || '#ef4444';
 
   return (
-    <div className="min-h-screen bg-[#07070a] text-white relative overflow-hidden">
+    <div ref={constraintsRef} className="min-h-screen bg-[#07070a] text-white relative overflow-hidden">
       <SeasonalEffects />
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-20 blur-3xl rounded-full"
@@ -93,36 +101,49 @@ export default function Dashboard() {
       {/* Movable Bar */}
       <motion.div 
         drag
+        dragConstraints={constraintsRef}
         dragMomentum={false}
         dragElastic={0.1}
+        animate={navControls}
         onDrag={(e, info) => {
-          const { x } = info.point;
+          const { x, y } = info.point;
           const w = window.innerWidth;
-          // Dynamically switch orientation preview during drag
-          if (x < 160 || x > w - 160) {
-            if (dock.orientation !== 'vertical') setDock(d => ({ ...d, orientation: 'vertical' }));
+          const h = window.innerHeight;
+          
+          // Smoothly update orientation and dashboard adjustment during drag
+          if (x < 180) {
+            if (dock.side !== 'left') setDock({ side: 'left', orientation: 'vertical' });
+          } else if (x > w - 180) {
+            if (dock.side !== 'right') setDock({ side: 'right', orientation: 'vertical' });
+          } else if (y < 150) {
+            if (dock.side !== 'top') setDock({ side: 'top', orientation: 'horizontal' });
+          } else if (y > h - 150) {
+            if (dock.side !== 'bottom') setDock({ side: 'bottom', orientation: 'horizontal' });
           } else {
-            if (dock.orientation !== 'horizontal') setDock(d => ({ ...d, orientation: 'horizontal' }));
+             if (dock.side !== 'top') setDock({ side: 'top', orientation: 'horizontal' });
           }
         }}
         onDragEnd={(e, info) => {
           const { x, y } = info.point;
           const w = window.innerWidth;
           const h = window.innerHeight;
-          if (x < 160) setDock({ side: 'left', orientation: 'vertical' });
-          else if (x > w - 160) setDock({ side: 'right', orientation: 'vertical' });
-          else if (y < 160) setDock({ side: 'top', orientation: 'horizontal' });
-          else if (y > h - 160) setDock({ side: 'bottom', orientation: 'horizontal' });
-          else setDock({ side: 'top', orientation: 'horizontal' });
+          
+          // Snap to the nearest edge
+          if (x < 180) {
+            navControls.start({ x: 24, y: h / 2 - 150, transition: { type: 'spring', damping: 20 } });
+            setDock({ side: 'left', orientation: 'vertical' });
+          } else if (x > w - 180) {
+            navControls.start({ x: w - 100, y: h / 2 - 150, transition: { type: 'spring', damping: 20 } });
+            setDock({ side: 'right', orientation: 'vertical' });
+          } else if (y > h - 180) {
+            navControls.start({ x: w / 2 - 200, y: h - 100, transition: { type: 'spring', damping: 20 } });
+            setDock({ side: 'bottom', orientation: 'horizontal' });
+          } else {
+            navControls.start({ x: w / 2 - 200, y: 32, transition: { type: 'spring', damping: 20 } });
+            setDock({ side: 'top', orientation: 'horizontal' });
+          }
         }}
-        layout
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className={`fixed z-50 cursor-grab active:cursor-grabbing group hidden md:block ${
-          dock.side === 'left' ? 'left-6 top-1/2 -translate-y-1/2' :
-          dock.side === 'right' ? 'right-6 top-1/2 -translate-y-1/2' :
-          dock.side === 'bottom' ? 'bottom-8 left-1/2 -translate-x-1/2' :
-          'top-8 left-1/2 -translate-x-1/2'
-        }`}
+        className="fixed z-50 cursor-grab active:cursor-grabbing group hidden md:block"
         style={{ touchAction: 'none' }}
       >
         <NavTabs activeTab={activeTab} setActiveTab={setActiveTab} accent={accent} isAdmin={session.is_admin} orientation={dock.orientation} />
