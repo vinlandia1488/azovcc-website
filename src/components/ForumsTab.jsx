@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ImagePlus, Send, X, MessagesSquare, Search } from 'lucide-react';
+import { ImagePlus, Send, X, MessagesSquare, Search, MessageCircle } from 'lucide-react';
 import { getBackendDb } from '@/lib/backend';
 
 const db = getBackendDb();
 const FORUM_POST_TYPE = '__FORUM_POST__';
+const FORUM_COMMENT_TYPE = '__FORUM_COMMENT__';
 
 function isLightColor(hex) {
   const h = String(hex || '').replace('#', '');
@@ -16,6 +17,7 @@ function isLightColor(hex) {
 
 export default function ForumsTab({ session, accent }) {
   const [posts, setPosts] = useState([]);
+  const [commentsByPost, setCommentsByPost] = useState({});
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [title, setTitle] = useState('');
@@ -23,6 +25,10 @@ export default function ForumsTab({ session, accent }) {
   const [pendingImage, setPendingImage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const fileInputRef = useRef(null);
+  const replyTextByPostRef = useRef({});
+  const replyImageByPostRef = useRef({});
+  const replyFileInputByPostRef = useRef({});
+  const [, forceRender] = useState(0);
 
   const accentText = isLightColor(accent) ? '#000' : '#fff';
 
@@ -41,9 +47,33 @@ export default function ForumsTab({ session, accent }) {
         .filter(Boolean)
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       setPosts(parsed);
+
+      // Load comments and bucket by post id
+      const commentRows = await db.entities.CloudConfig.filter({ name: FORUM_COMMENT_TYPE });
+      const parsedComments = (commentRows || [])
+        .map((r) => {
+          try {
+            const obj = JSON.parse(r.content);
+            return { ...obj, id: r.id, created_at: r.created_date };
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean)
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+      const bucket = {};
+      for (const c of parsedComments) {
+        const pid = c.post_id;
+        if (!pid) continue;
+        if (!bucket[pid]) bucket[pid] = [];
+        bucket[pid].push(c);
+      }
+      setCommentsByPost(bucket);
     } catch (err) {
       console.error('Forums load failed:', err);
       setPosts([]);
+      setCommentsByPost({});
     } finally {
       setLoading(false);
     }
@@ -106,6 +136,45 @@ export default function ForumsTab({ session, accent }) {
       );
     });
   }, [posts, searchQuery]);
+
+  async function createComment(postId) {
+    const text = String(replyTextByPostRef.current[postId] || '').trim();
+    const pendingReplyImg = replyImageByPostRef.current[postId] || null;
+    if (!text && !pendingReplyImg?.file) return;
+
+    let imageUrl = '';
+    try {
+      if (pendingReplyImg?.file) {
+        const { file_url } = await db.integrations.Core.UploadFile({ file: pendingReplyImg.file });
+        imageUrl = file_url;
+      }
+
+      const payload = {
+        post_id: postId,
+        username: session.username,
+        content: text,
+        image_url: imageUrl,
+        created_at: new Date().toISOString(),
+        pfp: session.profile_pic || '',
+      };
+
+      await db.entities.CloudConfig.create({
+        owner_username: session.username,
+        name: FORUM_COMMENT_TYPE,
+        content: JSON.stringify(payload),
+      });
+
+      // reset local reply inputs
+      replyTextByPostRef.current[postId] = '';
+      if (pendingReplyImg?.previewUrl) URL.revokeObjectURL(pendingReplyImg.previewUrl);
+      replyImageByPostRef.current[postId] = null;
+      forceRender((v) => v + 1);
+
+      await loadPosts();
+    } catch (err) {
+      alert('Failed to reply: ' + (err?.message || 'Unknown error'));
+    }
+  }
 
   return (
     <div className="space-y-4 animate-in fade-in zoom-in duration-300">
@@ -254,6 +323,126 @@ export default function ForumsTab({ session, accent }) {
                         onClick={() => window.open(p.image_url, '_blank')}
                       />
                     )}
+
+                    {/* Comments */}
+                    <div className="mt-5 pt-4 border-t border-zinc-800/60 space-y-3">
+                      <div className="flex items-center gap-2 text-zinc-500 text-[10px] uppercase tracking-widest font-bold">
+                        <MessageCircle size={12} />
+                        {(commentsByPost[p.id]?.length || 0)} Replies
+                      </div>
+
+                      {(commentsByPost[p.id] || []).map((c) => (
+                        <div key={c.id} className="flex items-start gap-3 bg-[#0c0c0e] border border-zinc-800/60 rounded-2xl p-3">
+                          <div className="w-8 h-8 rounded-full overflow-hidden border border-zinc-800 bg-zinc-900 shrink-0">
+                            {c.pfp ? (
+                              <img src={c.pfp} alt="pfp" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-zinc-600">
+                                {String(c.username || '?').substring(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-zinc-300 text-[11px] font-bold truncate">{c.username}</p>
+                              <p className="text-zinc-600 text-[9px] shrink-0">{new Date(c.created_at).toLocaleString()}</p>
+                            </div>
+                            {c.content && (
+                              <p className="text-zinc-300 text-sm mt-2 whitespace-pre-wrap">{c.content}</p>
+                            )}
+                            {c.image_url && (
+                              <img
+                                src={c.image_url}
+                                alt="Reply attachment"
+                                className="mt-3 max-w-full h-auto max-h-64 object-contain rounded-2xl border border-zinc-800/60 cursor-pointer"
+                                onClick={() => window.open(c.image_url, '_blank')}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Reply box */}
+                      <div className="bg-[#0c0c0e] border border-zinc-800/60 rounded-2xl p-3">
+                        {replyImageByPostRef.current[p.id]?.previewUrl && (
+                          <div className="mb-3 relative inline-block">
+                            <img
+                              src={replyImageByPostRef.current[p.id].previewUrl}
+                              alt="Preview"
+                              className="h-16 rounded-xl object-cover border border-zinc-800/60"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const prev = replyImageByPostRef.current[p.id];
+                                if (prev?.previewUrl) URL.revokeObjectURL(prev.previewUrl);
+                                replyImageByPostRef.current[p.id] = null;
+                                forceRender((v) => v + 1);
+                              }}
+                              className="absolute -top-2 -right-2 w-6 h-6 bg-zinc-900 border border-zinc-700 rounded-full flex items-center justify-center text-zinc-400 hover:text-white"
+                              aria-label="Remove reply image"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="flex items-end gap-3">
+                          <textarea
+                            value={replyTextByPostRef.current[p.id] || ''}
+                            onChange={(e) => {
+                              replyTextByPostRef.current[p.id] = e.target.value;
+                              forceRender((v) => v + 1);
+                            }}
+                            placeholder="Write a reply..."
+                            rows={1}
+                            className="flex-1 bg-[#111114] border border-zinc-800/60 text-white rounded-2xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition resize-none"
+                            style={{ maxHeight: '120px' }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                createComment(p.id);
+                              }
+                            }}
+                          />
+
+                          <input
+                            ref={(el) => {
+                              replyFileInputByPostRef.current[p.id] = el;
+                            }}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              replyImageByPostRef.current[p.id] = { file, previewUrl: URL.createObjectURL(file) };
+                              forceRender((v) => v + 1);
+                            }}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => replyFileInputByPostRef.current[p.id]?.click()}
+                            className="w-11 h-11 rounded-2xl flex items-center justify-center bg-[#111114] border border-zinc-800/60 text-zinc-400 hover:text-white hover:border-zinc-700/70 transition"
+                            aria-label="Attach reply image"
+                          >
+                            <ImagePlus size={18} />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => createComment(p.id)}
+                            disabled={false}
+                            className="w-11 h-11 rounded-2xl flex items-center justify-center transition"
+                            style={{ background: accent, color: accentText }}
+                            aria-label="Send reply"
+                          >
+                            <Send size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
