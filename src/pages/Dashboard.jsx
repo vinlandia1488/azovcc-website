@@ -31,8 +31,8 @@ export default function Dashboard() {
   const [feedbackActive, setFeedbackActive] = useState(false);
   const [dock, setDock] = useState({ side: 'left', orientation: 'vertical' });
   const [showIntro, setShowIntro] = useState(true);
-  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'pulse');
-  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') !== 'false');
+  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
+  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') === 'true');
 
 
   const constraintsRef = useRef(null);
@@ -67,8 +67,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!session) return;
-    setBrandingAnimation(localStorage.getItem('azov_brandingAnimation') || 'pulse');
-    setBrandingShowCc(localStorage.getItem('azov_brandingShowCc') !== 'false');
+    setBrandingAnimation(localStorage.getItem('azov_brandingAnimation') || 'slide');
+    setBrandingShowCc(localStorage.getItem('azov_brandingShowCc') === 'true');
     setShowIntro(true);
     const timeout = setTimeout(() => setShowIntro(false), 1800);
     return () => clearTimeout(timeout);

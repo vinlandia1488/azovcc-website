@@ -20,8 +20,8 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [currentPreset, setPreset] = useState(() => localStorage.getItem('azov_preset') || 'NONE');
   const [effectAmount, setEffectAmount] = useState(() => parseInt(localStorage.getItem('azov_effectAmount') || '30'));
   const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('azov_effectSpeed') || '5'));
-  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'pulse');
-  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') !== 'false');
+  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
+  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') === 'true');
   const [saving, setSaving] = useState(false);
   const [profilePic, setProfilePic] = useState(session.profile_pic || '');
   
@@ -394,9 +394,13 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                        >
                          <option value="off">Off</option>
                          <option value="slide">Slide (A -&gt; ZOV)</option>
+                         <option value="blur">Blur Fade</option>
                          <option value="pulse">Pulse</option>
-                         <option value="wave">Wave</option>
-                         <option value="glitch">Glitch</option>
+                         <option value="zoom">Zoom</option>
+                         <option value="blink">Blink</option>
+                         <option value="drift">Drift</option>
+                         <option value="shimmer">Shimmer</option>
+                         <option value="type">Type</option>
                        </select>
                      </div>
                      <div className="flex items-end">
@@ -417,7 +421,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                      Controls AZOV branding animation. Choose Off to disable animation.
                    </p>
                    <div className="grid grid-cols-2 gap-3">
-                     {['off', 'slide', 'pulse', 'wave', 'glitch'].map((style) => (
+                     {['off', 'slide', 'blur', 'pulse', 'zoom', 'blink', 'drift', 'shimmer', 'type'].map((style) => (
                        <button
                          key={style}
                          type="button"

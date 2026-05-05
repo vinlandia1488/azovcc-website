@@ -23,8 +23,8 @@ export default function Auth() {
 
   const [showIntro, setShowIntro] = useState(true);
   const [redirectToDashboard, setRedirectToDashboard] = useState(false);
-  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'pulse');
-  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') !== 'false');
+  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
+  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') === 'true');
 
   useEffect(() => {
     const session = getSession();
@@ -62,8 +62,8 @@ export default function Auth() {
 
   useEffect(() => {
     const onStorage = () => {
-      setBrandingAnimation(localStorage.getItem('azov_brandingAnimation') || 'pulse');
-      setBrandingShowCc(localStorage.getItem('azov_brandingShowCc') !== 'false');
+      setBrandingAnimation(localStorage.getItem('azov_brandingAnimation') || 'slide');
+      setBrandingShowCc(localStorage.getItem('azov_brandingShowCc') === 'true');
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
