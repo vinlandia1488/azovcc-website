@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Play, Pause, SkipBack, SkipForward, 
-  Maximize2, Minimize2, Music, 
+import {
+  Play, Pause, SkipBack, SkipForward,
+  Maximize2, Minimize2, Music,
   Volume2, X, GripHorizontal, Search, List
 } from 'lucide-react';
 import { getSpotifyUrl } from '@/lib/app-settings';
@@ -46,7 +46,7 @@ export default function MusicWidget({ accent }) {
 
 
       <div className={`relative flex flex-col bg-[#111114]/90 backdrop-blur-xl border border-zinc-800/60 rounded-[2rem] shadow-2xl overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'w-[400px] h-[600px]' : 'w-[280px] h-[80px]'}`}>
-        
+
         {/* Drag Handle & Header */}
         <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5 cursor-grab active:cursor-grabbing">
           <div className="flex items-center gap-2">
@@ -57,7 +57,7 @@ export default function MusicWidget({ accent }) {
           </div>
 
           <div className="flex items-center gap-1">
-            <button 
+            <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-500 hover:text-white transition"
             >
@@ -75,7 +75,7 @@ export default function MusicWidget({ accent }) {
             </div>
           ) : spotifyUrl ? (
             <div className="w-full h-full p-2">
-               <iframe
+              <iframe
                 src={spotifyUrl}
                 width="100%"
                 height="100%"
@@ -98,27 +98,26 @@ export default function MusicWidget({ accent }) {
         {/* Mini Controls (Visible only when collapsed) */}
         {!isExpanded && !loading && spotifyUrl && (
           <div className="absolute inset-0 top-8 pointer-events-none flex items-center px-4">
-             <div className="flex items-center gap-3 w-full">
-                <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800/60 flex items-center justify-center shrink-0">
-                  <Music size={16} className="text-zinc-500" />
+            <div className="flex items-center justify-between w-full">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
+                  <p className="text-white text-[11px] font-bold truncate">Player</p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                     <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-                     <p className="text-white text-[11px] font-bold truncate">Community Playlist</p>
-                  </div>
-                  <p className="text-zinc-500 text-[9px] font-bold uppercase tracking-tighter truncate">Spotify Sync Active</p>
-                </div>
-                <div className="flex items-center gap-2 pointer-events-auto">
-                   <button className="text-zinc-400 hover:text-white transition"><SkipBack size={14} /></button>
-                   <button className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition">
-                      <Play size={14} className="ml-0.5" fill="currentColor" />
-                   </button>
-                   <button className="text-zinc-400 hover:text-white transition"><SkipForward size={14} /></button>
-                </div>
-             </div>
+                <p className="text-zinc-500 text-[9px] font-bold uppercase tracking-tighter truncate">Spotify Sync Active</p>
+              </div>
+              <div className="flex items-center gap-2 pointer-events-auto">
+                <button
+                  onClick={() => setIsExpanded(true)}
+                  className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-lg"
+                >
+                  <Play size={16} className="ml-0.5" fill="currentColor" />
+                </button>
+              </div>
+            </div>
           </div>
         )}
+
 
       </div>
     </motion.div>
