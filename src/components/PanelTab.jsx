@@ -900,9 +900,6 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
       {tab === 'maintenance' && (() => {
         const isActive = maintenance.active;
-        async function saveMaintenance(patch) {
-          const next = { ...maintenance, ...patch };
-          setMaintenanceState(next);
           try { 
             await setMaintenance(next); 
             if (typeof onAction === 'function') onAction();
