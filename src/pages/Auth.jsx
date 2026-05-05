@@ -99,10 +99,10 @@ export default function Auth() {
               transition={{ duration: 2.2, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
               style={{ textShadow: '0 0 14px rgba(255,255,255,0.08)' }}
             >
-              <span style={{ textShadow: 'none' }}>azov</span>
+              <span style={{ textShadow: 'none' }}>AZOV</span>
               <motion.span
-                className="inline-block text-[#ef4444]"
-                animate={{ filter: ['drop-shadow(0 0 0 rgba(239,68,68,0))', 'drop-shadow(0 0 12px rgba(239,68,68,0.55))', 'drop-shadow(0 0 22px rgba(239,68,68,0.25))'] }}
+                className="inline-block text-[#a855f7]"
+                animate={{ filter: ['drop-shadow(0 0 0 rgba(168,85,247,0))', 'drop-shadow(0 0 12px rgba(168,85,247,0.55))', 'drop-shadow(0 0 22px rgba(168,85,247,0.25))'] }}
                 transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
                 style={{ letterSpacing: '0.02em' }}
               >
