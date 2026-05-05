@@ -18,7 +18,8 @@ import {
   getDownloadItems,
   updateDownloadItem,
 } from '@/lib/downloads';
-import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, Shield, User, Search, Wrench, CalendarClock, StopCircle } from 'lucide-react';
+import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, Shield, User, Search, Wrench, CalendarClock, StopCircle, ImagePlus } from 'lucide-react';
+
 import UserDetailModal from '@/components/UserDetailModal';
 import KeyDetailModal from '@/components/KeyDetailModal';
 
@@ -86,6 +87,8 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   const [selectedKey, setSelectedKey] = useState(null);
   const [panelWorking, setPanelWorking] = useState(false);
   const [maintenance, setMaintenanceState] = useState({ active: false, from: '', to: '' });
+  const [uploadingImage, setUploadingImage] = useState(false);
+
 
   const filteredAccounts = useMemo(() => {
     if (!userSearchQuery.trim()) return accounts;
@@ -304,6 +307,22 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     }
     if (typeof onAction === 'function') onAction();
   }
+
+  async function handleAnnouncementImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
+      setAnnouncementState(prev => prev + (prev ? '\n' : '') + file_url);
+      if (typeof onAction === 'function') onAction();
+    } catch (error) {
+      setPanelError('Image upload failed: ' + error.message);
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
 
 
   function saveConfigTemplates() {
@@ -851,7 +870,14 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
       {tab === 'announcement' && (
         <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 space-y-3">
-          <p className="text-zinc-500 text-xs">This text replaces the dashboard "Unique Identifier" card.</p>
+          <div className="flex items-center justify-between">
+            <p className="text-zinc-500 text-xs">This text replaces the dashboard "Unique Identifier" card.</p>
+            <label className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer transition ${uploadingImage ? 'opacity-50 cursor-not-allowed' : 'bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700'}`}>
+              <ImagePlus size={12} />
+              {uploadingImage ? 'UPLOADING...' : 'ATTACH IMAGE'}
+              <input type="file" className="hidden" accept="image/*" onChange={handleAnnouncementImageUpload} disabled={uploadingImage} />
+            </label>
+          </div>
           <textarea
             value={announcement}
             onChange={(e) => setAnnouncementState(e.target.value)}
@@ -868,6 +894,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
           </button>
         </div>
       )}
+
 
       {tab === 'configs' && (
         <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 space-y-4">
