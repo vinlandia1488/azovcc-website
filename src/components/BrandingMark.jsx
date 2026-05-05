@@ -9,8 +9,8 @@ function ccNode(showCc) {
   );
 }
 
-export default function BrandingMark({ animation = 'off', showCc = true, className = '', compact = false, loop = true }) {
-  const mode = String(animation || 'off').toLowerCase();
+export default function BrandingMark({ animation = 'pulse', showCc = true, className = '', compact = false, loop = true }) {
+  const mode = String(animation || 'pulse').toLowerCase();
 
   if (mode === 'off') {
     return <span className={className}>AZOV{ccNode(showCc)}</span>;
@@ -21,9 +21,9 @@ export default function BrandingMark({ animation = 'off', showCc = true, classNa
       <span className={className}>
         A
         <motion.span
-          initial={{ x: -18, opacity: 0 }}
-          animate={{ x: [0, 0], opacity: [0, 1] }}
-          transition={{ duration: 1.4, repeat: loop ? Infinity : 0, repeatDelay: 1.4, ease: 'easeOut' }}
+          initial={{ x: -30, opacity: 0, filter: 'blur(3px)' }}
+          animate={{ x: [0, 0], opacity: [0, 1], filter: ['blur(3px)', 'blur(0px)'] }}
+          transition={{ duration: 1.5, repeat: loop ? Infinity : 0, repeatDelay: 1.2, ease: 'easeOut' }}
           className="inline-block"
         >
           ZOV
@@ -34,14 +34,26 @@ export default function BrandingMark({ animation = 'off', showCc = true, classNa
   }
 
   if (mode === 'wave') {
+    const letters = ['A', 'Z', 'O', 'V'];
     return (
-      <motion.span
-        className={className}
-        animate={{ y: [0, -5, 0, 5, 0] }}
-        transition={{ duration: 2.8, repeat: loop ? Infinity : 0, ease: 'easeInOut' }}
-      >
-        AZOV{ccNode(showCc)}
-      </motion.span>
+      <span className={className}>
+        {letters.map((ch, idx) => (
+          <motion.span
+            key={`${ch}-${idx}`}
+            className="inline-block"
+            animate={{ y: [0, -8, 0, 8, 0], opacity: [0.9, 1, 0.9] }}
+            transition={{
+              duration: 1.8,
+              delay: idx * 0.08,
+              repeat: loop ? Infinity : 0,
+              ease: 'easeInOut',
+            }}
+          >
+            {ch}
+          </motion.span>
+        ))}
+        {ccNode(showCc)}
+      </span>
     );
   }
 
@@ -50,15 +62,36 @@ export default function BrandingMark({ animation = 'off', showCc = true, classNa
       <motion.span
         className={className}
         animate={{
-          x: [0, -1, 1, 0],
-          skewX: [0, -2, 2, 0],
+          x: [0, -2, 2, -1, 1, 0],
+          y: [0, 1, -1, 0],
+          skewX: [0, -3, 3, 0],
           textShadow: [
             '0 0 0 rgba(255,255,255,0)',
-            '2px 0 0 rgba(239,68,68,0.7), -2px 0 0 rgba(59,130,246,0.5)',
+            '3px 0 0 rgba(239,68,68,0.75), -3px 0 0 rgba(59,130,246,0.55)',
             '0 0 0 rgba(255,255,255,0)',
           ],
         }}
-        transition={{ duration: 0.9, repeat: loop ? Infinity : 0, repeatDelay: 2.2 }}
+        transition={{ duration: 0.95, repeat: loop ? Infinity : 0, repeatDelay: 1.6 }}
+      >
+        AZOV{ccNode(showCc)}
+      </motion.span>
+    );
+  }
+
+  if (mode === 'pulse') {
+    return (
+      <motion.span
+        className={className}
+        animate={{
+          scale: compact ? [1, 1.04, 1] : [1, 1.07, 1],
+          opacity: [0.85, 1, 0.85],
+          filter: [
+            'drop-shadow(0 0 0 rgba(255,255,255,0))',
+            'drop-shadow(0 0 14px rgba(255,255,255,0.35))',
+            'drop-shadow(0 0 0 rgba(255,255,255,0))',
+          ],
+        }}
+        transition={{ duration: 2.1, repeat: loop ? Infinity : 0, ease: 'easeInOut' }}
       >
         AZOV{ccNode(showCc)}
       </motion.span>
@@ -66,13 +99,7 @@ export default function BrandingMark({ animation = 'off', showCc = true, classNa
   }
 
   return (
-    <motion.span
-      className={className}
-      animate={compact ? { scale: [1, 1.05, 1], opacity: [0.78, 1, 0.78] } : { scale: [1, 1.06, 1], opacity: [0.88, 1, 0.88] }}
-      transition={{ duration: 2.8, repeat: loop ? Infinity : 0, ease: 'easeInOut' }}
-    >
-      AZOV{ccNode(showCc)}
-    </motion.span>
+    <span className={className}>AZOV{ccNode(showCc)}</span>
   );
 }
 

@@ -20,7 +20,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [currentPreset, setPreset] = useState(() => localStorage.getItem('azov_preset') || 'NONE');
   const [effectAmount, setEffectAmount] = useState(() => parseInt(localStorage.getItem('azov_effectAmount') || '30'));
   const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('azov_effectSpeed') || '5'));
-  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
+  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'pulse');
   const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') !== 'false');
   const [saving, setSaving] = useState(false);
   const [profilePic, setProfilePic] = useState(session.profile_pic || '');
