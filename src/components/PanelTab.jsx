@@ -19,7 +19,8 @@ import {
   getDownloadItems,
   updateDownloadItem,
 } from '@/lib/downloads';
-import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, Shield, User, Search, Wrench, CalendarClock, StopCircle, ImagePlus } from 'lucide-react';
+import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, Shield, User, Search, Wrench, CalendarClock, StopCircle, ImagePlus, Music } from 'lucide-react';
+
 
 import UserDetailModal from '@/components/UserDetailModal';
 import KeyDetailModal from '@/components/KeyDetailModal';

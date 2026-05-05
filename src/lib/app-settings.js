@@ -82,8 +82,10 @@ export async function getSpotifyUrl() {
     owner_username: SYSTEM_OWNER,
   });
   const row = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
-  return String(row?.content || "");
+  // Default playlist to avoid "No tracks linked" on first load
+  return String(row?.content || "https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM3M");
 }
+
 
 
 export async function setSpotifyUrl(url) {

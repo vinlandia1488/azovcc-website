@@ -40,9 +40,10 @@ export default function MusicWidget({ accent }) {
       drag
       dragMomentum={false}
       initial={{ x: 0, y: 0 }}
-      className="fixed bottom-8 right-8 z-[100] cursor-default pointer-events-auto"
+      className="fixed top-8 right-8 z-[100] cursor-default pointer-events-auto"
       style={{ touchAction: 'none' }}
     >
+
 
       <div className={`relative flex flex-col bg-[#111114]/90 backdrop-blur-xl border border-zinc-800/60 rounded-[2rem] shadow-2xl overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'w-[400px] h-[600px]' : 'w-[280px] h-[80px]'}`}>
         
@@ -50,8 +51,9 @@ export default function MusicWidget({ accent }) {
         <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5 cursor-grab active:cursor-grabbing">
           <div className="flex items-center gap-2">
             <GripHorizontal size={14} className="text-zinc-600" />
-            <span className="text-[10px] font-black tracking-[0.2em] text-zinc-500 uppercase">Azov Music</span>
+            <span className="text-[10px] font-black tracking-[0.2em] text-zinc-500 uppercase">Music Player</span>
           </div>
+
           <div className="flex items-center gap-1">
             <button 
               onClick={() => setIsExpanded(!isExpanded)}
