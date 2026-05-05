@@ -91,7 +91,7 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-[#07070a] flex items-center justify-center relative overflow-hidden">
       {showIntro && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#07070a]/90 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#07070a]">
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: [1, 1.02, 1] }}
@@ -101,17 +101,17 @@ export default function Auth() {
             <div className="text-white font-black tracking-[0.22em] uppercase text-5xl md:text-6xl">
               <span style={{ textShadow: '0 0 14px rgba(255,255,255,0.08)' }}>AZOV</span>
               <motion.span
-                className="inline-block text-[#a855f7]"
+                className="inline-block text-[#ef4444]"
                 animate={{
                   filter: [
-                    'drop-shadow(0 0 0 rgba(168,85,247,0))',
-                    'drop-shadow(0 0 16px rgba(168,85,247,0.55))',
-                    'drop-shadow(0 0 30px rgba(168,85,247,0.25))',
+                    'drop-shadow(0 0 0 rgba(239,68,68,0))',
+                    'drop-shadow(0 0 16px rgba(239,68,68,0.7))',
+                    'drop-shadow(0 0 30px rgba(239,68,68,0.35))',
                   ],
                 }}
                 transition={{ duration: 1.3, repeat: Infinity, ease: 'easeInOut' }}
               >
-                .CC
+                CC
               </motion.span>
             </div>
             <div className="mt-6 flex items-center justify-center gap-3 text-zinc-500 text-sm uppercase tracking-widest font-bold">
@@ -153,12 +153,12 @@ export default function Auth() {
             >
               <span style={{ textShadow: 'none' }}>AZOV</span>
               <motion.span
-                className="inline-block text-[#a855f7]"
-                animate={{ filter: ['drop-shadow(0 0 0 rgba(168,85,247,0))', 'drop-shadow(0 0 12px rgba(168,85,247,0.55))', 'drop-shadow(0 0 22px rgba(168,85,247,0.25))'] }}
+                className="inline-block text-[#ef4444]"
+                animate={{ filter: ['drop-shadow(0 0 0 rgba(239,68,68,0))', 'drop-shadow(0 0 12px rgba(239,68,68,0.6))', 'drop-shadow(0 0 22px rgba(239,68,68,0.3))'] }}
                 transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
                 style={{ letterSpacing: '0.02em' }}
               >
-                .CC
+                CC
               </motion.span>
             </motion.h1>
             <h1 className="text-white text-2xl font-semibold mb-1">
