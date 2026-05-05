@@ -107,12 +107,13 @@ export default function Auth() {
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: [1, 1.02, 1] }}
-            transition={{ duration: 1.4, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
+            transition={{ duration: 2.4, ease: 'easeInOut' }}
             className="text-center px-6"
           >
             <BrandingMark
               animation={brandingAnimation}
               showCc={brandingShowCc}
+              loop={false}
               className="text-white font-black tracking-[0.22em] uppercase text-5xl md:text-6xl inline-block"
             />
           </motion.div>

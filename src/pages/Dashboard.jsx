@@ -122,6 +122,7 @@ export default function Dashboard() {
           <BrandingMark
             animation={brandingAnimation}
             showCc={brandingShowCc}
+            loop={false}
             className="text-white font-black tracking-[0.22em] uppercase text-5xl md:text-6xl"
           />
         </div>
