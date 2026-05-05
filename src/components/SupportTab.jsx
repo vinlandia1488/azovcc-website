@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { Send, ImagePlus, User, Shield, Clock, X, Globe, MessageSquare, Search } from 'lucide-react';
 import { getBackendDb } from '@/lib/backend';
 
@@ -30,6 +30,7 @@ export default function SupportTab({ session, accent }) {
   
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
+  const shouldStickToBottomRef = useRef(true);
 
   useEffect(() => {
     loadAll();
@@ -37,11 +38,16 @@ export default function SupportTab({ session, accent }) {
     return () => clearInterval(interval);
   }, [selectedUser]);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, globalMessages, activeTab]);
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (!shouldStickToBottomRef.current) return;
+    requestAnimationFrame(() => {
+      const el2 = scrollRef.current;
+      if (!el2) return;
+      el2.scrollTop = el2.scrollHeight;
+    });
+  }, [messages, globalMessages, activeTab, selectedUser, loading]);
 
   async function loadAll() {
     await Promise.all([
@@ -261,7 +267,16 @@ export default function SupportTab({ session, accent }) {
         </div>
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar"
+          onScroll={() => {
+            const el = scrollRef.current;
+            if (!el) return;
+            const distanceFromBottom = el.scrollHeight - (el.scrollTop + el.clientHeight);
+            shouldStickToBottomRef.current = distanceFromBottom < 80;
+          }}
+        >
           {(activeTab === 'support' && session.is_admin && !selectedUser) ? (
             <div className="flex flex-col items-center justify-center h-full text-center opacity-30 space-y-3">
               <Search size={36} />

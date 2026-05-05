@@ -1,37 +1,69 @@
-local whitelistedid = 400473950
+﻿local whitelistedid = 400473950
+local whitelistedname = "whitelisted_user"
+
 local players = game:GetService("Players")
-local localplayer = players.LocalPlayer
 
-local mt = getrawmetatable(game)
-local oldindex = mt.__index
-local oldnamecall = mt.__namecall
+-- Wait for LocalPlayer and hook the Player metatable
+local lp = players.LocalPlayer
+while not lp do
+    players:GetPropertyChangedSignal("LocalPlayer"):Wait()
+    lp = players.LocalPlayer
+end
 
-setreadonly(mt, false)
+local player_mt = getrawmetatable(lp)
+local old_index = player_mt.__index
+local old_namecall = player_mt.__namecall
 
-mt.__index = newcclosure(function(t, k)
-    if not checkcaller() then
-        if k == "UserId" or k == "userId" then
+setreadonly(player_mt, false)
+player_mt.__index = newcclosure(function(t, k)
+    if k == "UserId" or k == "userId" then
+        return whitelistedid
+    end
+    if k == "Name" or k == "name" or k == "DisplayName" or k == "displayName" then
+        if t == lp then
+            return whitelistedname
+        end
+    end
+    return old_index(t, k)
+end)
+
+if old_namecall then
+    player_mt.__namecall = newcclosure(function(t, ...)
+        local method = getnamecallmethod()
+        if method == "UserId" or method == "userId" then
             return whitelistedid
         end
-    end
-    return oldindex(t, k)
-end)
+        return old_namecall(t, ...)
+    end)
+end
+setreadonly(player_mt, true)
 
-mt.__namecall = newcclosure(function(t, ...)
+-- Hook game for HttpGet
+local game_mt = getrawmetatable(game)
+local old_game_namecall = game_mt.__namecall
+setreadonly(game_mt, false)
+game_mt.__namecall = newcclosure(function(t, ...)
     local method = getnamecallmethod()
-    local args = {...}
-    
-    if not checkcaller() then
-        if method == "HttpGet" or method == "HttpGetAsync" then
-            -- Bypassing web-based whitelist checks can be added here
+    if method == "HttpGet" or method == "HttpGetAsync" then
+        local url = (...)
+        if url and (tostring(url):lower():find("whitelist") or tostring(url):lower():find("check") or tostring(url):lower():find("auth")) then
+            print("[XVORY BYPASS] Intercepted whitelist check: " .. tostring(url))
+            return "true"
         end
     end
-    
-    return oldnamecall(t, ...)
+    return old_game_namecall(t, ...)
 end)
+setreadonly(game_mt, true)
 
-setreadonly(mt, true)
-
+shared.xvory = {
+    whitelisted = true,
+    authenticated = true,
+    settings = {
+        aimbot = { enabled = true, keybind = "e", smoothness = 0.5, fieldofview = 100, visiblecheck = true, teamcheck = true, bone = "Head" },
+        visuals = { enabled = true, esp = true, tracers = true, boxes = true, names = true, distance = true, teamcheck = true, color = Color3.fromRGB(255, 255, 255) },
+        misc = { walkspeed = 16, jumppower = 50, noclip = false, fly = false, flyspeed = 50 }
+    }
+}
 
 
 --> why use free obfuscator? retard? crack by 2rdk lmao ;3

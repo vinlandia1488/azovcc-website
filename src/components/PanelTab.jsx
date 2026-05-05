@@ -1001,7 +1001,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                   <p className="text-white font-bold text-sm">Maintenance Mode</p>
                   {isActive && (
                     <p className="text-xs font-semibold uppercase tracking-wider text-red-400">
-                      Currently Active — Site is locked
+                      Currently Active — Forums are locked
                     </p>
                   )}
                 </div>

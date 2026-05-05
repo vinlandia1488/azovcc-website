@@ -11,6 +11,7 @@ import DownloadsTab from '@/components/DownloadsTab';
 import CloudConfigsTab from '@/components/CloudConfigsTab';
 import PanelTab from '@/components/PanelTab';
 import SupportTab from '@/components/SupportTab';
+import ForumsTab from '@/components/ForumsTab';
 import MusicWidget from '@/components/MusicWidget';
 import SettingsModal from '@/components/SettingsModal';
 
@@ -200,6 +201,9 @@ export default function Dashboard() {
               )}
               {activeTab === 'downloads' && (
                 <DownloadsTab accent={accent} session={session} onAction={triggerFeedback} />
+              )}
+              {activeTab === 'forums' && (
+                <ForumsTab accent={accent} session={session} />
               )}
               {activeTab === 'cloud-configs' && (
                 <CloudConfigsTab session={session} accent={accent} onAction={triggerFeedback} />
