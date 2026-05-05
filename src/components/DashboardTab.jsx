@@ -152,30 +152,6 @@ export default function DashboardTab({ session, onSettings, accent, announcement
         <MaskedField value={scriptLicense} label="Script License" copyable={true} accent={accent} />
       </motion.div>
 
-      {/* Music Section */}
-      {spotifyUrl && (
-        <motion.div {...fadeUp(0.25)} className="bg-[#111114] border border-zinc-800/60 rounded-xl p-5"
-          style={{ boxShadow: `0 0 0 1px rgba(255,255,255,0.03)` }}
-        >
-          <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-2">
-            <Music size={10} />
-            Community Music
-          </p>
-          <div className="rounded-xl overflow-hidden bg-black/20 border border-zinc-800/40 aspect-[21/9]">
-            <iframe
-              src={spotifyUrl}
-              width="100%"
-              height="100%"
-              frameBorder="0"
-              allowFullScreen=""
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-            />
-          </div>
-        </motion.div>
-      )}
-
-
     </div>
   );
 }

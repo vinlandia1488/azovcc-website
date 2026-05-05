@@ -65,7 +65,7 @@ export default function MusicWidget({ accent }) {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 relative flex flex-col">
+        <div className={`flex-1 relative flex flex-col ${!isExpanded ? 'hidden' : ''}`}>
           {loading ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
               <div className="w-8 h-8 rounded-full border-t-2 border-white/20 animate-spin" style={{ borderColor: `${accent} transparent transparent transparent` }} />
@@ -91,6 +91,7 @@ export default function MusicWidget({ accent }) {
             </div>
           )}
         </div>
+
 
         {/* Mini Controls (Visible only when collapsed) */}
         {!isExpanded && !loading && spotifyUrl && (
