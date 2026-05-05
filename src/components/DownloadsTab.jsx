@@ -39,13 +39,13 @@ function badgeStyle(status, accent) {
 function detectionBadge(value) {
   const v = String(value || '').toLowerCase();
   if (v === 'detected') {
-    return { label: 'DETECTED', color: '#22c55e', border: 'rgba(34,197,94,0.35)', bg: 'rgba(34,197,94,0.10)' };
+    return { label: 'Detection status: detected', color: '#22c55e', border: 'rgba(34,197,94,0.35)', bg: 'rgba(34,197,94,0.10)' };
   }
   if (v === 'undetected') {
-    return { label: 'UNDETECTED', color: '#ef4444', border: 'rgba(239,68,68,0.35)', bg: 'rgba(239,68,68,0.10)' };
+    return { label: 'Detection status: undetected', color: '#ef4444', border: 'rgba(239,68,68,0.35)', bg: 'rgba(239,68,68,0.10)' };
   }
   if (v === 'unsure') {
-    return { label: 'UNSURE', color: '#f59e0b', border: 'rgba(245,158,11,0.35)', bg: 'rgba(245,158,11,0.10)' };
+    return { label: 'Detection status: unsure', color: '#f59e0b', border: 'rgba(245,158,11,0.35)', bg: 'rgba(245,158,11,0.10)' };
   }
   return null;
 }
@@ -138,7 +138,7 @@ export default function DownloadsTab({ accent, session }) {
                 <p className="text-zinc-600 text-xs">{item.version}</p>
                 {det && !isRestricted && (
                   <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider"
+                    className="text-[10px] font-bold px-2 py-0.5 rounded border tracking-wider"
                     style={{ color: det.color, borderColor: det.border, background: det.bg }}
                     title="Detection Status (Internal)"
                   >
