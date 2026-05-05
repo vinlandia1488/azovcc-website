@@ -112,7 +112,7 @@ export default function Dashboard() {
 
       <div className="fixed top-8 left-8 z-[60] flex items-center select-none pointer-events-none md:pointer-events-auto">
         <h1 className="text-2xl font-black tracking-[0.3em] text-white uppercase leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-          AZOV<span style={{ color: '#a855f7', textShadow: '0 0 12px rgba(168,85,247,0.7)' }}>.CC</span>
+          AZOV
         </h1>
       </div>
 
