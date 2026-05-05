@@ -82,9 +82,9 @@ export async function getSpotifyUrl() {
     owner_username: SYSTEM_OWNER,
   });
   const row = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
-  // Default playlist if none set
-  return String(row?.content || "https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM3M");
+  return String(row?.content || "");
 }
+
 
 export async function setSpotifyUrl(url) {
   const nextUrl = String(url || "");
@@ -103,3 +103,5 @@ export async function setSpotifyUrl(url) {
     });
   }
 }
+
+

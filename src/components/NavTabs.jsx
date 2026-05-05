@@ -15,9 +15,9 @@ const tabs = [
   { id: 'downloads', label: 'DOWNLOADS', icon: Download },
   { id: 'cloud-configs', label: 'CLOUD CONFIGS', icon: CloudUpload },
   { id: 'chat', label: 'CHAT', icon: MessageSquare },
-  { id: 'music', label: 'MUSIC', icon: Music },
   { id: 'panel', label: 'PANEL', icon: Shield, adminOnly: true },
 ];
+
 
 
 export default function NavTabs({ activeTab, setActiveTab, accent, isAdmin, orientation = 'horizontal' }) {
