@@ -924,7 +924,6 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
               className="w-full min-h-[180px] bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-500 transition resize-none"
             />
           </div>
-          </div>
 
 
           <button
@@ -937,6 +936,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
           </button>
         </div>
       )}
+
 
       {tab === 'music' && (
         <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 space-y-4">

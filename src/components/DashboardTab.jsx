@@ -1,6 +1,8 @@
-import { useState } from 'react';
-import { Eye, EyeOff, Copy, Check, Settings } from 'lucide-react';
+import { Eye, EyeOff, Copy, Check, Settings, Music } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { getSpotifyUrl } from '@/lib/app-settings';
+
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 18 },
@@ -49,6 +51,22 @@ export default function DashboardTab({ session, onSettings, accent, announcement
   const displayUsername = session.username || session.user_name || 'Unknown';
   const internalLicense = session.internal_license || session.internalKey || '';
   const scriptLicense = session.script_license || session.scriptKey || '';
+  const [spotifyUrl, setSpotifyUrl] = useState('');
+
+  useEffect(() => {
+    async function load() {
+      const url = await getSpotifyUrl();
+      let finalUrl = url;
+      if (url.includes('spotify.com/playlist/') && !url.includes('/embed/')) {
+        finalUrl = url.replace('spotify.com/playlist/', 'spotify.com/embed/playlist/');
+      } else if (url.includes('spotify.com/track/') && !url.includes('/embed/')) {
+        finalUrl = url.replace('spotify.com/track/', 'spotify.com/embed/track/');
+      }
+      setSpotifyUrl(finalUrl);
+    }
+    load();
+  }, []);
+
 
   return (
     <div className="space-y-6 pt-4">
@@ -133,6 +151,30 @@ export default function DashboardTab({ session, onSettings, accent, announcement
         )}
         <MaskedField value={scriptLicense} label="Script License" copyable={true} accent={accent} />
       </motion.div>
+
+      {/* Music Section */}
+      {spotifyUrl && (
+        <motion.div {...fadeUp(0.25)} className="bg-[#111114] border border-zinc-800/60 rounded-xl p-5"
+          style={{ boxShadow: `0 0 0 1px rgba(255,255,255,0.03)` }}
+        >
+          <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-3 flex items-center gap-2">
+            <Music size={10} />
+            Community Music
+          </p>
+          <div className="rounded-xl overflow-hidden bg-black/20 border border-zinc-800/40 aspect-[21/9]">
+            <iframe
+              src={spotifyUrl}
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              allowFullScreen=""
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+            />
+          </div>
+        </motion.div>
+      )}
+
 
     </div>
   );
