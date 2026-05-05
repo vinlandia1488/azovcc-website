@@ -23,19 +23,21 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showSettings, setShowSettings] = useState(false);
   const [announcement, setAnnouncement] = useState('');
-  const [dock, setDock] = useState({ side: 'top', orientation: 'horizontal' });
+  const [dock, setDock] = useState({ side: 'left', orientation: 'vertical' });
+
   const constraintsRef = useRef(null);
   const barRef = useRef(null);
   const navControls = useAnimation();
 
   useEffect(() => {
-    // Initial centering after mount
+    // Initial left-side positioning
     if (barRef.current) {
-      const w = window.innerWidth;
-      const barW = barRef.current.offsetWidth;
-      navControls.set({ x: w / 2 - barW / 2, y: 32 });
+      const h = window.innerHeight;
+      const barH = barRef.current.offsetHeight;
+      navControls.set({ x: 24, y: h / 2 - barH / 2 });
     }
   }, [session]);
+
 
 
 

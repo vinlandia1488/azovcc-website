@@ -37,7 +37,7 @@ export default function CloudConfigsTab({ session, accent }) {
   return (
     <div className="relative min-h-[600px] w-full rounded-2xl border border-zinc-800/60 overflow-hidden bg-[#07070a]">
       {/* ACTUAL Original UI - Faded in Background */}
-      <div className="opacity-[0.06] blur-[2px] pointer-events-none select-none grayscale pt-4 flex gap-6 min-h-[600px] px-4 pb-4">
+      <div className="opacity-[0.25] pointer-events-none select-none grayscale pt-4 flex gap-6 min-h-[600px] px-4 pb-4">
         {/* Editor */}
         <div className="flex-1 bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden flex flex-col">
           <div className="flex items-center justify-between p-3 border-b border-zinc-800/60">
@@ -82,11 +82,11 @@ export default function CloudConfigsTab({ session, accent }) {
       </div>
 
       {/* WIP Overlay Content */}
-      <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[3px]">
+      <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px]">
         {/* Background glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div 
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] blur-[140px] opacity-20 rounded-full"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] blur-[80px] opacity-10 rounded-full"
             style={{ background: accent }}
           />
         </div>
@@ -94,19 +94,17 @@ export default function CloudConfigsTab({ session, accent }) {
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 text-center space-y-4"
+          className="relative z-10 text-center space-y-1"
         >
-          <div className="space-y-2">
-            <h2 className="text-white text-5xl font-black tracking-tighter uppercase italic drop-shadow-2xl">
-              Cloud Configs
-            </h2>
-            <p className="text-zinc-500 text-xs font-black tracking-[0.4em] uppercase">
-              Are Work In Progress
-            </p>
-          </div>
+          <h2 className="text-white text-xl font-bold tracking-widest uppercase">
+            Cloud Configs
+          </h2>
+          <p className="text-zinc-500 text-[10px] font-bold tracking-[0.4em] uppercase">
+            Are Work In Progress
+          </p>
         </motion.div>
-
       </div>
+
     </div>
   );
 }
