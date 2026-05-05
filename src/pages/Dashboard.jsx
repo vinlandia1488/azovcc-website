@@ -94,8 +94,18 @@ export default function Dashboard() {
       <motion.div 
         drag
         dragMomentum={false}
-        dragElastic={0.05}
+        dragElastic={0.1}
         onDrag={(e, info) => {
+          const { x } = info.point;
+          const w = window.innerWidth;
+          // Dynamically switch orientation preview during drag
+          if (x < 160 || x > w - 160) {
+            if (dock.orientation !== 'vertical') setDock(d => ({ ...d, orientation: 'vertical' }));
+          } else {
+            if (dock.orientation !== 'horizontal') setDock(d => ({ ...d, orientation: 'horizontal' }));
+          }
+        }}
+        onDragEnd={(e, info) => {
           const { x, y } = info.point;
           const w = window.innerWidth;
           const h = window.innerHeight;
@@ -103,12 +113,13 @@ export default function Dashboard() {
           else if (x > w - 160) setDock({ side: 'right', orientation: 'vertical' });
           else if (y < 160) setDock({ side: 'top', orientation: 'horizontal' });
           else if (y > h - 160) setDock({ side: 'bottom', orientation: 'horizontal' });
-          else setDock({ side: 'top', orientation: 'horizontal' }); // Default back to top if in middle-ish
+          else setDock({ side: 'top', orientation: 'horizontal' });
         }}
         layout
-        className={`fixed z-50 transition-all duration-500 cursor-grab active:cursor-grabbing group hidden md:block ${
-          dock.side === 'left' ? 'top-1/2 left-6 -translate-y-1/2' :
-          dock.side === 'right' ? 'top-1/2 right-6 -translate-y-1/2' :
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        className={`fixed z-50 cursor-grab active:cursor-grabbing group hidden md:block ${
+          dock.side === 'left' ? 'left-6 top-1/2 -translate-y-1/2' :
+          dock.side === 'right' ? 'right-6 top-1/2 -translate-y-1/2' :
           dock.side === 'bottom' ? 'bottom-8 left-1/2 -translate-x-1/2' :
           'top-8 left-1/2 -translate-x-1/2'
         }`}
@@ -116,6 +127,7 @@ export default function Dashboard() {
       >
         <NavTabs activeTab={activeTab} setActiveTab={setActiveTab} accent={accent} isAdmin={session.is_admin} orientation={dock.orientation} />
       </motion.div>
+
 
       {/* Mobile Nav (Static) */}
       <div className="relative z-10 pt-6 pb-4 flex justify-center md:hidden">

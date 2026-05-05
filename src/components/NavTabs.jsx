@@ -1,4 +1,6 @@
 import { Home, CloudUpload, Shield, Download, MessageSquare, GripVertical } from 'lucide-react';
+import { motion } from 'framer-motion';
+
 
 
 function isLight(hex) {
@@ -23,19 +25,25 @@ export default function NavTabs({ activeTab, setActiveTab, accent, isAdmin, orie
   const isVertical = orientation === 'vertical';
 
   return (
-    <div className={`flex ${isVertical ? 'flex-col p-3' : 'items-center px-2 py-1.5'} gap-1 bg-[#111114]/90 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] shadow-2xl transition-all duration-300`}>
-      <div className={`text-zinc-700 hidden md:block ${isVertical ? 'mx-auto mb-2 rotate-90' : 'pl-1 pr-0.5'}`}>
+    <motion.div 
+      layout
+      className={`flex ${isVertical ? 'flex-col p-3' : 'items-center px-2 py-1.5'} gap-1 bg-[#111114]/90 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] shadow-2xl`}
+    >
+      <motion.div layout className={`text-zinc-700 hidden md:block ${isVertical ? 'mx-auto mb-2 rotate-90' : 'pl-1 pr-0.5'}`}>
         <GripVertical size={14} />
-      </div>
+      </motion.div>
+
 
       {visibleTabs.map((tab) => {
         const isActive = activeTab === tab.id;
         const TabIcon = tab.icon;
         return (
-          <button
+          <motion.button
+            layout
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold tracking-wider transition-all duration-200 ${isVertical ? 'w-full justify-center lg:justify-start' : ''}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold tracking-wider ${isVertical ? 'w-full justify-center lg:justify-start' : ''}`}
+
             style={isActive ? {
               background: accent,
               color: isLight(accent) ? '#000' : '#fff',
@@ -48,9 +56,11 @@ export default function NavTabs({ activeTab, setActiveTab, accent, isAdmin, orie
             <span className={isVertical ? 'hidden lg:inline' : 'inline'}>
               {tab.label}
             </span>
-          </button>
+          </motion.button>
         );
+
       })}
-    </div>
+    </motion.div>
+
   );
 }
