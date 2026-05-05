@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { deleteUserAccount, generateInternalLicense, generateScriptLicense, normalizeAccountDiscordLink, upgradeToInternal } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
-import { getAnnouncement, setAnnouncement, getMaintenance, setMaintenance } from '@/lib/app-settings';
+import { getAnnouncement, setAnnouncement, getMaintenance, setMaintenance, getSpotifyUrl, setSpotifyUrl } from '@/lib/app-settings';
+
 import {
   getDefaultCloudConfig,
   getPreviewConfig,
@@ -88,6 +89,8 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   const [panelWorking, setPanelWorking] = useState(false);
   const [maintenance, setMaintenanceState] = useState({ active: false, from: '', to: '' });
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [spotifyUrl, setSpotifyUrlState] = useState('');
+
 
 
   const filteredAccounts = useMemo(() => {
@@ -134,11 +137,12 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   }
 
   async function loadData() {
-    const [keysResult, accountsResult, downloadsResult, announcementResult] = await Promise.allSettled([
+    const [keysResult, accountsResult, downloadsResult, announcementResult, spotifyResult] = await Promise.allSettled([
       getLicenseKeys(),
       getEntityRows('Account'),
       getDownloadItems(),
       getAnnouncement(),
+      getSpotifyUrl(),
     ]);
 
     setKeys(keysResult.status === 'fulfilled' ? (keysResult.value || []) : []);
@@ -149,6 +153,8 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     );
     setDownloads(downloadsResult.status === 'fulfilled' ? (downloadsResult.value || []) : []);
     setAnnouncementState(announcementResult.status === 'fulfilled' ? announcementResult.value : '');
+    setSpotifyUrlState(spotifyResult.status === 'fulfilled' ? spotifyResult.value : '');
+
     try { const m = await getMaintenance(); setMaintenanceState(m); } catch {}
 
     const templates = await getConfigTemplatesShared();
@@ -328,18 +334,21 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   function saveConfigTemplates() {
     (async () => {
       try {
-        await saveConfigTemplatesShared({
-          defaultCloudConfig,
-          previewConfig,
-        });
+        await Promise.all([
+          saveConfigTemplatesShared({
+            defaultCloudConfig,
+            previewConfig,
+          }),
+          setSpotifyUrl(spotifyUrl)
+        ]);
         setPanelError('');
         if (typeof onAction === 'function') onAction();
       } catch (error) {
-
-        setPanelError(error?.message || 'Failed to save config templates.');
+        setPanelError(error?.message || 'Failed to save configs.');
       }
     })();
   }
+
 
   async function removeUser(account) {
     if (!account?.username) return;
@@ -914,6 +923,18 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
               className="w-full min-h-[180px] bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-500 transition resize-none"
             />
           </div>
+          <div className="h-px bg-zinc-800/60" />
+          <div>
+            <p className="text-zinc-400 text-xs mb-2 uppercase font-bold tracking-widest">Spotify Embed URL</p>
+            <input
+              value={spotifyUrl}
+              onChange={(e) => setSpotifyUrlState(e.target.value)}
+              placeholder="https://open.spotify.com/playlist/..."
+              className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+            />
+            <p className="text-zinc-500 text-[10px] mt-2">Paste a Spotify Playlist, Album, or Track link. It will automatically convert to an embed.</p>
+          </div>
+
           <button
             onClick={saveConfigTemplates}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg"

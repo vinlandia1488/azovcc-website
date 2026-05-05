@@ -73,3 +73,33 @@ export async function setMaintenance(data) {
     });
   }
 }
+
+const SPOTIFY_URL_NAME = "__spotify_url__";
+
+export async function getSpotifyUrl() {
+  const rows = await db.entities.CloudConfig.filter({
+    name: SPOTIFY_URL_NAME,
+    owner_username: SYSTEM_OWNER,
+  });
+  const row = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+  // Default playlist if none set
+  return String(row?.content || "https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM3M");
+}
+
+export async function setSpotifyUrl(url) {
+  const nextUrl = String(url || "");
+  const rows = await db.entities.CloudConfig.filter({
+    name: SPOTIFY_URL_NAME,
+    owner_username: SYSTEM_OWNER,
+  });
+  const existing = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+  if (existing?.id) {
+    await db.entities.CloudConfig.update(existing.id, { content: nextUrl });
+  } else {
+    await db.entities.CloudConfig.create({
+      name: SPOTIFY_URL_NAME,
+      owner_username: SYSTEM_OWNER,
+      content: nextUrl,
+    });
+  }
+}

@@ -11,7 +11,9 @@ import DownloadsTab from '@/components/DownloadsTab';
 import CloudConfigsTab from '@/components/CloudConfigsTab';
 import PanelTab from '@/components/PanelTab';
 import SupportTab from '@/components/SupportTab';
+import MusicTab from '@/components/MusicTab';
 import SettingsModal from '@/components/SettingsModal';
+
 import SeasonalEffects from '@/components/SeasonalEffects';
 import { getAnnouncement } from '@/lib/app-settings';
 
@@ -204,7 +206,11 @@ export default function Dashboard() {
               {activeTab === 'chat' && (
                 <SupportTab session={session} accent={accent} />
               )}
+              {activeTab === 'music' && (
+                <MusicTab accent={accent} />
+              )}
               {activeTab === 'panel' && session.is_admin && (
+
                 <PanelTab
                   accent={accent}
                   session={session}
