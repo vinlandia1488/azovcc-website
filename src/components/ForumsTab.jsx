@@ -49,7 +49,6 @@ export default function ForumsTab({ session, accent }) {
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       setPosts(parsed);
 
-      // Load comments and bucket by post id
       const commentRows = await db.entities.CloudConfig.filter({ name: FORUM_COMMENT_TYPE });
       const parsedComments = (commentRows || [])
         .map((r) => {
@@ -165,7 +164,6 @@ export default function ForumsTab({ session, accent }) {
         content: JSON.stringify(payload),
       });
 
-      // reset local reply inputs
       replyTextByPostRef.current[postId] = '';
       if (pendingReplyImg?.previewUrl) URL.revokeObjectURL(pendingReplyImg.previewUrl);
       replyImageByPostRef.current[postId] = null;
@@ -202,7 +200,6 @@ export default function ForumsTab({ session, accent }) {
 
   return (
     <div className="space-y-4 animate-in fade-in zoom-in duration-300">
-      {/* Create post */}
       <div className="bg-[#111114] border border-zinc-800/60 rounded-3xl overflow-hidden shadow-2xl">
         <div className="px-6 py-5 border-b border-zinc-800/60 flex items-center justify-between bg-[#0c0c0e]">
           <div className="flex items-center gap-3">
@@ -293,7 +290,6 @@ export default function ForumsTab({ session, accent }) {
         </div>
       </div>
 
-      {/* Feed */}
       <div className="bg-[#111114] border border-zinc-800/60 rounded-3xl overflow-hidden shadow-2xl">
         <div className="px-6 py-4 border-b border-zinc-800/60 bg-[#0c0c0e]">
           <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-bold">
@@ -382,7 +378,6 @@ export default function ForumsTab({ session, accent }) {
                       />
                     )}
 
-                    {/* Comments */}
                     {openPostId === p.id && (
                       <div className="mt-5 pt-4 border-t border-zinc-800/60 space-y-3">
                         <div className="flex items-center justify-between gap-3">
@@ -435,7 +430,6 @@ export default function ForumsTab({ session, accent }) {
                           </div>
                         ))}
 
-                        {/* Reply box */}
                         <div className="bg-[#0c0c0e] border border-zinc-800/60 rounded-2xl p-3">
                         {replyImageByPostRef.current[p.id]?.previewUrl && (
                           <div className="mb-3 relative inline-block">

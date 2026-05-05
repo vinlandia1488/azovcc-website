@@ -12,7 +12,6 @@ import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import MaintenanceScreen from '@/components/MaintenanceScreen';
 import { getMaintenance } from '@/lib/app-settings';
-// Add page imports here
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -20,7 +19,6 @@ const AuthenticatedApp = () => {
   const location = useLocation();
   const [maintenanceData, setMaintenanceData] = useState(null);
 
-  // Check maintenance status on mount and poll every 60s
   useEffect(() => {
     async function checkMaintenance() {
       try {
@@ -36,7 +34,6 @@ const AuthenticatedApp = () => {
   }, []);
 
   useEffect(() => {
-    // Session validation: logout if account no longer exists
     async function validateSession() {
       const session = getSession();
       if (!session || session.username === 'admin') return;
@@ -56,7 +53,6 @@ const AuthenticatedApp = () => {
     validateSession();
   }, [location.pathname, navigate]);
 
-  // Loading spinner while checking settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -65,15 +61,12 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     }
-    // auth_required: App uses custom auth — render routes normally
   }
 
-  // Maintenance gate: block non-admins when maintenance is active
   if (maintenanceData?.active) {
     const session = getSession();
     const isAdmin = session?.is_admin === true || session?.username === 'admin';
@@ -86,8 +79,6 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<Auth />} />
       <Route path="/dashboard" element={<Dashboard />} />
-      {/* Hidden route /dist/v1/auth/0x7b2a9f4c3d8e1a6b is handled by vercel.json -> api/auth.js */}
-      {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

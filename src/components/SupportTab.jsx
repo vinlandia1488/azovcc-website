@@ -104,10 +104,8 @@ export default function SupportTab({ session, accent }) {
 
   async function loadUserList() {
     try {
-      // Fetch all accounts to allow admin to search any user
       const accounts = await db.entities.Account.list();
       
-      // Also fetch messages to show unread status and last message time
       const allMsgs = await db.entities.CloudConfig.filter({ name: SUPPORT_MSG_TYPE });
       const msgStatus = {};
       (allMsgs || []).forEach(r => {
@@ -190,7 +188,6 @@ export default function SupportTab({ session, accent }) {
   return (
     <div className="flex bg-[#111114] border border-zinc-800/60 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300" style={{ height: 'calc(100vh - 160px)', minHeight: '600px' }}>
       
-      {/* Sidebar for Admin or Tabs for User */}
       <div className="w-64 border-r border-zinc-800/60 flex flex-col bg-[#0c0c0e]">
         <div className="p-4 space-y-1">
           <button 
@@ -247,9 +244,7 @@ export default function SupportTab({ session, accent }) {
         )}
       </div>
 
-      {/* Main Chat Area */}
       <div className="flex-1 flex flex-col relative bg-[#07070a]">
-        {/* Header */}
         <div className="px-6 py-4 border-b border-zinc-800/60 flex items-center justify-between shrink-0 bg-[#0c0c0e]">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-zinc-800/50 flex items-center justify-center border border-zinc-700/30">
@@ -266,7 +261,6 @@ export default function SupportTab({ session, accent }) {
           </div>
         </div>
 
-        {/* Messages */}
         <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar"
@@ -336,7 +330,6 @@ export default function SupportTab({ session, accent }) {
           )}
         </div>
 
-        {/* Input Area */}
         {(!session.is_admin || activeTab === 'global' || selectedUser) && (
           <div className="px-5 pb-5 pt-4 border-t border-zinc-800/60 shrink-0 bg-[#0c0c0e]">
             {pendingImage && (

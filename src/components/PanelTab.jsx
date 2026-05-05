@@ -60,13 +60,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   const [keys, setKeys] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [generating, setGenerating] = useState(false);
-  const [tab, setTab] = useState('keys'); // 'keys' | 'users' | 'downloads' | 'announcement' | 'support'
+  const [tab, setTab] = useState('keys');
   const [revealedKeys, setRevealedKeys] = useState({});
   const [downloads, setDownloads] = useState([]);
   const [announcement, setAnnouncementState] = useState('');
   const [defaultCloudConfig, setDefaultCloudConfigState] = useState('');
   const [previewConfig, setPreviewConfigState] = useState('');
-  const [selectedUser, setSelectedUser] = useState(null); // For detail modal
+  const [selectedUser, setSelectedUser] = useState(null);
   const [note, setNote] = useState('');
   const [newKeyType, setNewKeyType] = useState('script');
   const [manualInternalKey, setManualInternalKey] = useState('');
@@ -1026,7 +1026,6 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
 
         return (
           <div className="space-y-6">
-            {/* Status Banner */}
             <div className={`rounded-2xl p-5 border flex items-center justify-between ${isActive ? 'bg-red-500/10 border-red-500/30' : 'bg-zinc-900/40 border-zinc-800/60'}`}>
               <div className="flex items-center gap-4">
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${isActive ? 'bg-red-500/20' : 'bg-zinc-800'}`}>
@@ -1063,7 +1062,6 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
               </div>
             </div>
 
-            {/* Time Range */}
             <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-6 space-y-5">
               <div className="flex items-center gap-3 mb-1">
                 <CalendarClock size={16} className="text-zinc-500" />
@@ -1137,7 +1135,6 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
         />
       )}
 
-      {/* Confirm Admin Toggle Modal */}
       {confirmAdminTarget && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={() => setConfirmAdminTarget(null)}>
           <div className="bg-[#111114] border border-amber-500/30 rounded-2xl w-full max-w-sm p-6 shadow-2xl" onClick={e => e.stopPropagation()}>

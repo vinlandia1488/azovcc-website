@@ -172,7 +172,6 @@ export async function getDownloadItems() {
       return normalized;
     }
 
-    // Seed defaults into backend so subsequent edits use real persisted IDs.
     const defaults = getDefaultDownloads();
     const createdDefaults = [];
     for (let i = 0; i < defaults.length; i += 1) {

@@ -15,7 +15,7 @@ export default function MusicWidget({ accent }) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const [isHidden, setIsHidden] = useState(false);
-  const [hiddenEdge, setHiddenEdge] = useState('right'); // 'left' | 'right' | 'top' | 'bottom'
+  const [hiddenEdge, setHiddenEdge] = useState('right');
 
   function snapIntoView(edge) {
     const el = widgetRef.current;
@@ -59,7 +59,6 @@ export default function MusicWidget({ accent }) {
     async function load() {
       const url = await getSpotifyUrl();
       let finalUrl = url;
-      // Force embed format
       if (url.includes('spotify.com/playlist/') && !url.includes('/embed/')) {
         finalUrl = url.replace('spotify.com/playlist/', 'spotify.com/embed/playlist/');
       } else if (url.includes('spotify.com/track/') && !url.includes('/embed/')) {
@@ -67,7 +66,6 @@ export default function MusicWidget({ accent }) {
       } else if (url.includes('spotify.com/album/') && !url.includes('/embed/')) {
         finalUrl = url.replace('spotify.com/album/', 'spotify.com/embed/album/');
       }
-      // Add theme parameter for a cleaner look
       if (finalUrl && !finalUrl.includes('utm_source')) {
         finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'utm_source=generator&theme=0';
       }
@@ -79,7 +77,6 @@ export default function MusicWidget({ accent }) {
 
   return (
     <>
-      {/* Edge handle shown when player is hidden off-screen */}
       {isHidden && (
         <div
           className="fixed z-[120]"
@@ -138,7 +135,7 @@ export default function MusicWidget({ accent }) {
           const rect = el.getBoundingClientRect();
           const vw = window.innerWidth;
           const vh = window.innerHeight;
-          const threshold = 120; // how close to edge before hiding (very forgiving)
+          const threshold = 120;
 
           let edge = null;
           if (rect.left < threshold) edge = 'left';
@@ -157,7 +154,6 @@ export default function MusicWidget({ accent }) {
 
       <div className={`relative flex flex-col bg-[#111114]/90 backdrop-blur-xl border border-zinc-800/60 rounded-[2rem] shadow-2xl overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'w-[400px] h-[600px]' : 'w-[280px] h-[92px]'}`}>
 
-        {/* Drag Handle & Header */}
         <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5 cursor-grab active:cursor-grabbing">
           <div className="flex items-center gap-2">
             <GripHorizontal size={14} className="text-zinc-600" />
@@ -176,7 +172,6 @@ export default function MusicWidget({ accent }) {
           </div>
         </div>
 
-        {/* Content Area */}
         <div className={`flex-1 relative flex flex-col ${!isExpanded ? 'hidden' : ''}`}>
           {loading ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
@@ -205,7 +200,6 @@ export default function MusicWidget({ accent }) {
         </div>
 
 
-        {/* Mini Controls (Visible only when collapsed) */}
         {!isExpanded && !loading && spotifyUrl && (
           <div className="absolute inset-0 top-8 flex items-center px-4">
             <div className="w-full flex items-center justify-between">

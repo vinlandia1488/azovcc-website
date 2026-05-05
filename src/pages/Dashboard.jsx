@@ -36,7 +36,6 @@ export default function Dashboard() {
   const navControls = useAnimation();
 
   useEffect(() => {
-    // Initial left-side positioning
     if (barRef.current) {
       const h = window.innerHeight;
       const barH = barRef.current.offsetHeight;
@@ -111,14 +110,12 @@ export default function Dashboard() {
           style={{ background: `radial-gradient(ellipse, ${accent}44, transparent)` }} />
       </div>
 
-      {/* Top Left Logo */}
       <div className="fixed top-8 left-8 z-[60] flex items-center select-none pointer-events-none md:pointer-events-auto">
         <h1 className="text-2xl font-black tracking-[0.3em] text-white uppercase leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
           AZOV
         </h1>
       </div>
 
-      {/* Movable Bar */}
       <motion.div 
         drag
         dragConstraints={constraintsRef}
@@ -130,7 +127,6 @@ export default function Dashboard() {
           const w = window.innerWidth;
           const h = window.innerHeight;
           
-          // Smoothly update orientation and dashboard adjustment during drag
           if (x < 180) {
             if (dock.side !== 'left') setDock({ side: 'left', orientation: 'vertical' });
           } else if (x > w - 180) {
@@ -150,7 +146,6 @@ export default function Dashboard() {
           const barW = barRef.current?.offsetWidth || 400;
           const barH = barRef.current?.offsetHeight || 50;
           
-          // Snap to the nearest edge with precise centering
           if (x < 180) {
             navControls.start({ x: 24, y: h / 2 - barH / 2, transition: { type: 'spring', damping: 20 } });
             setDock({ side: 'left', orientation: 'vertical' });
@@ -175,7 +170,6 @@ export default function Dashboard() {
 
 
 
-      {/* Mobile Nav (Static) */}
       <div className="relative z-10 pt-6 pb-4 flex justify-center md:hidden">
         <NavTabs activeTab={activeTab} setActiveTab={setActiveTab} accent={accent} isAdmin={session.is_admin} />
       </div>
@@ -229,7 +223,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Global Feedback Toast */}
       <AnimatePresence>
         {feedbackActive && (
           <motion.div
