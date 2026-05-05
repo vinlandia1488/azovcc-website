@@ -25,12 +25,18 @@ export default function Dashboard() {
   const [announcement, setAnnouncement] = useState('');
   const [dock, setDock] = useState({ side: 'top', orientation: 'horizontal' });
   const constraintsRef = useRef(null);
+  const barRef = useRef(null);
   const navControls = useAnimation();
 
   useEffect(() => {
-    // Initial position: Top Center
-    navControls.set({ x: window.innerWidth / 2 - 200, y: 32 });
-  }, []);
+    // Initial centering after mount
+    if (barRef.current) {
+      const w = window.innerWidth;
+      const barW = barRef.current.offsetWidth;
+      navControls.set({ x: w / 2 - barW / 2, y: 32 });
+    }
+  }, [session]);
+
 
 
   useEffect(() => {
@@ -127,27 +133,32 @@ export default function Dashboard() {
           const { x, y } = info.point;
           const w = window.innerWidth;
           const h = window.innerHeight;
+          const barW = barRef.current?.offsetWidth || 400;
+          const barH = barRef.current?.offsetHeight || 50;
           
-          // Snap to the nearest edge
+          // Snap to the nearest edge with precise centering
           if (x < 180) {
-            navControls.start({ x: 24, y: h / 2 - 150, transition: { type: 'spring', damping: 20 } });
+            navControls.start({ x: 24, y: h / 2 - barH / 2, transition: { type: 'spring', damping: 20 } });
             setDock({ side: 'left', orientation: 'vertical' });
           } else if (x > w - 180) {
-            navControls.start({ x: w - 100, y: h / 2 - 150, transition: { type: 'spring', damping: 20 } });
+            navControls.start({ x: w - barW - 24, y: h / 2 - barH / 2, transition: { type: 'spring', damping: 20 } });
             setDock({ side: 'right', orientation: 'vertical' });
           } else if (y > h - 180) {
-            navControls.start({ x: w / 2 - 200, y: h - 100, transition: { type: 'spring', damping: 20 } });
+            navControls.start({ x: w / 2 - barW / 2, y: h - barH - 32, transition: { type: 'spring', damping: 20 } });
             setDock({ side: 'bottom', orientation: 'horizontal' });
           } else {
-            navControls.start({ x: w / 2 - 200, y: 32, transition: { type: 'spring', damping: 20 } });
+            navControls.start({ x: w / 2 - barW / 2, y: 32, transition: { type: 'spring', damping: 20 } });
             setDock({ side: 'top', orientation: 'horizontal' });
           }
         }}
-        className="fixed z-50 cursor-grab active:cursor-grabbing group hidden md:block"
+        className="fixed z-50 top-0 left-0 cursor-grab active:cursor-grabbing group hidden md:block"
         style={{ touchAction: 'none' }}
       >
-        <NavTabs activeTab={activeTab} setActiveTab={setActiveTab} accent={accent} isAdmin={session.is_admin} orientation={dock.orientation} />
+        <div ref={barRef}>
+          <NavTabs activeTab={activeTab} setActiveTab={setActiveTab} accent={accent} isAdmin={session.is_admin} orientation={dock.orientation} />
+        </div>
       </motion.div>
+
 
 
       {/* Mobile Nav (Static) */}
