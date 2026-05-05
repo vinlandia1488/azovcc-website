@@ -39,10 +39,11 @@ export default function MusicWidget({ accent }) {
     <motion.div
       drag
       dragMomentum={false}
-      initial={{ x: window.innerWidth - 350, y: window.innerHeight - 150 }}
-      className="fixed z-[100] cursor-default pointer-events-auto"
+      initial={{ x: 0, y: 0 }}
+      className="fixed bottom-8 right-8 z-[100] cursor-default pointer-events-auto"
       style={{ touchAction: 'none' }}
     >
+
       <div className={`relative flex flex-col bg-[#111114]/90 backdrop-blur-xl border border-zinc-800/60 rounded-[2rem] shadow-2xl overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'w-[400px] h-[600px]' : 'w-[280px] h-[80px]'}`}>
         
         {/* Drag Handle & Header */}

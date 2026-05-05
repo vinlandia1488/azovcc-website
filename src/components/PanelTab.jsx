@@ -394,9 +394,10 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
         {[
           { id: 'keys', label: 'License Keys', icon: Key },
           { id: 'users', label: 'Users', icon: Users },
-          {id: 'downloads', label: 'Downloads', icon: Download },
+          { id: 'downloads', label: 'Downloads', icon: Download },
           { id: 'announcement', label: 'Announcement', icon: Megaphone },
           { id: 'configs', label: 'Configs', icon: FileText },
+          { id: 'music', label: 'Music', icon: Music },
           { id: 'maintenance', label: 'Maintenance', icon: Wrench },
         ].map(t => (
           <button
@@ -923,17 +924,8 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
               className="w-full min-h-[180px] bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-500 transition resize-none"
             />
           </div>
-          <div className="h-px bg-zinc-800/60" />
-          <div>
-            <p className="text-zinc-400 text-xs mb-2 uppercase font-bold tracking-widest">Spotify Embed URL</p>
-            <input
-              value={spotifyUrl}
-              onChange={(e) => setSpotifyUrlState(e.target.value)}
-              placeholder="https://open.spotify.com/playlist/..."
-              className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-            />
-            <p className="text-zinc-500 text-[10px] mt-2">Paste a Spotify Playlist, Album, or Track link. It will automatically convert to an embed.</p>
           </div>
+
 
           <button
             onClick={saveConfigTemplates}
@@ -942,6 +934,30 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
           >
             <Save size={13} />
             Save Config Templates
+          </button>
+        </div>
+      )}
+
+      {tab === 'music' && (
+        <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 space-y-4">
+          <div>
+            <p className="text-zinc-400 text-xs mb-2 uppercase font-bold tracking-widest">Global Spotify Player</p>
+            <p className="text-zinc-500 text-[10px] mb-4">This URL controls the floating draggable music widget for all users.</p>
+            <input
+              value={spotifyUrl}
+              onChange={(e) => setSpotifyUrlState(e.target.value)}
+              placeholder="https://open.spotify.com/playlist/..."
+              className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+            />
+            <p className="text-zinc-500 text-[10px] mt-2">Paste a Spotify Playlist, Album, or Track link. It will automatically convert to an embed.</p>
+          </div>
+          <button
+            onClick={saveConfigTemplates}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg"
+            style={{ background: accent, color: accentText, border: accentBorder }}
+          >
+            <Save size={13} />
+            Update Player
           </button>
         </div>
       )}
