@@ -110,7 +110,18 @@ export default function CloudConfigsTab({ session, accent }) {
   }
 
   return (
-    <div className="pt-4 flex gap-6 min-h-[600px]">
+    <div className="pt-4 space-y-4">
+      {/* WIP Banner */}
+      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 flex items-center justify-center gap-3">
+        <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+        <p className="text-amber-500 text-xs font-bold tracking-widest uppercase">
+          Cloud configs are work in progress
+        </p>
+        <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+      </div>
+
+      <div className="flex gap-6 min-h-[600px]">
+
       {/* Editor */}
       <div className="flex-1 bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-3 border-b border-zinc-800/60">
