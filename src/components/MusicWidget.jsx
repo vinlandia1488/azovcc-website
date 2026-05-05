@@ -138,7 +138,7 @@ export default function MusicWidget({ accent }) {
           const rect = el.getBoundingClientRect();
           const vw = window.innerWidth;
           const vh = window.innerHeight;
-          const threshold = 24; // how far off-screen before hiding
+          const threshold = 90; // how close to edge before hiding (more forgiving)
 
           let edge = null;
           if (rect.right < threshold) edge = 'left';
