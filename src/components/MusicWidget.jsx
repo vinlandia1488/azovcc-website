@@ -104,7 +104,6 @@ export default function MusicWidget({ accent }) {
                   <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
                   <p className="text-white text-[11px] font-bold truncate">Player</p>
                 </div>
-                <p className="text-zinc-500 text-[9px] font-bold uppercase tracking-tighter truncate">Spotify Sync Active</p>
               </div>
               <div className="flex items-center gap-2 pointer-events-auto">
                 <button
