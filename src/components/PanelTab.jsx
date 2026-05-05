@@ -76,7 +76,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     name: '',
     version: 'Version 1.0.0',
     status: 'stable',
-    detection_status: '',
+    detection_status: 'UNSURE',
     action_label: 'DOWNLOAD',
     file_url: '',
     open_url: '',
@@ -268,7 +268,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
         name: '',
         version: 'Version 1.0.0',
         status: 'stable',
-        detection_status: '',
+        detection_status: 'UNSURE',
         action_label: 'DOWNLOAD',
         file_url: '',
         open_url: '',
@@ -787,14 +787,14 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
             </select>
             {(newDownload.name || '').toLowerCase().includes('internal') ? (
               <select
-                value={newDownload.detection_status || 'unsure'}
+                value={newDownload.detection_status || 'UNSURE'}
                 onChange={(e) => setNewDownload((prev) => ({ ...prev, detection_status: e.target.value }))}
                 className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-zinc-500 transition"
                 title="Detection Status (Internal)"
               >
                 {DETECTION_STATUSES.map((s) => (
                   <option key={s} value={s}>
-                    {s}
+                    {`DETECTION STATUS: ${s}`}
                   </option>
                 ))}
               </select>
@@ -862,14 +862,14 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                   </select>
                   {String(item.name || '').toLowerCase().includes('internal') ? (
                     <select
-                      value={item.detection_status || 'unsure'}
+                      value={item.detection_status || 'UNSURE'}
                       onChange={(e) => updateLocalDownload(item.id, { detection_status: e.target.value })}
                       className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
                       title="Detection Status (Internal)"
                     >
                       {DETECTION_STATUSES.map((s) => (
                         <option key={s} value={s}>
-                          {s}
+                          {`DETECTION STATUS: ${s}`}
                         </option>
                       ))}
                     </select>

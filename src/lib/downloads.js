@@ -36,6 +36,7 @@ export function getDefaultDownloads() {
   ];
 }
 
+function normalizeItem(item, index = 0) {
   const rawDet = String(item?.detection_status || '').toUpperCase();
   const detection = DETECTION_STATUSES.includes(rawDet) ? rawDet : DETECTION_STATUSES[0];
   return {
