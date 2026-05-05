@@ -45,7 +45,7 @@ export default function MusicWidget({ accent }) {
     >
 
 
-      <div className={`relative flex flex-col bg-[#111114]/90 backdrop-blur-xl border border-zinc-800/60 rounded-[2rem] shadow-2xl overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'w-[400px] h-[600px]' : 'w-[280px] h-[80px]'}`}>
+      <div className={`relative flex flex-col bg-[#111114]/90 backdrop-blur-xl border border-zinc-800/60 rounded-[2rem] shadow-2xl overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'w-[400px] h-[600px]' : 'w-[280px] h-[92px]'}`}>
 
         {/* Drag Handle & Header */}
         <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5 cursor-grab active:cursor-grabbing">
@@ -106,9 +106,9 @@ export default function MusicWidget({ accent }) {
                     href={spotifyUrl.replace('/embed/', '/')} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-zinc-400 hover:text-white text-[9px] font-bold uppercase tracking-widest transition"
+                    className="text-zinc-400 hover:text-white text-[10px] font-black uppercase tracking-[0.1em] transition"
                   >
-                    Open Spotify
+                    ADD TRACK
                   </a>
                 </div>
               </div>
