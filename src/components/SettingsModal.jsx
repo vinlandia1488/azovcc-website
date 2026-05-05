@@ -396,11 +396,8 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                          <option value="slide">Slide (A -&gt; ZOV)</option>
                          <option value="blur">Blur Fade</option>
                          <option value="pulse">Pulse</option>
-                         <option value="zoom">Zoom</option>
                          <option value="blink">Blink</option>
-                         <option value="drift">Drift</option>
                          <option value="shimmer">Shimmer</option>
-                         <option value="type">Type</option>
                        </select>
                      </div>
                      <div className="flex items-end">
@@ -417,11 +414,9 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                        </button>
                      </div>
                    </div>
-                   <p className="text-zinc-500 text-[10px]">
-                     Controls AZOV branding animation. Choose Off to disable animation.
-                   </p>
+                   <p className="text-zinc-500 text-[10px]">js some fun animations to play around with</p>
                    <div className="grid grid-cols-2 gap-3">
-                     {['off', 'slide', 'blur', 'pulse', 'zoom', 'blink', 'drift', 'shimmer', 'type'].map((style) => (
+                     {['off', 'slide', 'blur', 'pulse', 'blink', 'shimmer'].map((style) => (
                        <button
                          key={style}
                          type="button"
