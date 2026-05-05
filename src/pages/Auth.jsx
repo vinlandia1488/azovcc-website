@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { loginUser, registerUser, getSession, ensureAdminExists, getDiscordAuthUrl, fetchDiscordUser } from '@/lib/auth';
 import { Eye, EyeOff, MessageSquare, CheckCircle2 } from 'lucide-react';
 import PreviewTablesModal from '@/components/PreviewTablesModal';
+import { motion } from 'framer-motion';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -76,6 +77,14 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-[#07070a] flex items-center justify-center relative overflow-hidden">
+      <a
+        href="https://discord.gg/ycymTeFWBd"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute top-5 right-5 z-20 px-4 py-2 rounded-xl bg-[#5865F2]/10 border border-[#5865F2]/30 text-[#b9c9ff] hover:text-white hover:bg-[#5865F2]/20 transition text-xs font-bold uppercase tracking-widest"
+      >
+        discord
+      </a>
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-zinc-800/20 rounded-full blur-3xl" />
       </div>
@@ -83,6 +92,23 @@ export default function Auth() {
       <div className="relative z-10 w-full max-w-[420px] mx-4">
         <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-8 shadow-2xl">
           <div className="text-center mb-6">
+            <motion.h1
+              className="text-white text-3xl font-black tracking-[0.22em] uppercase"
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: [1, 1.01, 1] }}
+              transition={{ duration: 2.2, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
+              style={{ textShadow: '0 0 14px rgba(255,255,255,0.08)' }}
+            >
+              <span style={{ textShadow: 'none' }}>azov</span>
+              <motion.span
+                className="inline-block text-[#ef4444]"
+                animate={{ filter: ['drop-shadow(0 0 0 rgba(239,68,68,0))', 'drop-shadow(0 0 12px rgba(239,68,68,0.55))', 'drop-shadow(0 0 22px rgba(239,68,68,0.25))'] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                style={{ letterSpacing: '0.02em' }}
+              >
+                .cc
+              </motion.span>
+            </motion.h1>
             <h1 className="text-white text-2xl font-semibold mb-1">
               {mode === 'login' ? 'Welcome back' : 'Create account'}
             </h1>
