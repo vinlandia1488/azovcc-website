@@ -1173,7 +1173,6 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
           onClose={() => setSelectedKey(null)}
           accent={accent}
           onUpdate={loadData}
-          accounts={accounts}
         />
       )}
 

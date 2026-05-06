@@ -79,7 +79,7 @@ export default function UserDetailModal({ user, onClose, accent, onUpdate }) {
 
     setUpdating(true);
     try {
-      await upgradeToInternal(u.username, keyToUse);
+      await upgradeToInternal(u.username, keyToUse, { updateSession: false });
       if (onUpdate) await onUpdate();
       alert("Successfully upgraded user to Internal!");
     } catch (err) {

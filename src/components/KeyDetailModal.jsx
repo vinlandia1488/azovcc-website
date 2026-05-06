@@ -1,18 +1,17 @@
 import { useState } from 'react';
 import { updateLicenseKeyRecord } from '@/lib/license-keys';
-import { getBackendDb } from '@/lib/backend';
-import { X, Key, Shield, ArrowUpCircle } from 'lucide-react';
-
-const db = getBackendDb();
+import { upgradeToInternal } from '@/lib/auth';
+import { X, Key, ArrowUpCircle } from 'lucide-react';
 
 function hashDisplay(str) {
   if (!str) return '—';
   return str.substring(0, 4) + '••••••••' + str.substring(str.length - 4);
 }
 
-export default function KeyDetailModal({ keyRecord, onClose, accent, onUpdate, accounts = [] }) {
+export default function KeyDetailModal({ keyRecord, onClose, accent, onUpdate }) {
   const [updating, setUpdating] = useState(false);
   const [manualLicenseInput, setManualLicenseInput] = useState('');
+  const [linkError, setLinkError] = useState('');
 
   if (!keyRecord) return null;
 
@@ -20,38 +19,24 @@ export default function KeyDetailModal({ keyRecord, onClose, accent, onUpdate, a
     const newInternal = manualLicenseInput.trim();
     if (!newInternal) return;
     setUpdating(true);
+    setLinkError('');
     try {
-      // Update the key record
-      await updateLicenseKeyRecord(keyRecord.id, {
-        internal_key: newInternal,
-        type: 'internal'
-      });
-      
-      // If the key is used by a user, we should also update the user's account to have the internal license
       if (keyRecord.used_by_username) {
-        const user = accounts.find(a => a.username === keyRecord.used_by_username);
-        if (user && user.id && !user.internal_license) {
-          const oldLicense = user.license_key || '';
-          let discordInfoPacked = '';
-          if (oldLicense.includes('|+|')) {
-            const parts = oldLicense.split('|+|');
-            if (parts.length >= 5)
-              discordInfoPacked = '|+|' + (parts[2] || '') + '|+|' + (parts[3] || '') + '|+|' + (parts[4] || '');
-          }
-          const scriptLicense = user.script_license || '';
-          await db.entities.Account.update(user.id, {
-            internal_license: newInternal,
-            script_license: scriptLicense,
-            license_key: newInternal + '|+|' + scriptLicense + discordInfoPacked,
-          });
-        }
+        await upgradeToInternal(keyRecord.used_by_username, newInternal, {
+          updateSession: false,
+        });
+      } else {
+        await updateLicenseKeyRecord(keyRecord.id, {
+          internal_key: newInternal,
+          type: 'internal',
+        });
       }
 
       setManualLicenseInput('');
       if (onUpdate) await onUpdate();
       onClose();
     } catch (err) {
-      alert('Failed to link internal key: ' + err.message);
+      setLinkError(err?.message || 'Failed to link internal key');
     } finally {
       setUpdating(false);
     }
@@ -117,23 +102,39 @@ export default function KeyDetailModal({ keyRecord, onClose, accent, onUpdate, a
           {/* Action: Link Internal Key for Script-only keys */}
           {keyRecord.type === 'script' && !keyRecord.internal_key && (
             <div className="pt-2">
-              <p className="text-zinc-400 text-xs mb-3">This is a script-only key. You can link an internal key to upgrade it.</p>
-              <div className="flex gap-2">
-                <input
-                  value={manualLicenseInput}
-                  onChange={e => setManualLicenseInput(e.target.value)}
-                  placeholder="Type internal license key..."
-                  className="flex-1 bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-2.5 text-xs font-mono placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50"
-                />
-                <button
-                  onClick={handleLinkInternalKey}
-                  disabled={updating || !manualLicenseInput.trim()}
-                  className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 px-4 py-2.5 rounded-xl text-xs font-bold transition disabled:opacity-40"
-                >
-                  <ArrowUpCircle size={14} />
-                  LINK
-                </button>
-              </div>
+              <p className="text-zinc-400 text-xs mb-3">
+                {keyRecord.used_by_username
+                  ? 'Enter an unused internal key from your Keys list to upgrade this user (same as redeem in Settings).'
+                  : 'Attach an internal key string to this unused script key record (optional).'}
+              </p>
+              <form
+                className="flex flex-col gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleLinkInternalKey();
+                }}
+              >
+                <div className="flex gap-2">
+                  <input
+                    value={manualLicenseInput}
+                    onChange={(e) => {
+                      setManualLicenseInput(e.target.value);
+                      setLinkError('');
+                    }}
+                    placeholder="Type internal license key..."
+                    className="flex-1 bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-2.5 text-xs font-mono placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={updating || !manualLicenseInput.trim()}
+                    className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 px-4 py-2.5 rounded-xl text-xs font-bold transition disabled:opacity-40 shrink-0"
+                  >
+                    <ArrowUpCircle size={14} />
+                    {updating ? '…' : 'LINK'}
+                  </button>
+                </div>
+                {linkError && <p className="text-red-400 text-[11px]">{linkError}</p>}
+              </form>
             </div>
           )}
         </div>

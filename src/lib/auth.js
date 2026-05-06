@@ -238,7 +238,10 @@ function normalizeSessionAccount(account, fallbackUsername = "") {
   };
 }
 
-export async function upgradeToInternal(username, internalKey) {
+export async function upgradeToInternal(username, internalKey, options = {}) {
+  const updateSession =
+    typeof options === "boolean" ? options : options?.updateSession !== false;
+
   const accounts = await db.entities.Account.filter({ username });
   if (!accounts || accounts.length === 0) throw new Error("User not found");
   const account = accounts[0];
@@ -260,11 +263,12 @@ export async function upgradeToInternal(username, internalKey) {
       discordInfoPacked = "|+|" + (parts[2] || "") + "|+|" + (parts[3] || "") + "|+|" + (parts[4] || "");
   }
 
+  const scriptPart = account.script_license || row.script_key || "";
   const updated = {
     ...account,
     internal_license: row.internal_key,
-    script_license: row.script_key || account.script_license,
-    license_key: row.internal_key + "|+|" + (row.script_key || account.script_license || "") + discordInfoPacked,
+    script_license: scriptPart,
+    license_key: row.internal_key + "|+|" + scriptPart + discordInfoPacked,
   };
 
   await db.entities.Account.update(account.id, {
@@ -273,7 +277,9 @@ export async function upgradeToInternal(username, internalKey) {
     license_key: updated.license_key,
     assigned_internal_key: "",
   });
-  setSession(normalizeSessionAccount(updated));
+  if (updateSession) {
+    setSession(normalizeSessionAccount(updated));
+  }
   return updated;
 }
 
