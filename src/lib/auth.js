@@ -1,4 +1,4 @@
-import { consumeLicenseForRegistration } from "@/lib/license-keys";
+import { consumeLicenseForRegistration, getLicenseKeys, markLicenseKeyUsed } from "@/lib/license-keys";
 import { getBackendDb } from "@/lib/backend";
 
 const db = getBackendDb();
