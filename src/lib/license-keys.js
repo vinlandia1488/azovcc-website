@@ -56,6 +56,7 @@ function normalize(row) {
     key: rawKey,
     note: row?.note || "",
     used: Boolean(row?.used),
+    reserved_for_username: row?.reserved_for_username || "",
     used_by_username: row?.used_by_username || "",
     used_at: row?.used_at || null,
     created_date: row?.created_date || new Date().toISOString(),
@@ -198,6 +199,7 @@ export async function markLicenseKeyUsed(id, username) {
   try {
     await tryDbUpdate(id, {
       used: true,
+      reserved_for_username: "",
       used_by_username: username,
       used_at: usedAt,
     });

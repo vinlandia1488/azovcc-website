@@ -246,6 +246,9 @@ export async function upgradeToInternal(username, internalKey) {
   const keys = await getLicenseKeys();
   const row = keys.find((k) => !k.used && k.type === "internal" && k.internal_key === internalKey);
   if (!row) throw new Error("Invalid or already used internal key");
+  if (row.reserved_for_username && String(row.reserved_for_username) !== String(username)) {
+    throw new Error("This internal key is reserved for a different user");
+  }
 
   await markLicenseKeyUsed(row.id, username);
 
@@ -267,7 +270,8 @@ export async function upgradeToInternal(username, internalKey) {
   await db.entities.Account.update(account.id, {
     internal_license: updated.internal_license,
     script_license: updated.script_license,
-    license_key: updated.license_key
+    license_key: updated.license_key,
+    assigned_internal_key: "",
   });
   setSession(normalizeSessionAccount(updated));
   return updated;

@@ -11,7 +11,7 @@ import {
   getConfigTemplatesShared,
   saveConfigTemplatesShared,
 } from '@/lib/config-templates';
-import { createLicenseKeyRecord, deleteLicenseKeyRecord, getLicenseKeys } from '@/lib/license-keys';
+import { createLicenseKeyRecord, deleteLicenseKeyRecord, getLicenseKeys, updateLicenseKeyRecord } from '@/lib/license-keys';
 import {
   createDownloadItem,
   deleteDownloadItem,
@@ -20,7 +20,7 @@ import {
   getDownloadItems,
   updateDownloadItem,
 } from '@/lib/downloads';
-import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, Shield, User, Search, Wrench, CalendarClock, StopCircle, ImagePlus, Music } from 'lucide-react';
+import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, Shield, User, Search, Wrench, CalendarClock, StopCircle, ImagePlus, Music, SendHorizontal } from 'lucide-react';
 
 
 import UserDetailModal from '@/components/UserDetailModal';
@@ -56,7 +56,7 @@ function CopyBtn({ value }) {
   );
 }
 
-export default function PanelTab({ accent, session, onAnnouncementSaved }) {
+export default function PanelTab({ accent, session, onAnnouncementSaved, onAction }) {
   const [keys, setKeys] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [generating, setGenerating] = useState(false);
@@ -88,6 +88,8 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [keySearchQuery, setKeySearchQuery] = useState('');
   const [confirmAdminTarget, setConfirmAdminTarget] = useState(null);
+  const [assignInternalTarget, setAssignInternalTarget] = useState(null);
+  const [assignInternalKeyId, setAssignInternalKeyId] = useState('');
   const [selectedKey, setSelectedKey] = useState(null);
   const [panelWorking, setPanelWorking] = useState(false);
   const [maintenance, setMaintenanceState] = useState({ active: false, from: '', to: '' });
@@ -119,7 +121,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     );
   }, [keys, keySearchQuery]);
 
-  const availableInternalKeys = useMemo(() => keys.filter(k => !k.used && k.type === 'internal'), [keys]);
+  const availableInternalKeys = useMemo(() => keys.filter(k => !k.used && k.type === 'internal' && !k.reserved_for_username), [keys]);
 
   useEffect(() => {
     loadData();
@@ -360,6 +362,33 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
     await deleteUserAccount(account);
     await loadData();
     if (typeof onAction === 'function') onAction();
+  }
+
+  async function assignInternalKeyToUser(account) {
+    if (!account?.id || !account?.username || !assignInternalKeyId) return;
+    setPanelWorking(true);
+    setPanelError('');
+    try {
+      const keyRecord = keys.find((k) => k.id === assignInternalKeyId);
+      if (!keyRecord || keyRecord.used || keyRecord.type !== 'internal') {
+        throw new Error('Selected internal key is unavailable.');
+      }
+      await db.entities.Account.update(account.id, {
+        assigned_internal_key: keyRecord.internal_key,
+      });
+      await updateLicenseKeyRecord(keyRecord.id, {
+        reserved_for_username: account.username,
+        note: `${keyRecord.note || ''}${keyRecord.note ? ' ' : ''}[ASSIGNED:${account.username}]`,
+      });
+      setAssignInternalTarget(null);
+      setAssignInternalKeyId('');
+      await loadData();
+      if (typeof onAction === 'function') onAction();
+    } catch (err) {
+      setPanelError(err?.message || 'Failed to assign internal key.');
+    } finally {
+      setPanelWorking(false);
+    }
   }
 
 
@@ -739,6 +768,19 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
                           >
                             <ExternalLink size={14} />
                           </button>
+                          {a.username !== 'admin' && (
+                            <button
+                              onClick={() => {
+                                setAssignInternalTarget(a);
+                                setAssignInternalKeyId('');
+                              }}
+                              disabled={panelWorking || !!a.internal_license || availableInternalKeys.length === 0}
+                              className="p-2 text-zinc-500 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition disabled:opacity-40"
+                              title={a.internal_license ? 'User already has internal license' : 'Assign Internal Key to User'}
+                            >
+                              <SendHorizontal size={14} />
+                            </button>
+                          )}
                           {a.username !== 'admin' && (
                             <button
                               onClick={() => removeUser(a)}
@@ -1133,6 +1175,55 @@ export default function PanelTab({ accent, session, onAnnouncementSaved }) {
           onUpdate={loadData}
           accounts={accounts}
         />
+      )}
+
+      {assignInternalTarget && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={() => setAssignInternalTarget(null)}>
+          <div className="bg-[#111114] border border-indigo-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                <Key size={18} className="text-indigo-400" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm">Assign Internal Key</p>
+                <p className="text-zinc-500 text-[11px]">User: @{assignInternalTarget.username}</p>
+              </div>
+            </div>
+
+            <select
+              value={assignInternalKeyId}
+              onChange={(e) => setAssignInternalKeyId(e.target.value)}
+              className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-500 transition"
+            >
+              <option value="">Select available internal key...</option>
+              {availableInternalKeys.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.internal_key}
+                </option>
+              ))}
+            </select>
+
+            <p className="text-zinc-500 text-[11px] mt-3">
+              This reserves the key for this user. They can redeem it in Settings to upgrade.
+            </p>
+
+            <div className="flex gap-2 mt-5">
+              <button
+                onClick={() => assignInternalKeyToUser(assignInternalTarget)}
+                disabled={panelWorking || !assignInternalKeyId}
+                className="flex-1 py-2.5 rounded-xl text-[11px] font-bold bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 transition disabled:opacity-50"
+              >
+                {panelWorking ? 'ASSIGNING...' : 'ASSIGN KEY'}
+              </button>
+              <button
+                onClick={() => setAssignInternalTarget(null)}
+                className="flex-1 py-2.5 rounded-xl text-[11px] font-bold bg-zinc-800 hover:bg-zinc-700 text-white transition"
+              >
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {confirmAdminTarget && (

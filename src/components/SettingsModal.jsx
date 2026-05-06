@@ -284,6 +284,18 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                <div className="h-px bg-zinc-800/60" />
                <div>
                  <h3 className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-4">License Key</h3>
+                {!session.internal_license && session.assigned_internal_key && (
+                  <div className="mb-3 p-3 rounded-xl border border-indigo-500/30 bg-indigo-500/10">
+                    <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest mb-1">Assigned Internal Key</p>
+                    <p className="text-white text-xs break-all font-mono">{session.assigned_internal_key}</p>
+                    <button
+                      onClick={() => setInternalKey(session.assigned_internal_key)}
+                      className="mt-2 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-indigo-500/20 border border-indigo-500/30 text-indigo-200 hover:bg-indigo-500/30 transition"
+                    >
+                      USE ASSIGNED KEY
+                    </button>
+                  </div>
+                )}
                  <input 
                     type="text"
                     value={internalKey}
