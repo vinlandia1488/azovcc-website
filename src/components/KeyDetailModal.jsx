@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { updateLicenseKeyRecord } from '@/lib/license-keys';
 import { upgradeToInternal } from '@/lib/auth';
+import { getBackendDb } from '@/lib/backend';
 import { X, Key, ArrowUpCircle } from 'lucide-react';
+
+const db = getBackendDb();
 
 function hashDisplay(str) {
   if (!str) return '—';
@@ -22,8 +25,39 @@ export default function KeyDetailModal({ keyRecord, onClose, accent, onUpdate })
     setLinkError('');
     try {
       if (keyRecord.used_by_username) {
-        await upgradeToInternal(keyRecord.used_by_username, newInternal, {
-          updateSession: false,
+        try {
+          await upgradeToInternal(keyRecord.used_by_username, newInternal, {
+            updateSession: false,
+          });
+        } catch (err) {
+          const message = String(err?.message || '');
+          if (!message.toLowerCase().includes('invalid or already used internal key')) {
+            throw err;
+          }
+          const users = await db.entities.Account.filter({ username: keyRecord.used_by_username });
+          if (!users || users.length === 0) {
+            throw new Error('Linked user no longer exists.');
+          }
+          const user = users[0];
+          const oldLicense = user.license_key || '';
+          let discordInfoPacked = '';
+          if (oldLicense.includes('|+|')) {
+            const parts = oldLicense.split('|+|');
+            if (parts.length >= 5) {
+              discordInfoPacked = '|+|' + (parts[2] || '') + '|+|' + (parts[3] || '') + '|+|' + (parts[4] || '');
+            }
+          }
+          const scriptPart = user.script_license || keyRecord.script_key || '';
+          await db.entities.Account.update(user.id, {
+            internal_license: newInternal,
+            script_license: scriptPart,
+            license_key: newInternal + '|+|' + scriptPart + discordInfoPacked,
+            assigned_internal_key: '',
+          });
+        }
+        await updateLicenseKeyRecord(keyRecord.id, {
+          internal_key: newInternal,
+          type: 'internal',
         });
       } else {
         await updateLicenseKeyRecord(keyRecord.id, {
@@ -104,7 +138,7 @@ export default function KeyDetailModal({ keyRecord, onClose, accent, onUpdate })
             <div className="pt-2">
               <p className="text-zinc-400 text-xs mb-3">
                 {keyRecord.used_by_username
-                  ? 'Enter an unused internal key from your Keys list to upgrade this user (same as redeem in Settings).'
+                  ? 'Type an internal key to upgrade this user now. If it exists unused, it redeems; otherwise it directly assigns.'
                   : 'Attach an internal key string to this unused script key record (optional).'}
               </p>
               <form
