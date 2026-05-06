@@ -247,7 +247,14 @@ export async function upgradeToInternal(username, internalKey, options = {}) {
   const account = accounts[0];
 
   const keys = await getLicenseKeys();
-  const row = keys.find((k) => !k.used && k.type === "internal" && k.internal_key === internalKey);
+  const normalized = String(internalKey || "").trim();
+  const row = keys.find((k) => {
+    if (!k || k.used || k.type !== "internal") return false;
+    const ik = String(k.internal_key || "").trim();
+    const sk = String(k.script_key || "").trim();
+    const kk = String(k.key || "").trim();
+    return ik === normalized || sk === normalized || kk === normalized;
+  });
   if (!row) throw new Error("Invalid or already used internal key");
   if (row.reserved_for_username && String(row.reserved_for_username) !== String(username)) {
     throw new Error("This internal key is reserved for a different user");
