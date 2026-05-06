@@ -77,7 +77,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
     version: 'Version 1.0.0',
     status: 'stable',
     detection_status: 'UNSURE',
-    action_label: 'DOWNLOAD',
+    action_label: 'download',
     file_url: '',
     open_url: '',
   });
@@ -271,7 +271,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
         version: 'Version 1.0.0',
         status: 'stable',
         detection_status: 'UNSURE',
-        action_label: 'DOWNLOAD',
+        action_label: 'download',
         file_url: '',
         open_url: '',
       });
@@ -425,13 +425,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
       
       <div className="flex gap-2">
         {[
-          { id: 'keys', label: 'License Keys', icon: Key },
-          { id: 'users', label: 'Users', icon: Users },
-          { id: 'downloads', label: 'Downloads', icon: Download },
-          { id: 'announcement', label: 'Announcement', icon: Megaphone },
-          { id: 'configs', label: 'Configs', icon: FileText },
-          { id: 'music', label: 'Music', icon: Music },
-          { id: 'maintenance', label: 'Maintenance', icon: Wrench },
+          { id: 'keys', label: 'license keys', icon: Key },
+          { id: 'users', label: 'users', icon: Users },
+          { id: 'downloads', label: 'downloads', icon: Download },
+          { id: 'announcement', label: 'announcement', icon: Megaphone },
+          { id: 'configs', label: 'configs', icon: FileText },
+          { id: 'music', label: 'music', icon: Music },
+          { id: 'maintenance', label: 'maintenance', icon: Wrench },
         ].map(t => (
           <button
             key={t.id}
@@ -451,31 +451,31 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
         <div className="space-y-6">
           <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-6 space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-white font-bold text-lg">Generate Keys</h3>
+              <h3 className="text-white font-bold text-lg">generate keys</h3>
               <div className="flex gap-2">
                 <button 
                   onClick={() => setNewKeyType('script')}
                   className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${newKeyType === 'script' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:bg-zinc-800/40'}`}
                 >
-                  SCRIPT ONLY
+                  script only
                 </button>
                 <button 
                   onClick={() => setNewKeyType('internal_only')}
                   className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${newKeyType === 'internal_only' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:bg-zinc-800/40'}`}
                 >
-                  INTERNAL ONLY
+                  internal only
                 </button>
                 <button 
                   onClick={() => setNewKeyType('internal')}
                   className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${newKeyType === 'internal' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:bg-zinc-800/40'}`}
                 >
-                  INTERNAL PAIR
+                  internal pair
                 </button>
                 <button 
                   onClick={() => setNewKeyType('bulk')}
                   className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${newKeyType === 'bulk' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:bg-zinc-800/40'}`}
                 >
-                  BULK ADD
+                  bulk add
                 </button>
               </div>
             </div>
@@ -485,13 +485,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                 <textarea
                   value={bulkScriptKeys}
                   onChange={(e) => setBulkScriptKeys(e.target.value)}
-                  placeholder="Paste script keys here (one per line)...&#10;scriptkey1&#10;scriptkey2&#10;scriptkey3"
+                  placeholder="paste script keys here (one per line)...&#10;scriptkey1&#10;scriptkey2&#10;scriptkey3"
                   className="w-full h-32 bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 font-mono resize-y"
                 />
                 <input
                   value={note}
                   onChange={e => setNote(e.target.value)}
-                  placeholder="Note / Tag (Optional, applied to all keys)"
+                  placeholder="note (optional, applied to all keys)"
                   className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
                 />
               </div>
@@ -501,7 +501,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                   <input
                     value={manualInternalKey}
                     onChange={(e) => setManualInternalKey(e.target.value)}
-                    placeholder="Internal Key (Auto)"
+                    placeholder="internal key (auto)"
                     disabled={newKeyType === 'script'}
                     className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm disabled:opacity-30 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
                   />
@@ -518,7 +518,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                   <input
                     value={manualScriptKey}
                     onChange={(e) => setManualScriptKey(e.target.value)}
-                    placeholder="Script Key (Auto)"
+                    placeholder="script key (auto)"
                     disabled={newKeyType === 'internal_only'}
                     className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 disabled:opacity-30"
                   />
@@ -535,7 +535,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                   <input
                     value={note}
                     onChange={e => setNote(e.target.value)}
-                    placeholder="Note / Tag"
+                    placeholder="note"
                     className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
                   />
                 </div>
@@ -549,13 +549,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
               style={{ background: accent, color: accentText }}
             >
               <Plus size={18} />
-              {generating ? 'CREATING...' : 'CREATE LICENSE KEY'}
+              {generating ? 'creating...' : 'create license key'}
             </button>
           </div>
 
           <div className="bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden shadow-xl">
             <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20 flex items-center justify-between">
-              <h3 className="text-white text-sm font-bold uppercase tracking-wider">License Keys</h3>
+              <h3 className="text-white text-sm font-bold tracking-wider">license keys</h3>
               <div className="flex items-center gap-3">
                 <span className="text-zinc-600 text-[10px] font-bold">{keys.filter(k => !k.used).length} available / {keys.length} total</span>
                 <div className="relative">
@@ -574,19 +574,19 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-800/60 text-[10px] uppercase font-bold tracking-widest text-zinc-600">
-                    <th className="px-6 py-4">Type</th>
-                    <th className="px-6 py-4">Key</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Used By</th>
-                    <th className="px-6 py-4">Note</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                    <th className="px-6 py-4">type</th>
+                    <th className="px-6 py-4">key</th>
+                    <th className="px-6 py-4">status</th>
+                    <th className="px-6 py-4">used by</th>
+                    <th className="px-6 py-4">note</th>
+                    <th className="px-6 py-4 text-right">actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/30">
                   {filteredKeys.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-6 py-12 text-center text-zinc-600 text-sm italic">
-                        {keys.length === 0 ? 'No license keys found.' : 'No keys match your search.'}
+                        {keys.length === 0 ? 'no license keys found.' : 'no keys match your search.'}
                       </td>
                     </tr>
                   ) : (
@@ -612,7 +612,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                           <div className="flex items-center gap-2">
                             <div className={`w-1.5 h-1.5 rounded-full ${k.used ? 'bg-red-500' : 'bg-green-500'}`} />
                             <span className={`text-[11px] font-bold uppercase ${k.used ? 'text-red-400' : 'text-green-400'}`}>
-                              {k.used ? 'Redeemed' : 'Active'}
+                              {k.used ? 'redeemed' : 'active'}
                             </span>
                           </div>
                         </td>
@@ -638,14 +638,14 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                             <button
                               onClick={() => setSelectedKey(k)}
                               className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition"
-                              title="View Key Details"
+                              title="view key details"
                             >
                               <ExternalLink size={14} />
                             </button>
                             <button
                               onClick={() => removeLicenseKey(k.id)}
                               className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
-                              title="Delete Key"
+                              title="delete key"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -664,7 +664,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
       {tab === 'users' && (
         <div className="bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden shadow-xl">
           <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20 flex items-center justify-between">
-            <h3 className="text-white text-sm font-bold uppercase tracking-wider">User Directory</h3>
+            <h3 className="text-white text-sm font-bold tracking-wider">user directory</h3>
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
               <input 
@@ -680,19 +680,19 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-zinc-800/60 text-[10px] uppercase font-bold tracking-widest text-zinc-600">
-                  <th className="px-6 py-4">UID</th>
-                  <th className="px-6 py-4">Username</th>
-                  <th className="px-6 py-4">Discord</th>
-                  <th className="px-6 py-4">License</th>
-                  <th className="px-6 py-4">Last Login</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                  <th className="px-6 py-4">uid</th>
+                  <th className="px-6 py-4">username</th>
+                  <th className="px-6 py-4">discord</th>
+                  <th className="px-6 py-4">license</th>
+                  <th className="px-6 py-4">last login</th>
+                  <th className="px-6 py-4 text-right">actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800/30">
                 {filteredAccounts.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-zinc-600 text-sm italic">
-                      {accounts.length === 0 ? 'No users found.' : 'No users match your search.'}
+                      {accounts.length === 0 ? 'no users found.' : 'no users match your search.'}
                     </td>
                   </tr>
                 ) : (
@@ -712,7 +712,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                               {a.is_admin && <Shield size={10} className="text-amber-500" />}
                             </div>
                             <span className="text-[10px] text-zinc-600 uppercase tracking-tighter">
-                              {a.is_admin ? 'Administrator' : 'User'}
+                              {a.is_admin ? 'administrator' : 'user'}
                             </span>
                           </div>
                         </div>
@@ -724,13 +724,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                             <span className="text-[9px] text-zinc-600 font-mono">{a.discord_id}</span>
                           </div>
                         ) : (
-                          <span className="text-zinc-700 text-xs italic">Not linked</span>
+                          <span className="text-zinc-700 text-xs italic">not linked</span>
                         )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 group/key">
                           <code className="text-zinc-500 text-[10px] font-mono">
-                            {revealedKeys[`u-${a.username}-int`] ? (a.internal_license || 'NO LICENSE') : hashDisplay(a.internal_license)}
+                            {revealedKeys[`u-${a.username}-int`] ? (a.internal_license || 'no license') : hashDisplay(a.internal_license)}
                           </code>
                           {a.internal_license && (
                             <button onClick={() => toggleReveal(`u-${a.username}-int`)} className="text-zinc-600 hover:text-white transition opacity-0 group-hover/key:opacity-100">
@@ -741,7 +741,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-zinc-500 text-[11px]">
-                          {a.last_login ? new Date(a.last_login).toLocaleDateString() : 'Never'}
+                          {a.last_login ? new Date(a.last_login).toLocaleDateString() : 'never'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -756,7 +756,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                                   ? 'text-amber-500 hover:text-amber-300 hover:bg-amber-500/10'
                                   : 'text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10'
                               }`}
-                              title={a.is_admin ? 'Revoke Admin' : 'Make Admin'}
+                              title={a.is_admin ? 'revoke admin' : 'make admin'}
                             >
                               <Shield size={14} />
                             </button>
@@ -764,7 +764,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                           <button
                             onClick={() => openUserDetails(a)}
                             className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition"
-                            title="View Full Profile"
+                            title="view full profile"
                           >
                             <ExternalLink size={14} />
                           </button>
@@ -776,7 +776,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                               }}
                               disabled={panelWorking || !!a.internal_license || availableInternalKeys.length === 0}
                               className="p-2 text-zinc-500 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition disabled:opacity-40"
-                              title={a.internal_license ? 'User already has internal license' : 'Assign Internal Key to User'}
+                              title={a.internal_license ? 'user already has internal license' : 'assign internal key to user'}
                             >
                               <SendHorizontal size={14} />
                             </button>
@@ -785,7 +785,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                             <button
                               onClick={() => removeUser(a)}
                               className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
-                              title="Ban/Remove User"
+                              title="ban/remove user"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -836,7 +836,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
               >
                 {DETECTION_STATUSES.map((s) => (
                   <option key={s} value={s}>
-                    {`DETECTION STATUS: ${s}`}
+                    {`detection status: ${String(s).toLowerCase()}`}
                   </option>
                 ))}
               </select>
@@ -852,7 +852,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
             <input
               value={newDownload.file_url}
               onChange={(e) => setNewDownload((prev) => ({ ...prev, file_url: e.target.value }))}
-              placeholder="Download File URL"
+              placeholder="download file url"
               className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
             />
             <button
@@ -866,7 +866,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
             <input
               value={newDownload.open_url}
               onChange={(e) => setNewDownload((prev) => ({ ...prev, open_url: e.target.value }))}
-              placeholder="Open URL (optional)"
+              placeholder="open url (optional)"
               className="col-span-6 bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
             />
           </div>
@@ -911,7 +911,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     >
                       {DETECTION_STATUSES.map((s) => (
                         <option key={s} value={s}>
-                          {`DETECTION STATUS: ${s}`}
+                          {`detection status: ${String(s).toLowerCase()}`}
                         </option>
                       ))}
                     </select>
@@ -927,7 +927,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     value={item.file_url || ''}
                     onChange={(e) => updateLocalDownload(item.id, { file_url: e.target.value })}
                     className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
-                    placeholder="Download File URL"
+                    placeholder="download file url"
                   />
                   <div className="flex gap-2">
                     <button
@@ -935,7 +935,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                       className="flex-1 flex items-center justify-center gap-1 bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 hover:text-white hover:border-zinc-500 rounded-lg px-2 py-2 text-xs transition"
                     >
                       <Save size={11} />
-                      Save
+                      save
                     </button>
                     <button
                       onClick={() => removeDownload(item.id)}
@@ -948,7 +948,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     value={item.open_url || ''}
                     onChange={(e) => updateLocalDownload(item.id, { open_url: e.target.value })}
                     className="col-span-6 bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
-                    placeholder="Open URL (optional)"
+                    placeholder="open url (optional)"
                   />
                 </div>
               ))}
@@ -959,17 +959,17 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
       {tab === 'announcement' && (
         <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-zinc-500 text-xs">This text replaces the dashboard "Unique Identifier" card.</p>
+            <p className="text-zinc-500 text-xs">this text replaces the dashboard "unique identifier" card.</p>
             <label className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer transition ${uploadingImage ? 'opacity-50 cursor-not-allowed' : 'bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700'}`}>
               <ImagePlus size={12} />
-              {uploadingImage ? 'UPLOADING...' : 'ATTACH IMAGE'}
+              {uploadingImage ? 'uploading...' : 'attach image'}
               <input type="file" className="hidden" accept="image/*" onChange={handleAnnouncementImageUpload} disabled={uploadingImage} />
             </label>
           </div>
           <textarea
             value={announcement}
             onChange={(e) => setAnnouncementState(e.target.value)}
-            placeholder="Write announcement here..."
+            placeholder="write announcement here..."
             className="w-full min-h-[120px] bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition resize-none"
           />
           <button
@@ -983,7 +983,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
             style={{ background: accent, color: accentText, border: accentBorder }}
           >
             <Save size={13} />
-            {panelWorking ? 'SAVING...' : 'Save Announcement'}
+            {panelWorking ? 'saving...' : 'save announcement'}
           </button>
         </div>
       )}
@@ -1020,7 +1020,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
             style={{ background: accent, color: accentText, border: accentBorder }}
           >
             <Save size={13} />
-            {panelWorking ? 'SAVING...' : 'Save Config Templates'}
+            {panelWorking ? 'saving...' : 'save config templates'}
           </button>
         </div>
       )}
@@ -1029,15 +1029,15 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
       {tab === 'music' && (
         <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 space-y-4">
           <div>
-            <p className="text-zinc-400 text-xs mb-2 uppercase font-bold tracking-widest">Global Spotify Player</p>
-            <p className="text-zinc-500 text-[10px] mb-4">This URL controls the floating draggable music widget for all users.</p>
+            <p className="text-zinc-400 text-xs mb-2 font-bold tracking-widest">global spotify player</p>
+            <p className="text-zinc-500 text-[10px] mb-4">this url controls the floating draggable music widget for all users.</p>
             <input
               value={spotifyUrl}
               onChange={(e) => setSpotifyUrlState(e.target.value)}
               placeholder="https://open.spotify.com/playlist/..."
               className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
             />
-            <p className="text-zinc-500 text-[10px] mt-2">Paste a Spotify Playlist, Album, or Track link. It will automatically convert to an embed.</p>
+            <p className="text-zinc-500 text-[10px] mt-2">paste a spotify playlist, album, or track link. it will automatically convert to an embed.</p>
           </div>
           <button
             onClick={async () => {
@@ -1050,7 +1050,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
             style={{ background: accent, color: accentText, border: accentBorder }}
           >
             <Save size={13} />
-            {panelWorking ? 'SAVING...' : 'Update Player'}
+            {panelWorking ? 'saving...' : 'update player'}
           </button>
         </div>
       )}
@@ -1074,10 +1074,10 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                   <Wrench size={20} className={isActive ? 'text-red-400' : 'text-zinc-500'} />
                 </div>
                 <div>
-                  <p className="text-white font-bold text-sm">Maintenance Mode</p>
+                  <p className="text-white font-bold text-sm">maintenance mode</p>
                   {isActive && (
-                    <p className="text-xs font-semibold uppercase tracking-wider text-red-400">
-                      Currently Active — Forums are locked
+                    <p className="text-xs font-semibold tracking-wider text-red-400">
+                      currently active
                     </p>
                   )}
                 </div>
@@ -1089,7 +1089,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 text-xs font-bold transition"
                   >
                     <StopCircle size={14} />
-                    STOP MAINTENANCE
+                    stop maintenance
                   </button>
                 ) : (
                   <button
@@ -1098,7 +1098,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     style={{ background: accent, color: accentText }}
                   >
                     <Wrench size={14} />
-                    ACTIVATE MAINTENANCE
+                    activate maintenance
                   </button>
                 )}
               </div>
@@ -1107,12 +1107,12 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
             <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-6 space-y-5">
               <div className="flex items-center gap-3 mb-1">
                 <CalendarClock size={16} className="text-zinc-500" />
-                <h3 className="text-white font-bold text-sm">Maintenance Window</h3>
+                <h3 className="text-white font-bold text-sm">maintenance window</h3>
               </div>
-              <p className="text-zinc-500 text-xs">Set the duration for the maintenance. The countdown will be shown to users.</p>
+              <p className="text-zinc-500 text-xs">set the duration for maintenance. the countdown will be shown to users.</p>
               <div className="flex items-center gap-4">
                 <div className="flex-1">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-2">Duration</label>
+                  <label className="text-[10px] font-bold tracking-widest text-zinc-500 block mb-2">duration</label>
                   <input
                     id="maint-duration"
                     type="number"
@@ -1122,22 +1122,22 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-2">Unit</label>
+                  <label className="text-[10px] font-bold tracking-widest text-zinc-500 block mb-2">unit</label>
                   <select
                     id="maint-unit"
                     defaultValue="minutes"
                     className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-500 transition"
                   >
-                    <option value="minutes">Minutes</option>
-                    <option value="hours">Hours</option>
-                    <option value="days">Days</option>
+                    <option value="minutes">minutes</option>
+                    <option value="hours">hours</option>
+                    <option value="days">days</option>
                   </select>
                 </div>
               </div>
               <button
                 onClick={() => {
                   const duration = parseFloat(document.getElementById('maint-duration').value);
-                  if (isNaN(duration) || duration <= 0) return alert('Enter a valid duration');
+                  if (isNaN(duration) || duration <= 0) return alert('enter a valid duration');
                   const unit = document.getElementById('maint-unit').value;
                   const now = new Date();
                   const end = new Date(now.getTime());
@@ -1203,7 +1203,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
             </select>
 
             <p className="text-zinc-500 text-[11px] mt-3">
-              This reserves the key for this user. They can redeem it in Settings to upgrade.
+              this reserves the key for this user. they can redeem it in settings to upgrade.
             </p>
 
             <div className="flex gap-2 mt-5">
@@ -1212,13 +1212,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                 disabled={panelWorking || !assignInternalKeyId}
                 className="flex-1 py-2.5 rounded-xl text-[11px] font-bold bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 transition disabled:opacity-50"
               >
-                {panelWorking ? 'ASSIGNING...' : 'ASSIGN KEY'}
+                {panelWorking ? 'assigning...' : 'assign key'}
               </button>
               <button
                 onClick={() => setAssignInternalTarget(null)}
                 className="flex-1 py-2.5 rounded-xl text-[11px] font-bold bg-zinc-800 hover:bg-zinc-700 text-white transition"
               >
-                CANCEL
+                cancel
               </button>
             </div>
           </div>
@@ -1233,12 +1233,12 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                 <Shield size={18} className="text-amber-500" />
               </div>
               <div>
-                <p className="text-white font-bold text-sm">Confirm Action</p>
-                <p className="text-zinc-500 text-[11px]">{confirmAdminTarget.is_admin ? 'Revoke administrator' : 'Grant administrator'} privileges</p>
+                <p className="text-white font-bold text-sm">confirm action</p>
+                <p className="text-zinc-500 text-[11px]">{confirmAdminTarget.is_admin ? 'revoke administrator' : 'grant administrator'} privileges</p>
               </div>
             </div>
             <p className="text-zinc-400 text-xs mb-5 leading-relaxed">
-              Are you sure you want to {confirmAdminTarget.is_admin ? <><span className="text-red-400 font-bold">revoke admin</span> from</> : <><span className="text-amber-400 font-bold">grant admin</span> to</>} <span className="text-white font-bold">@{confirmAdminTarget.username}</span>?
+              are you sure you want to {confirmAdminTarget.is_admin ? <><span className="text-red-400 font-bold">revoke admin</span> from</> : <><span className="text-amber-400 font-bold">grant admin</span> to</>} <span className="text-white font-bold">@{confirmAdminTarget.username}</span>?
             </p>
             <div className="flex gap-2">
               <button
@@ -1250,13 +1250,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     : 'bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30'
                 }`}
               >
-                {panelWorking ? 'WORKING...' : confirmAdminTarget.is_admin ? 'YES, REVOKE ADMIN' : 'YES, MAKE ADMIN'}
+                {panelWorking ? 'working...' : confirmAdminTarget.is_admin ? 'yes, revoke admin' : 'yes, make admin'}
               </button>
               <button
                 onClick={() => setConfirmAdminTarget(null)}
                 className="flex-1 py-2.5 rounded-xl text-[11px] font-bold bg-zinc-800 hover:bg-zinc-700 text-white transition"
               >
-                CANCEL
+                cancel
               </button>
             </div>
           </div>
