@@ -31,7 +31,7 @@ export default function Auth() {
     const session = getSession();
     const hasSession = !!session;
     setRedirectToDashboard(hasSession);
-    ensureAdminExists().catch(() => {});
+    ensureAdminExists().catch(() => { });
 
     const timeout = setTimeout(() => {
       setShowIntro(false);
@@ -121,7 +121,11 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-[#07070a] flex items-center justify-center relative overflow-hidden">
+      <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet" />
       <style>{`
+        .font-garamond {
+          font-family: 'EB Garamond', serif;
+        }
         .spotlight-border {
           position: relative;
         }
@@ -154,7 +158,7 @@ export default function Auth() {
       `}</style>
       <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
       <div className="absolute inset-0 glow-overlay z-0" />
-      
+
       {showIntro && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#07070a]">
           <motion.div
@@ -192,154 +196,159 @@ export default function Auth() {
               </p>
             </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-zinc-400 text-xs mb-1.5 block">Username</label>
-              <div className="relative">
-                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-                <input
-                  type="text"
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  placeholder="Username"
-                  required
-                  autoComplete="username"
-                  maxLength={32}
-                  className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-                />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-zinc-400 text-xs mb-1.5 block">Username</label>
+                <div className="relative">
+                  <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    placeholder="Username"
+                    required
+                    autoComplete="username"
+                    maxLength={32}
+                    className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="text-zinc-400 text-xs mb-1.5 block">Password</label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                  className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-10 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-                >
-                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            {mode === 'register' && (
-              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                {!discordLinked ? (
-                  <a
-                    href={getDiscordAuthUrl()}
-                    className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-xl px-4 py-3 text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-[#5865F2]/20"
+              <div>
+                <label className="text-zinc-400 text-xs mb-1.5 block">Password</label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                    className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-10 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
                   >
-                    <MessageSquare size={18} />
-                    Connect Discord
-                  </a>
-                ) : (
-                  <div className="w-full bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={18} className="text-green-500" />
-                      <div className="flex flex-col">
-                        <span className="text-green-500 text-[10px] font-bold uppercase tracking-wider">Discord Linked</span>
-                        <span className="text-zinc-300 text-xs font-mono">{discordInfo?.username}</span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => { setDiscordLinked(false); setDiscordInfo(null); }}
-                      className="text-zinc-500 hover:text-zinc-300 text-[10px] underline"
-                    >
-                      Change
-                    </button>
-                  </div>
-                )}
+                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
-            )}
 
-            {mode === 'register' && (
-              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <label className="text-zinc-400 text-xs mb-1.5 block">License Type</label>
-                    <select
-                      value={licenseType}
-                      onChange={e => setLicenseType(e.target.value)}
-                      className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-zinc-500 transition"
+              {mode === 'register' && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  {!discordLinked ? (
+                    <a
+                      href={getDiscordAuthUrl()}
+                      className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-xl px-4 py-3 text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-[#5865F2]/20"
                     >
-                      <option value="script">Script</option>
-                      <option value="internal">Internal</option>
-                    </select>
-                  </div>
-                  {licenseType === 'internal' && (
+                      <MessageSquare size={18} />
+                      Connect Discord
+                    </a>
+                  ) : (
+                    <div className="w-full bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 size={18} className="text-green-500" />
+                        <div className="flex flex-col">
+                          <span className="text-green-500 text-[10px] font-bold uppercase tracking-wider">Discord Linked</span>
+                          <span className="text-zinc-300 text-xs font-mono">{discordInfo?.username}</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setDiscordLinked(false); setDiscordInfo(null); }}
+                        className="text-zinc-500 hover:text-zinc-300 text-[10px] underline"
+                      >
+                        Change
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {mode === 'register' && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="text-zinc-400 text-xs mb-1.5 block">Internal License Key</label>
+                      <label className="text-zinc-400 text-xs mb-1.5 block">License Type</label>
+                      <select
+                        value={licenseType}
+                        onChange={e => setLicenseType(e.target.value)}
+                        className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-zinc-500 transition"
+                      >
+                        <option value="script">Script</option>
+                        <option value="internal">Internal</option>
+                      </select>
+                    </div>
+                    {licenseType === 'internal' && (
+                      <div>
+                        <label className="text-zinc-400 text-xs mb-1.5 block">Internal License Key</label>
+                        <input
+                          type="text"
+                          value={internalLicenseKey}
+                          onChange={e => setInternalLicenseKey(e.target.value)}
+                          placeholder="Internal key..."
+                          required={licenseType === 'internal'}
+                          maxLength={64}
+                          className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <label className="text-zinc-400 text-xs mb-1.5 block">Script License Key</label>
                       <input
                         type="text"
-                        value={internalLicenseKey}
-                        onChange={e => setInternalLicenseKey(e.target.value)}
-                        placeholder="Internal key..."
-                        required={licenseType === 'internal'}
+                        value={scriptLicenseKey}
+                        onChange={e => setScriptLicenseKey(e.target.value)}
+                        placeholder="Script key..."
+                        required
                         maxLength={64}
                         className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono"
                       />
                     </div>
-                  )}
-                  <div>
-                    <label className="text-zinc-400 text-xs mb-1.5 block">Script License Key</label>
-                    <input
-                      type="text"
-                      value={scriptLicenseKey}
-                      onChange={e => setScriptLicenseKey(e.target.value)}
-                      placeholder="Script key..."
-                      required
-                      maxLength={64}
-                      className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono"
-                    />
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {error && (
-              <p className="text-red-400 text-xs bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</p>
-            )}
+              {error && (
+                <p className="text-red-400 text-xs bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</p>
+              )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-b from-zinc-100 to-zinc-300 hover:from-white hover:to-zinc-200 disabled:opacity-50 text-black font-medium py-2.5 rounded-xl text-sm transition"
-            >
-              {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Register'}
-            </button>
-          </form>
-
-          <div className="mt-4 text-center space-y-2">
-            <p className="text-zinc-500 text-xs">
-              {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
               <button
-                onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
-                className="text-[#ef4444] hover:text-red-300 font-medium transition"
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-b from-zinc-100 to-zinc-300 hover:from-white hover:to-zinc-200 disabled:opacity-50 text-black font-medium py-2.5 rounded-xl text-sm transition"
               >
-                {mode === 'login' ? 'Sign up' : 'Sign in'}
+                {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Register'}
               </button>
-            </p>
-            <button
-              onClick={() => setShowPreview(true)}
-              className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 text-xs mx-auto transition"
-            >
-              <Eye size={13} />
-              Preview tables
-            </button>
+            </form>
+
+            <div className="mt-4 text-center space-y-2">
+              <p className="text-zinc-500 text-xs">
+                {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+                <button
+                  onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
+                  className="text-[#ef4444] hover:text-red-300 font-medium transition"
+                >
+                  {mode === 'login' ? 'Sign up' : 'Sign in'}
+                </button>
+              </p>
+              <button
+                onClick={() => setShowPreview(true)}
+                className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 text-xs mx-auto transition"
+              >
+                <Eye size={13} />
+                Preview tables
+              </button>
             </div>
           </div>
+        </div>
+        <div className="mt-10 text-center space-y-2">
+          <p className="text-zinc-400/80 text-[15px] font-garamond italic tracking-widest leading-none">
+            @foreverwithmommy is my dada, rdk is my slave
+          </p>
         </div>
       </div>
 
