@@ -14,7 +14,7 @@ export default function MusicWidget({ accent }) {
   const widgetRef = useRef(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const [isHidden, setIsHidden] = useState(false);
+  const [isHidden, setIsHidden] = useState(true);
   const [hiddenEdge, setHiddenEdge] = useState('right');
 
   function snapIntoView(edge) {
@@ -135,7 +135,7 @@ export default function MusicWidget({ accent }) {
           const rect = el.getBoundingClientRect();
           const vw = window.innerWidth;
           const vh = window.innerHeight;
-          const threshold = 120;
+          const threshold = 50;
 
           let edge = null;
           if (rect.left < threshold) edge = 'left';

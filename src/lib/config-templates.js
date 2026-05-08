@@ -209,12 +209,26 @@ export async function getConfigTemplatesShared() {
   try {
     const row = await getTemplatesRow();
     if (row?.content) {
-      const parsed = JSON.parse(row.content);
+      let rawContent = row.content;
+      // If the content is a URL (starts with http), fetch the actual JSON from the file.
+      if (rawContent.trim().startsWith('http')) {
+        try {
+          const res = await fetch(rawContent.trim());
+          if (res.ok) {
+            rawContent = await res.text();
+          }
+        } catch (fetchErr) {
+          console.error('Failed to fetch large template content:', fetchErr);
+        }
+      }
+      const parsed = JSON.parse(rawContent);
       const payload = coerceTemplatesPayload(parsed);
       memoryCache = payload;
       return payload;
     }
-  } catch {}
+  } catch (err) {
+    console.error('Error loading config templates:', err);
+  }
   // If backend missing/unavailable, fall back to in-memory templates/defaults.
   return coerceTemplatesPayload(memoryCache);
 }
@@ -222,7 +236,24 @@ export async function getConfigTemplatesShared() {
 export async function saveConfigTemplatesShared({ defaultCloudConfig, previewConfig, scriptPreviewConfig }) {
   const db = getBackendDb();
   const payload = coerceTemplatesPayload({ defaultCloudConfig, previewConfig, scriptPreviewConfig });
-  const content = JSON.stringify(payload);
+  let content = JSON.stringify(payload);
+
+  // If content is very large, upload it as a file to bypass database field limits.
+  // We use 20KB as a safe threshold.
+  if (content.length > 20000) {
+    try {
+      const blob = new Blob([content], { type: 'application/json' });
+      const file = new File([blob], 'config_templates.json', { type: 'application/json' });
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
+      if (file_url) {
+        content = file_url;
+      }
+    } catch (uploadErr) {
+      console.error('Failed to upload large config content:', uploadErr);
+      // Fallback: try to save normally and let the DB error if it must.
+    }
+  }
+
   const rowsAdmin = await db.entities.CloudConfig.filter({
     name: TEMPLATES_NAME,
     owner_username: SHARED_OWNER,
