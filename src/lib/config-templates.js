@@ -126,6 +126,19 @@ export const DEFAULT_PREVIEW_CONFIG = `shared.azov = {
     },
 }`;
 
+export const DEFAULT_SCRIPT_PREVIEW_CONFIG = `-- shared.azov Script Table
+shared.azov = {
+    ["Visuals"] = {
+        ["Watermark"] = true,
+        ["Keybind List"] = true,
+    },
+    ["Utility"] = {
+        ["Auto-Heal"] = false,
+        ["Auto-Armor"] = true,
+    }
+}`;
+
+
 let memoryCache = null;
 
 export function getDefaultCloudConfig() {
@@ -147,6 +160,17 @@ export function setPreviewConfig(value) {
   memoryCache = {
     ...(memoryCache || {}),
     previewConfig: String(value || ""),
+  };
+}
+
+export function getScriptPreviewConfig() {
+  return String(memoryCache?.scriptPreviewConfig || DEFAULT_SCRIPT_PREVIEW_CONFIG);
+}
+
+export function setScriptPreviewConfig(value) {
+  memoryCache = {
+    ...(memoryCache || {}),
+    scriptPreviewConfig: String(value || ""),
   };
 }
 
@@ -174,6 +198,9 @@ function coerceTemplatesPayload(input) {
     previewConfig: String(
       input?.previewConfig ?? fallback.previewConfig ?? DEFAULT_PREVIEW_CONFIG
     ),
+    scriptPreviewConfig: String(
+      input?.scriptPreviewConfig ?? fallback.scriptPreviewConfig ?? DEFAULT_SCRIPT_PREVIEW_CONFIG
+    ),
   };
 }
 
@@ -192,9 +219,9 @@ export async function getConfigTemplatesShared() {
   return coerceTemplatesPayload(memoryCache);
 }
 
-export async function saveConfigTemplatesShared({ defaultCloudConfig, previewConfig }) {
+export async function saveConfigTemplatesShared({ defaultCloudConfig, previewConfig, scriptPreviewConfig }) {
   const db = getBackendDb();
-  const payload = coerceTemplatesPayload({ defaultCloudConfig, previewConfig });
+  const payload = coerceTemplatesPayload({ defaultCloudConfig, previewConfig, scriptPreviewConfig });
   const content = JSON.stringify(payload);
   const rowsAdmin = await db.entities.CloudConfig.filter({
     name: TEMPLATES_NAME,

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginUser, registerUser, getSession, ensureAdminExists, getDiscordAuthUrl, fetchDiscordUser } from '@/lib/auth';
-import { Eye, EyeOff, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, MessageSquare, CheckCircle2, User, Lock } from 'lucide-react';
 import PreviewTablesModal from '@/components/PreviewTablesModal';
 import { motion } from 'framer-motion';
 import BrandingMark from '@/components/BrandingMark';
+import ALogo from '@/assets/alogo.png';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -69,6 +70,24 @@ export default function Auth() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      const card = document.querySelector('.spotlight-border');
+      if (card) {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+      }
+      // Also update global ones for the background glow
+      document.documentElement.style.setProperty('--global-mouse-x', `${e.clientX}px`);
+      document.documentElement.style.setProperty('--global-mouse-y', `${e.clientY}px`);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
@@ -102,6 +121,40 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-[#07070a] flex items-center justify-center relative overflow-hidden">
+      <style>{`
+        .spotlight-border {
+          position: relative;
+        }
+        .spotlight-border::before {
+          content: "";
+          position: absolute;
+          inset: -1px;
+          background: radial-gradient(
+            var(--glow-size, 600px) circle at var(--mouse-x) var(--mouse-y),
+            rgba(255, 255, 255, 0.08),
+            transparent 80%
+          );
+          border-radius: inherit;
+          z-index: -1;
+          pointer-events: none;
+          transition: opacity 0.3s ease;
+        }
+        .card-shimmer {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.05) 0%,
+            transparent 20%,
+            transparent 100%
+          );
+          pointer-events: none;
+          border-radius: inherit;
+        }
+      `}</style>
+      <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
+      <div className="absolute inset-0 glow-overlay z-0" />
+      
       {showIntro && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#07070a]">
           <motion.div
@@ -119,47 +172,48 @@ export default function Auth() {
           </motion.div>
         </div>
       )}
-      <a
-        href="https://discord.gg/ycymTeFWBd"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute top-5 right-5 z-20 px-4 py-2 rounded-xl bg-[#5865F2]/10 border border-[#5865F2]/30 text-[#b9c9ff] hover:text-white hover:bg-[#5865F2]/20 transition text-xs font-bold uppercase tracking-widest"
-      >
-        discord
-      </a>
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] h-[640px] bg-black/40 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full max-w-[420px] mx-4">
-        <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-8 shadow-2xl">
-          <div className="text-center mb-6">
-            <h1 className="text-white text-2xl font-semibold mb-1">
-              {mode === 'login' ? 'Welcome back' : 'Create account'}
-            </h1>
-            <p className="text-zinc-500 text-sm">
-              {mode === 'login' ? 'Enter your credentials to continue.' : 'Register with your license key.'}
-            </p>
-          </div>
+      <div className="relative z-10 w-full max-w-[360px] mx-4">
+        <div className="bg-black border border-white/10 rounded-[28px] p-10 shadow-2xl spotlight-border overflow-hidden">
+          <div className="card-shimmer" />
+          <div className="relative z-10">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-white/[0.03] border border-white/[0.08] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <img src={ALogo} alt="Azov" className="w-10 h-10 object-contain" />
+              </div>
+              <h1 className="text-white text-2xl font-semibold mb-1">
+                {mode === 'login' ? 'Welcome back' : 'Create account'}
+              </h1>
+              <p className="text-zinc-500 text-sm">
+                {mode === 'login' ? 'Enter your credentials to continue.' : 'Register with your license key.'}
+              </p>
+            </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-zinc-400 text-xs mb-1.5 block">Username</label>
-              <input
-                type="text"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                placeholder="Username"
-                required
-                autoComplete="username"
-                maxLength={32}
-                className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-              />
+              <div className="relative">
+                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                <input
+                  type="text"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  placeholder="Username"
+                  required
+                  autoComplete="username"
+                  maxLength={32}
+                  className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+                />
+              </div>
             </div>
 
             <div>
               <label className="text-zinc-400 text-xs mb-1.5 block">Password</label>
               <div className="relative">
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                 <input
                   type={showPass ? 'text' : 'password'}
                   value={password}
@@ -167,7 +221,7 @@ export default function Auth() {
                   placeholder="••••••••"
                   required
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                  className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 pr-10 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+                  className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-10 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
                 />
                 <button
                   type="button"
@@ -261,9 +315,9 @@ export default function Auth() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#ef4444] hover:bg-[#dc2626] disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition"
+              className="w-full bg-gradient-to-b from-zinc-100 to-zinc-300 hover:from-white hover:to-zinc-200 disabled:opacity-50 text-black font-medium py-2.5 rounded-xl text-sm transition"
             >
-              {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Register'}
+              {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Register'}
             </button>
           </form>
 
@@ -284,8 +338,24 @@ export default function Auth() {
               <Eye size={13} />
               Preview tables
             </button>
+            </div>
           </div>
         </div>
+      </div>
+
+      <div className="fixed bottom-12 left-12 z-50">
+        <a
+          href="https://discord.gg/ycymTeFWBd"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Join Discord server"
+          className="group relative flex items-center justify-center w-14 h-14"
+        >
+          <div className="absolute inset-0 rounded-full border border-[#5865F2]/40 bg-[#11121d] group-hover:border-[#5865F2] group-hover:bg-[#5865F2]/10 transition-all duration-300 shadow-[0_0_20px_rgba(88,101,242,0.15)] group-hover:shadow-[0_0_30px_rgba(88,101,242,0.3)]" />
+          <svg viewBox="0 0 127.14 96.36" className="w-6 h-auto fill-white relative z-10 group-hover:scale-110 transition-transform duration-300" aria-hidden="true">
+            <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.71,32.65-1.82,56.6.4,80.21a105.73,105.73,0,0,0,32.29,16.15,77.7,77.7,0,0,0,7.37-12,67.48,67.48,0,0,1-11.86-5.67c.91-.66,1.8-1.34,2.66-2a75.31,75.31,0,0,0,65.32,0c.87.71,1.76,1.39,2.66,2a67.88,67.88,0,0,1-11.86,5.67,79.71,79.71,0,0,0,7.37,12,106.15,106.15,0,0,0,32.33-16.14C129.58,52.87,125.09,29.05,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5.07-12.67,11.41-12.67S54,46,53.86,53,48.74,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5.07-12.67,11.44-12.67S96.23,46,96.11,53,91,65.69,84.69,65.69Z" />
+          </svg>
+        </a>
       </div>
 
       {showPreview && <PreviewTablesModal onClose={() => setShowPreview(false)} />}

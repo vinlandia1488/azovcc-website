@@ -6,8 +6,10 @@ import { getAnnouncement, setAnnouncement, getMaintenance, setMaintenance, getSp
 import {
   getDefaultCloudConfig,
   getPreviewConfig,
+  getScriptPreviewConfig,
   setDefaultCloudConfig,
   setPreviewConfig,
+  setScriptPreviewConfig,
   getConfigTemplatesShared,
   saveConfigTemplatesShared,
 } from '@/lib/config-templates';
@@ -66,6 +68,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
   const [announcement, setAnnouncementState] = useState('');
   const [defaultCloudConfig, setDefaultCloudConfigState] = useState('');
   const [previewConfig, setPreviewConfigState] = useState('');
+  const [scriptPreviewConfig, setScriptPreviewConfigState] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [note, setNote] = useState('');
   const [newKeyType, setNewKeyType] = useState('script');
@@ -165,6 +168,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
     const templates = await getConfigTemplatesShared();
     setDefaultCloudConfigState(String(templates.defaultCloudConfig || getDefaultCloudConfig()));
     setPreviewConfigState(String(templates.previewConfig || getPreviewConfig()));
+    setScriptPreviewConfigState(String(templates.scriptPreviewConfig || getScriptPreviewConfig()));
 
     const failures = [keysResult, accountsResult, downloadsResult, announcementResult].filter((r) => r.status === 'rejected');
     if (failures.length > 0) {
@@ -344,6 +348,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
           saveConfigTemplatesShared({
             defaultCloudConfig,
             previewConfig,
+            scriptPreviewConfig,
           }),
           setSpotifyUrl(spotifyUrl)
         ]);
@@ -1007,7 +1012,14 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
               className="w-full min-h-[180px] bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-500 transition resize-none"
             />
           </div>
-
+          <div>
+            <p className="text-zinc-400 text-xs mb-2 uppercase font-bold tracking-widest">Script Preview Config Template</p>
+            <textarea
+              value={scriptPreviewConfig}
+              onChange={(e) => setScriptPreviewConfigState(e.target.value)}
+              className="w-full min-h-[180px] bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-500 transition resize-none"
+            />
+          </div>
 
           <button
             onClick={async () => {
