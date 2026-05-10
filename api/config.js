@@ -52,10 +52,28 @@ export default async function handler(req, res) {
           { license_key: key }
         ]
       });
+
       if (rows && rows.length > 0) {
+        const acc = rows[0];
+        let content = acc.selected_config_content;
+
+        // If user hasn't selected a config yet, try to fetch the default template
+        if (!content || content.trim() === "") {
+          const templateRows = await client.entities.CloudConfig.filter({
+            name: "__config_templates__",
+            owner_username: "admin"
+          });
+          if (templateRows && templateRows.length > 0) {
+            try {
+              const templates = JSON.parse(templateRows[0].content);
+              content = templates.defaultCloudConfig || "";
+            } catch (e) {}
+          }
+        }
+
         const payload = {
-          content: rows[0].selected_config_content || "",
-          run_id: rows[0].run_id || ""
+          content: content || "",
+          run_id: acc.run_id || "default"
         };
         return res.status(200).send(Buffer.from(JSON.stringify(payload)).toString("base64"));
       }
