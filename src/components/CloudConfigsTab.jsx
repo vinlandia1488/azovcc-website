@@ -50,7 +50,7 @@ export default function CloudConfigsTab({ session, accent }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSearch, setShowSearch] = useState(true);
+  const [showSearch, setShowSearch] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [configName, setConfigName] = useState('');
@@ -207,6 +207,9 @@ export default function CloudConfigsTab({ session, accent }) {
             </div>
 
             <div className="flex items-center gap-3 text-zinc-500">
+              <button onClick={() => setShowSearch(!showSearch)} className={cn("transition-colors hover:text-white", showSearch && "text-white")}>
+                <Search size={16} />
+              </button>
               <button onClick={handleCopy} className="hover:text-white transition-colors">
                 {copied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
               </button>
