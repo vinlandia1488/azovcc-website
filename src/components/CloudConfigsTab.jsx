@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { getBackendDb } from '@/lib/backend';
 import { 
   Plus, Play, RotateCcw, Trash2, Copy, Check, 
