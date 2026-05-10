@@ -22,24 +22,30 @@ const highlightLua = (code, accent) => {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  // Comments
-  html = html.replace(/(--.*)/g, '<span class="text-zinc-500 italic">$1</span>');
-  
-  // Strings
-  html = html.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, '<span class="text-emerald-400">$1</span>');
-  
-  // Keywords
-  const keywords = /\b(local|function|return|end|for|in|do|if|then|else|elseif|while|repeat|until|true|false|nil)\b/g;
-  html = html.replace(keywords, `<span style="color: ${accent}">$1</span>`);
-  
-  // Built-ins
-  const builtins = /\b(print|pairs|ipairs|table|string|math|wait|task|spawn|delay|Color3|Vector3|Instance|game|script|workspace)\b/g;
-  html = html.replace(builtins, '<span class="text-sky-400">$1</span>');
-  
-  // Numbers
-  html = html.replace(/\b(\d+)\b/g, '<span class="text-orange-400">$1</span>');
-  
-  return html;
+  const tokens = [
+    { type: 'comment', regex: /--.*/ },
+    { type: 'string',  regex: /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/ },
+    { type: 'keyword', regex: /\b(?:local|function|return|end|for|in|do|if|then|else|elseif|while|repeat|until|true|false|nil)\b/ },
+    { type: 'builtin', regex: /\b(?:print|pairs|ipairs|table|string|math|wait|task|spawn|delay|Color3|Vector3|Instance|game|script|workspace)\b/ },
+    { type: 'number',  regex: /\b\d+\b/ }
+  ];
+
+  const combinedRegex = new RegExp(tokens.map(t => `(${t.regex.source})`).join('|'), 'g');
+
+  return html.replace(combinedRegex, (...args) => {
+    const match = args[0];
+    for (let i = 0; i < tokens.length; i++) {
+      if (args[i + 1] !== undefined) {
+        const type = tokens[i].type;
+        if (type === 'comment') return `<span class="text-zinc-500 italic">${match}</span>`;
+        if (type === 'string')  return `<span class="text-emerald-400">${match}</span>`;
+        if (type === 'keyword') return `<span style="color: ${accent}">${match}</span>`;
+        if (type === 'builtin') return `<span class="text-sky-400">${match}</span>`;
+        if (type === 'number')  return `<span class="text-orange-400">${match}</span>`;
+      }
+    }
+    return match;
+  });
 };
 
 export default function CloudConfigsTab({ session, accent }) {
