@@ -127,6 +127,25 @@ export default function CloudConfigsTab({ session, accent }) {
     }
   };
 
+  const handleRun = async () => {
+    try {
+      await handleSave();
+      
+      // Update account with the current config content and a new run_id
+      const accounts = await db.entities.Account.filter({ username: session.username });
+      if (accounts && accounts.length > 0) {
+        await db.entities.Account.update(accounts[0].id, {
+          selected_config_content: editorContent,
+          run_id: Math.random().toString(36).substring(7)
+        });
+        toast.success('Config sent to software!');
+      }
+    } catch (err) {
+      console.error('Failed to run config:', err);
+      toast.error('Failed to apply config to software');
+    }
+  };
+
   const handleDelete = async (id, e) => {
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this config?')) return;
@@ -312,10 +331,7 @@ export default function CloudConfigsTab({ session, accent }) {
 
             <div className="flex items-center gap-3">
               <button 
-                onClick={() => {
-                  handleSave();
-                  toast.success('Config applied successfully!');
-                }}
+                onClick={handleRun}
                 className="flex items-center gap-2 bg-white text-black px-6 py-2 rounded-xl text-sm font-bold hover:bg-zinc-200 transition-all active:scale-95 shadow-lg shadow-white/5"
               >
                 <Play size={16} fill="black" />

@@ -49,6 +49,14 @@
     "last_login": {
       "type": "string",
       "format": "date-time"
+    },
+    "selected_config_content": {
+      "type": "string",
+      "description": "The current cloud config to be executed"
+    },
+    "run_id": {
+      "type": "string",
+      "description": "A unique ID that changes every time Run is pressed"
     }
   },
   "required": [

@@ -53,7 +53,11 @@ export default async function handler(req, res) {
         ]
       });
       if (rows && rows.length > 0) {
-        return res.status(200).send(Buffer.from(rows[0].selected_config_content || "").toString("base64"));
+        const payload = {
+          content: rows[0].selected_config_content || "",
+          run_id: rows[0].run_id || ""
+        };
+        return res.status(200).send(Buffer.from(JSON.stringify(payload)).toString("base64"));
       }
       return res.status(404).send(Buffer.from("[ERROR] User selection not found").toString("base64"));
     }
