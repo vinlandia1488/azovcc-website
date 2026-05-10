@@ -61,6 +61,7 @@ export default function CloudConfigsTab({ session, accent }) {
   const [showSidebar, setShowSidebar] = useState(false);
   const [configName, setConfigName] = useState('');
   const [copied, setCopied] = useState(false);
+  const [activeConfigId, setActiveConfigId] = useState(null);
   
   const textAreaRef = useRef(null);
   const preRef = useRef(null);
@@ -75,6 +76,24 @@ export default function CloudConfigsTab({ session, accent }) {
         // Load user's configs
         await loadConfigs();
         
+        // Load active config from account if exists
+        const accounts = await db.entities.Account.filter({ username: session.username });
+        if (accounts && accounts.length > 0) {
+          const acc = accounts[0];
+          setActiveConfigId(acc.active_config_id);
+          if (acc.selected_config_content) {
+            setEditorContent(acc.selected_config_content);
+            // Try to find which config this content belongs to for selection
+            const userConfigs = await db.entities.CloudConfig.filter({ owner_username: session.username });
+            const matching = userConfigs.find(c => c.id === acc.active_config_id);
+            if (matching) {
+              setSelectedConfig(matching);
+              setConfigName(matching.name);
+            }
+            return;
+          }
+        }
+
         // Default to the admin template if no config is selected
         setEditorContent(template);
       } catch (err) {
@@ -137,13 +156,21 @@ export default function CloudConfigsTab({ session, accent }) {
     try {
       await handleSave();
       
-      // Update account with the current config content and a new run_id
+      // Update account with the current config content, a new run_id, and active_config_id
       const accounts = await db.entities.Account.filter({ username: session.username });
       if (accounts && accounts.length > 0) {
-        await db.entities.Account.update(accounts[0].id, {
+        const updateData = {
           selected_config_content: editorContent,
           run_id: Math.random().toString(36).substring(7)
-        });
+        };
+
+        // If we have a selected config, save its ID as active
+        if (selectedConfig) {
+          updateData.active_config_id = selectedConfig.id;
+          setActiveConfigId(selectedConfig.id);
+        }
+
+        await db.entities.Account.update(accounts[0].id, updateData);
         toast.success('Config sent to software!');
       }
     } catch (err) {
@@ -378,12 +405,18 @@ export default function CloudConfigsTab({ session, accent }) {
                         setConfigName(cfg.name);
                       }}
                       className={cn(
-                        "group p-3 rounded-xl border transition-all cursor-pointer",
+                        "group p-3 rounded-xl border transition-all cursor-pointer relative",
                         selectedConfig?.id === cfg.id 
                           ? "bg-zinc-800/40 border-zinc-700/50" 
                           : "bg-zinc-900/20 border-zinc-800/40 hover:bg-zinc-900/40 hover:border-zinc-700/30"
                       )}
                     >
+                      {activeConfigId === cfg.id && (
+                        <div className="absolute -top-1 -right-1 flex items-center gap-1 bg-emerald-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg shadow-emerald-500/20 z-10">
+                          <div className="w-1 h-1 bg-black rounded-full animate-pulse" />
+                          ACTIVE
+                        </div>
+                      )}
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-white text-xs font-bold truncate pr-2">{cfg.name}</span>
                         <button 
