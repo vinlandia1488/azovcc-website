@@ -995,45 +995,58 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
 
 
       {tab === 'configs' && (
-        <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 space-y-4">
-          <div>
-            <p className="text-zinc-400 text-xs mb-2 uppercase font-bold tracking-widest">Default Cloud Config Template</p>
-            <textarea
-              value={defaultCloudConfig}
-              onChange={(e) => setDefaultCloudConfigState(e.target.value)}
-              className="w-full min-h-[180px] bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-500 transition resize-none"
-            />
-          </div>
-          <div>
-            <p className="text-zinc-400 text-xs mb-2 uppercase font-bold tracking-widest">Preview Config Template</p>
-            <textarea
-              value={previewConfig}
-              onChange={(e) => setPreviewConfigState(e.target.value)}
-              className="w-full min-h-[180px] bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-500 transition resize-none"
-            />
-          </div>
-          <div>
-            <p className="text-zinc-400 text-xs mb-2 uppercase font-bold tracking-widest">Script Preview Config Template</p>
-            <textarea
-              value={scriptPreviewConfig}
-              onChange={(e) => setScriptPreviewConfigState(e.target.value)}
-              className="w-full min-h-[180px] bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-500 transition resize-none"
-            />
-          </div>
+        <div className="space-y-6">
+          <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-bold text-lg">Config Templates</h3>
+              <button
+                onClick={async () => {
+                  setPanelWorking(true);
+                  await saveConfigTemplates();
+                  setPanelWorking(false);
+                }}
+                disabled={panelWorking}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition shadow-lg disabled:opacity-50"
+                style={{ background: accent, color: accentText, border: accentBorder }}
+              >
+                <Save size={16} />
+                {panelWorking ? 'Saving...' : 'Save All Templates'}
+              </button>
+            </div>
 
-          <button
-            onClick={async () => {
-              setPanelWorking(true);
-              await saveConfigTemplates();
-              setPanelWorking(false);
-            }}
-            disabled={panelWorking}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg disabled:opacity-50"
-            style={{ background: accent, color: accentText, border: accentBorder }}
-          >
-            <Save size={13} />
-            {panelWorking ? 'saving...' : 'save config templates'}
-          </button>
+            <div className="grid grid-cols-1 gap-6">
+              {[
+                { label: 'Default Cloud Config', state: defaultCloudConfig, setter: setDefaultCloudConfigState },
+                { label: 'Preview Config', state: previewConfig, setter: setPreviewConfigState },
+                { label: 'Script Preview Config', state: scriptPreviewConfig, setter: setScriptPreviewConfigState },
+              ].map((cfg, i) => (
+                <div key={i} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-zinc-400 text-[10px] uppercase font-bold tracking-widest">{cfg.label}</p>
+                    <span className="text-[10px] text-zinc-600 font-mono italic">Editable Template</span>
+                  </div>
+                  <div className="bg-[#0b0b0e] border border-zinc-800/60 rounded-2xl overflow-hidden relative min-h-[300px] flex flex-col">
+                    <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800/40 bg-[#0d0d10]">
+                      <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-zinc-800" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-zinc-800" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-zinc-800" />
+                      </div>
+                      <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">{cfg.label.replace(' Template', '')}</span>
+                      <div className="w-10" />
+                    </div>
+                    <textarea
+                      value={cfg.state}
+                      onChange={(e) => cfg.setter(e.target.value)}
+                      spellCheck="false"
+                      className="flex-1 w-full bg-transparent text-zinc-200 p-4 text-xs font-mono focus:outline-none resize-none leading-relaxed selection:bg-zinc-700/50"
+                      placeholder={`Enter ${cfg.label.toLowerCase()} content...`}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
