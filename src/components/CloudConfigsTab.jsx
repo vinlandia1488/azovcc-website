@@ -199,11 +199,7 @@ export default function CloudConfigsTab({ session, accent }) {
           {/* Title Bar */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/40 bg-[#0d0d10]">
             <div className="flex items-center gap-2">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
-                <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-                <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
-              </div>
+              {/* Traffic lights removed */}
             </div>
             
             <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 text-zinc-500 text-[11px] font-bold tracking-widest uppercase">
@@ -418,34 +414,9 @@ export default function CloudConfigsTab({ session, accent }) {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-1 h-6 rounded-full" style={{ background: accent }} />
-                    <h4 className="text-white font-bold uppercase tracking-wider text-sm">Applied Modules</h4>
+                    <h4 className="text-white font-bold uppercase tracking-wider text-sm">Applied Configuration</h4>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Parsing the Lua table for a simple visual preview if possible, 
-                        otherwise just showing the blocks */}
-                    <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-bold text-zinc-400 uppercase">Aimbot</span>
-                        <div className={cn("w-2 h-2 rounded-full", editorContent.includes('["Aimbot"] = {\n        ["Enabled"] = true') ? "bg-emerald-500" : "bg-red-500")} />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="h-2 bg-zinc-800 rounded w-full" />
-                        <div className="h-2 bg-zinc-800 rounded w-2/3" />
-                      </div>
-                    </div>
-                    <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-bold text-zinc-400 uppercase">Visuals</span>
-                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="h-2 bg-zinc-800 rounded w-full" />
-                        <div className="h-2 bg-zinc-800 rounded w-3/4" />
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="bg-zinc-900/20 border border-zinc-800/40 rounded-2xl p-4 font-mono text-[11px] text-zinc-400 whitespace-pre overflow-x-auto">
                     {editorContent}
                   </div>
