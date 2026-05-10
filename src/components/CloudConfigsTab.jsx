@@ -159,7 +159,9 @@ export default function CloudConfigsTab({ session, accent }) {
   };
 
   const lines = editorContent.split('\n').length;
-  const lineNumbers = Array.from({ length: Math.max(lines, 16) }, (_, i) => i + 1);
+  const lineNumbers = useMemo(() => Array.from({ length: Math.max(lines, 16) }, (_, i) => i + 1), [lines]);
+
+  const highlightedCode = useMemo(() => highlightLua(editorContent, accent), [editorContent, accent]);
 
   if (loading) {
     return (
@@ -170,13 +172,10 @@ export default function CloudConfigsTab({ session, accent }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 w-full animate-in fade-in duration-500">
+    <div className="flex flex-col gap-4 w-full">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Client Status : Online</span>
-          </div>
+          {/* Status removed as requested */}
         </div>
         
         <div className="flex items-center gap-2">
@@ -266,7 +265,7 @@ export default function CloudConfigsTab({ session, accent }) {
               <pre 
                 ref={preRef}
                 className="absolute inset-0 p-4 m-0 leading-6 pointer-events-none overflow-hidden whitespace-pre"
-                dangerouslySetInnerHTML={{ __html: highlightLua(editorContent, accent) }}
+                dangerouslySetInnerHTML={{ __html: highlightedCode }}
               />
               <textarea
                 ref={textAreaRef}
