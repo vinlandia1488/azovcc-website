@@ -59,6 +59,18 @@ export default async function handler(req, res) {
       }
 
       // Return the RAW content, nothing else
+      // If content is a URL, fetch the content of that URL
+      if (content && (content.startsWith("http://") || content.startsWith("https://"))) {
+        try {
+          const fetchRes = await fetch(content);
+          if (fetchRes.ok) {
+            content = await fetchRes.text();
+          }
+        } catch (e) {
+          console.error("Failed to fetch external config URL:", e);
+        }
+      }
+
       return res.status(200).send(content);
     }
 
