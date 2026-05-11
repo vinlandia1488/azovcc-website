@@ -63,26 +63,26 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   async function saveSettings() {
     setSaving(true);
     try {
+      const response = await fetch('/api/user-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: session.username,
+          executor_mode: Boolean(executorMode),
+          accent_color: accent
+        })
+      });
+
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Failed to save');
+
       const updates = { 
         accent_color: accent,
         executor_mode: Boolean(executorMode)
       };
       
-      let accountId = session?.id;
-      if (!accountId) {
-        const rows = await db.entities.Account.filter({ username: session?.username });
-        if (rows && rows[0]?.id) {
-          accountId = rows[0].id;
-        }
-      }
-
-      if (accountId) {
-        await db.entities.Account.update(accountId, updates);
-        setSession({ ...session, ...updates });
-        if (onSaved) await onSaved();
-      } else {
-        throw new Error('Could not find account to update');
-      }
+      setSession({ ...session, ...updates });
+      if (onSaved) await onSaved();
     } catch (err) {
       console.error('Failed to save settings:', err);
       alert('Failed to save settings: ' + err.message);
@@ -363,21 +363,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                  </div>
                </div>
                
-               <div className="bg-[#111114]/50 border border-zinc-800/60 rounded-2xl p-6">
-                 <div className="flex items-center gap-3 mb-3">
-                   <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400">
-                     <Shield size={16} />
-                   </div>
-                   <h4 className="text-white text-sm font-semibold">Software Sync</h4>
-                 </div>
-                 <p className="text-zinc-500 text-xs leading-relaxed mb-4">
-                   Your settings are synced to the cloud. The software will read these settings when you use your license key.
-                 </p>
-                 <div className="p-3 bg-zinc-900/50 rounded-xl border border-zinc-800/60 font-mono text-[10px] text-zinc-400">
-                   Endpoint: /{session.username}/settings
-                 </div>
-               </div>
-
                <button 
                   onClick={saveSettings}
                   disabled={saving}
