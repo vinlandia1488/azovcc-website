@@ -128,6 +128,7 @@ export default async function handler(req, res) {
           is_executor: isExecutor, // Duplicate for compatibility
           // Keep payload explicit for software consumers that want a direct raw endpoint.
           raw_url: safeUsername ? `https://azovcc.vercel.app/${encodeURIComponent(safeUsername)}/configs` : "",
+          settings_url: safeUsername ? `https://azovcc.vercel.app/${encodeURIComponent(safeUsername)}/settings` : "",
           content: finalContent,
           run_id: acc.run_id || "default"
         };

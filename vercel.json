@@ -17,6 +17,10 @@
       "destination": "/api/configs?username=:username"
     },
     {
+      "source": "/:username/settings",
+      "destination": "/api/user-settings?username=:username"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

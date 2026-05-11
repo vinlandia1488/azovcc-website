@@ -189,11 +189,18 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
               Redeem
             </button>
             <button 
+              onClick={() => setActiveTab('software')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === 'software' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
+            >
+              <ZapOff size={16} />
+              Software
+            </button>
+            <button 
               onClick={() => setActiveTab('themes')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === 'themes' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
             >
               <Palette size={16} />
-              Software
+              Themes
             </button>
             <button 
               onClick={() => setActiveTab('security')}
@@ -327,7 +334,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                  </button>
                </div>
              </div>
-           ) : activeTab === 'themes' ? (
+           ) : activeTab === 'software' ? (
              <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
                <div>
                  <h3 className="text-white text-sm font-semibold mb-4">Software Settings</h3>
@@ -349,7 +356,32 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                    </button>
                  </div>
                </div>
-               <div className="h-px bg-zinc-800/60" />
+               
+               <div className="bg-[#111114]/50 border border-zinc-800/60 rounded-2xl p-6">
+                 <div className="flex items-center gap-3 mb-3">
+                   <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400">
+                     <Shield size={16} />
+                   </div>
+                   <h4 className="text-white text-sm font-semibold">Software Sync</h4>
+                 </div>
+                 <p className="text-zinc-500 text-xs leading-relaxed mb-4">
+                   Your settings are synced to the cloud. The software will read these settings when you use your license key.
+                 </p>
+                 <div className="p-3 bg-zinc-900/50 rounded-xl border border-zinc-800/60 font-mono text-[10px] text-zinc-400">
+                   Endpoint: /{session.username}/settings
+                 </div>
+               </div>
+
+               <button 
+                  onClick={saveSettings}
+                  disabled={saving}
+                  className="w-full mt-4 bg-white hover:bg-zinc-200 text-black font-bold rounded-xl px-4 py-3 text-sm transition disabled:opacity-50"
+               >
+                  {saving ? 'Saving...' : 'Save Software Settings'}
+               </button>
+             </div>
+           ) : activeTab === 'themes' ? (
+             <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
                <div>
                  <h3 className="text-white text-sm font-semibold mb-4">Performance</h3>
                  <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4 flex items-center justify-between">
