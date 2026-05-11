@@ -193,7 +193,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === 'themes' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
             >
               <Palette size={16} />
-              Themes
+              Software
             </button>
             <button 
               onClick={() => setActiveTab('security')}
@@ -330,7 +330,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
            ) : activeTab === 'themes' ? (
              <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
                <div>
-                 <h3 className="text-white text-sm font-semibold mb-4">Software Behavior</h3>
+                 <h3 className="text-white text-sm font-semibold mb-4">Software Settings</h3>
                  <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4 flex items-center justify-between">
                    <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-zinc-800/50 flex items-center justify-center text-zinc-400">

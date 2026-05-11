@@ -115,13 +115,17 @@ export default async function handler(req, res) {
 
         const safeUsername = String(acc.username || "").trim();
         let finalContent = String(content || "");
-        if (acc.executor_mode === true) {
+        const isExecutor = acc.executor_mode === true;
+        
+        if (isExecutor) {
           finalContent = applyExecutorMode(finalContent);
+          res.setHeader("X-Executor-Mode", "true");
         }
 
         const payload = {
           username: safeUsername,
-          executor_mode: acc.executor_mode === true,
+          executor_mode: isExecutor,
+          is_executor: isExecutor, // Duplicate for compatibility
           // Keep payload explicit for software consumers that want a direct raw endpoint.
           raw_url: safeUsername ? `https://azovcc.vercel.app/${encodeURIComponent(safeUsername)}/configs` : "",
           content: finalContent,

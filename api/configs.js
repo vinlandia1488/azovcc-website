@@ -124,7 +124,8 @@ export default async function handler(req, res) {
     if (rawRow && String(rawRow.content || "").length > 0) {
       let finalContent = String(rawRow.content || "");
       if (accountForCheck?.executor_mode === true) {
-        finalContent = "-- [EXECUTOR MODE ENABLED]\n" + applyExecutorMode(finalContent);
+        res.setHeader("X-Executor-Mode", "true");
+        finalContent = "-- AZOV_EXECUTOR_MODE = true\n" + applyExecutorMode(finalContent);
       }
       return res.status(200).send(finalContent);
     }
@@ -189,7 +190,8 @@ export default async function handler(req, res) {
 
       let finalContent = String(content || "");
       if (acc.executor_mode === true) {
-        finalContent = "-- [EXECUTOR MODE ENABLED]\n" + applyExecutorMode(finalContent);
+        res.setHeader("X-Executor-Mode", "true");
+        finalContent = "-- AZOV_EXECUTOR_MODE = true\n" + applyExecutorMode(finalContent);
       }
 
       // Return the RAW content as clean Lua
