@@ -188,6 +188,7 @@ export default function CloudConfigsTab({ session, accent }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          account_id: accountId,
           username: session.username,
           content: editorContent,
           active_config_id: savedCfg.id
@@ -195,10 +196,18 @@ export default function CloudConfigsTab({ session, accent }) {
       });
 
       if (response.ok) {
-        console.log('Direct Vercel API Save Successful');
+        const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.includes('application/json')) {
+          throw new Error('API returned non-JSON response');
+        }
+        const payload = await response.json();
+        if (!payload?.success) {
+          throw new Error('API save did not confirm success');
+        }
+        console.log('Direct Vercel API Save Successful', payload);
       } else {
         const errorText = (await response.text()) || '';
-        console.warn('Direct API sync failed, but account update succeeded:', errorText);
+        throw new Error(errorText || 'Failed to sync with /api/configs');
       }
 
       await loadConfigs();

@@ -26,23 +26,41 @@ export default async function handler(req, res) {
 
     // HANDLE SAVING (POST)
     if (req.method === "POST") {
-      const { username, content, active_config_id } = req.body;
-      if (!username) return res.status(400).send("[ERROR] Username required");
+      const parsedBody = typeof req.body === "string"
+        ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })()
+        : (req.body || {});
+      const { username, content, active_config_id, account_id } = parsedBody;
+      if (!username && !account_id) {
+        return res.status(400).send("[ERROR] Username or account_id required");
+      }
 
-      const allAccounts = await client.entities.Account.filter({});
-      const account = allAccounts.find(a => 
-        String(a.username || "").toLowerCase() === username.toLowerCase()
-      );
+      let account = null;
+      if (account_id) {
+        try {
+          account = await client.entities.Account.get(account_id);
+        } catch {}
+      }
+      if (!account && username) {
+        const allAccounts = await client.entities.Account.filter({});
+        account = allAccounts.find(a =>
+          String(a.username || "").toLowerCase() === String(username).toLowerCase()
+        );
+      }
 
       if (!account) return res.status(404).send("[ERROR] User not found");
 
       await client.entities.Account.update(account.id, {
-        selected_config_content: content,
+        selected_config_content: String(content || ""),
         active_config_id: active_config_id,
         run_id: Math.random().toString(36).substring(7)
       });
 
-      return res.status(200).json({ success: true });
+      return res.status(200).json({
+        success: true,
+        account_id: account.id,
+        username: account.username || username || "",
+        active_config_id: active_config_id || ""
+      });
     }
 
     // HANDLE LOADING (GET)
