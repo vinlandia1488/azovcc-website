@@ -135,14 +135,20 @@ export default function CloudConfigsTab({ session, accent }) {
 
     setSaving(true);
     try {
+      console.log('--- Config Save Start ---');
+      console.log('Target Name:', name);
+      console.log('Session ID:', session.id);
+      
       let savedCfg = selectedConfig;
       if (selectedConfig) {
+        console.log('Updating existing CloudConfig:', selectedConfig.id);
         await db.entities.CloudConfig.update(selectedConfig.id, { 
           content: editorContent,
           name: name 
         });
         toast.success('Config updated');
       } else {
+        console.log('Creating new CloudConfig for user:', session.username);
         savedCfg = await db.entities.CloudConfig.create({
           name: name,
           content: editorContent,
@@ -152,49 +158,32 @@ export default function CloudConfigsTab({ session, accent }) {
         toast.success('Config saved');
       }
 
-      // Automatically sync to Account whenever we save
-      try {
-        const currentUser = await db.auth.me();
-        if (currentUser) {
-          console.log('Syncing to account via db.auth.me():', currentUser.username, 'Config ID:', savedCfg.id);
-          
-          const updatedAccountData = {
-            selected_config_content: editorContent,
-            active_config_id: savedCfg.id,
-            run_id: Math.random().toString(36).substring(7)
-          };
+      // Direct Sync to Account using the session ID
+      if (session.id) {
+        console.log('Syncing code to Account ID:', session.id);
+        const updateData = {
+          selected_config_content: editorContent,
+          active_config_id: savedCfg.id,
+          run_id: Math.random().toString(36).substring(7)
+        };
 
-          await db.entities.Account.update(currentUser.id, updatedAccountData);
-          
-          // IMPORTANT: Update the local session cache so the UI stays in sync
-          setSession({ ...session, ...updatedAccountData });
-          
-          setActiveConfigId(savedCfg.id);
-          console.log('Account synced successfully via db.auth.me()');
-        } else {
-          // Fallback if db.auth.me() is not available or returns null
-          const accounts = await db.entities.Account.filter({});
-          const acc = accounts.find(a => String(a.username || "").toLowerCase() === String(session.username || "").toLowerCase());
-          
-          if (acc) {
-            console.log('Syncing to account via fallback filter:', acc.username);
-            const updatedAccountData = {
-              selected_config_content: editorContent,
-              active_config_id: savedCfg.id,
-              run_id: Math.random().toString(36).substring(7)
-            };
-            await db.entities.Account.update(acc.id, updatedAccountData);
-            setSession({ ...session, ...updatedAccountData });
-            setActiveConfigId(savedCfg.id);
-          }
-        }
-      } catch (syncErr) {
-        console.error('Account sync failed:', syncErr);
+        await db.entities.Account.update(session.id, updateData);
+        
+        // Update local session to keep UI in sync
+        setSession({ ...session, ...updateData });
+        setActiveConfigId(savedCfg.id);
+        
+        console.log('Sync Successful');
+      } else {
+        console.warn('Cannot sync to account: session.id is missing');
       }
 
       await loadConfigs();
+      console.log('--- Config Save End (Success) ---');
     } catch (err) {
-      toast.error('Failed to save config');
+      console.error('--- Config Save Failed ---');
+      console.error('Error Details:', err);
+      toast.error('Failed to save config: ' + (err.message || 'Check console for details'));
     } finally {
       setSaving(false);
     }
