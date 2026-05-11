@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       const acc = accounts[0];
       let content = acc.selected_config_content;
 
-      // Fallback to default template if empty
+      // If user hasn't selected a config yet, try to fetch the default template
       if (!content || content.trim() === "") {
         const templateRows = await client.entities.CloudConfig.filter({
           name: "__config_templates__",
@@ -42,12 +42,22 @@ export default async function handler(req, res) {
         });
         if (templateRows && templateRows.length > 0) {
           try {
-            // Try parsing if it's JSON, otherwise use raw
             let rawTemplate = templateRows[0].content;
+            
+            // If the template content is a URL, fetch it first
+            if (rawTemplate && (rawTemplate.startsWith("http://") || rawTemplate.startsWith("https://"))) {
+              const fetchRes = await fetch(rawTemplate);
+              if (fetchRes.ok) {
+                rawTemplate = await fetchRes.text();
+              }
+            }
+
+            // Try to parse the template as JSON to get the specific "defaultCloudConfig" field
             try {
               const templates = JSON.parse(rawTemplate);
               content = templates.defaultCloudConfig || rawTemplate;
             } catch (e) {
+              // If it's not JSON, just use the raw text
               content = rawTemplate;
             }
           } catch (e) {
@@ -58,19 +68,17 @@ export default async function handler(req, res) {
         }
       }
 
-      // Return the RAW content, nothing else
-      // If content is a URL, fetch the content of that URL
+      // Final step: If the final content is a URL, fetch it one last time
       if (content && (content.startsWith("http://") || content.startsWith("https://"))) {
         try {
-          const fetchRes = await fetch(content);
-          if (fetchRes.ok) {
-            content = await fetchRes.text();
+          const finalFetch = await fetch(content);
+          if (finalFetch.ok) {
+            content = await finalFetch.text();
           }
-        } catch (e) {
-          console.error("Failed to fetch external config URL:", e);
-        }
+        } catch (e) {}
       }
 
+      // Return the RAW content as clean Lua
       return res.status(200).send(content);
     }
 
