@@ -9,7 +9,6 @@ import { getDefaultCloudConfig, getConfigTemplatesShared } from '@/lib/config-te
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
-import { setSession } from '@/lib/auth';
 
 const db = getBackendDb();
 
@@ -76,33 +75,17 @@ export default function CloudConfigsTab({ session, accent }) {
         
         // Load user's configs
         await loadConfigs();
-        
-        // Load active config from account if exists
-        let acc = null;
-        if (session.id) {
-          acc = await db.entities.Account.get(session.id);
+
+        // Single source of truth: load the raw config directly from /api/configs.
+        const res = await fetch(`/api/configs?username=${encodeURIComponent(session.username)}`, {
+          cache: 'no-store'
+        });
+        if (res.ok) {
+          const raw = await res.text();
+          setEditorContent(String(raw || template));
         } else {
-          const accounts = await db.entities.Account.filter({});
-          acc = accounts.find(a => String(a.username || "").toLowerCase() === String(session.username || "").toLowerCase());
+          setEditorContent(template);
         }
-
-        if (acc) {
-          setActiveConfigId(acc.active_config_id);
-          if (acc.selected_config_content) {
-            setEditorContent(acc.selected_config_content);
-            // Try to find which config this content belongs to for selection
-            const userConfigs = await db.entities.CloudConfig.filter({ owner_username: session.username });
-            const matching = userConfigs.find(c => c.id === acc.active_config_id);
-            if (matching) {
-              setSelectedConfig(matching);
-              setConfigName(matching.name);
-            }
-            return;
-          }
-        }
-
-        // Default to the admin template if no config is selected
-        setEditorContent(template);
       } catch (err) {
         console.error('Failed to load initial data:', err);
       } finally {
@@ -126,72 +109,15 @@ export default function CloudConfigsTab({ session, accent }) {
 
   const handleSave = async () => {
     if (!editorContent.trim()) return toast.error('Config cannot be empty');
-    
-    let name = configName;
-    if (!name) {
-      name = prompt('Enter a name for this config:');
-      if (!name) return;
-      setConfigName(name);
-    }
-    name = String(name).trim();
-    if (!name) return toast.error('Config name is required');
 
     setSaving(true);
     try {
-      console.log('--- Config Save Start ---');
-      console.log('Target Name:', name);
-      console.log('Session ID:', session.id);
-      
-      let savedCfg = selectedConfig;
-      if (selectedConfig) {
-        console.log('Updating existing CloudConfig:', selectedConfig.id);
-        await db.entities.CloudConfig.update(selectedConfig.id, { 
-          content: editorContent,
-          name: name 
-        });
-        savedCfg = { ...selectedConfig, content: editorContent, name };
-        toast.success('Config updated');
-      } else {
-        console.log('Creating new CloudConfig for user:', session.username);
-        savedCfg = await db.entities.CloudConfig.create({
-          name: name,
-          content: editorContent,
-          owner_username: session.username
-        });
-        setSelectedConfig(savedCfg);
-        toast.success('Config saved');
-      }
-
-      const appliedUpdate = {
-        selected_config_content: editorContent,
-        active_config_id: savedCfg.id,
-        run_id: 'updated-' + Date.now()
-      };
-
-      // Primary apply path: update account directly so /:username/configs reflects instantly.
-      let accountId = session?.id || null;
-      if (!accountId) {
-        const accounts = await db.entities.Account.filter({ username: session.username });
-        if (accounts && accounts.length > 0) {
-          accountId = accounts[0].id;
-        }
-      }
-      if (accountId) {
-        await db.entities.Account.update(accountId, appliedUpdate);
-      }
-      setSession({ ...session, ...appliedUpdate });
-      setActiveConfigId(savedCfg.id);
-
-      // Direct Save to the Vercel API Endpoint
-      console.log('--- Direct Vercel API Save Start ---');
       const response = await fetch('/api/configs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          account_id: accountId,
           username: session.username,
-          content: editorContent,
-          active_config_id: savedCfg.id
+          content: editorContent
         })
       });
 
@@ -204,19 +130,18 @@ export default function CloudConfigsTab({ session, accent }) {
         if (!payload?.success) {
           throw new Error('API save did not confirm success');
         }
-        console.log('Direct Vercel API Save Successful', payload);
+        toast.success('Config saved');
       } else {
         const errorText = (await response.text()) || '';
         throw new Error(errorText || 'Failed to sync with /api/configs');
       }
 
       await loadConfigs();
-      console.log('--- Config Save End (Success) ---');
+      await loadConfigs();
       return savedCfg;
     } catch (err) {
       console.error('--- Config Save Failed ---');
       console.error('Error Details:', err);
-      toast.error('Failed to save config: ' + (err.message || 'Check console for details'));
       throw err;
     } finally {
       setSaving(false);
@@ -225,26 +150,8 @@ export default function CloudConfigsTab({ session, accent }) {
 
   const handleRun = async () => {
     try {
-      const savedCfg = await handleSave();
-      
-      // Update account with the current config content, a new run_id, and active_config_id
-      const accounts = await db.entities.Account.filter({ username: session.username });
-      if (accounts && accounts.length > 0) {
-        const updateData = {
-          selected_config_content: editorContent,
-          run_id: Math.random().toString(36).substring(7)
-        };
-
-        // If we have a selected config, save its ID as active
-        const configId = savedCfg?.id || selectedConfig?.id || null;
-        if (configId) {
-          updateData.active_config_id = configId;
-          setActiveConfigId(configId);
-        }
-
-        await db.entities.Account.update(accounts[0].id, updateData);
-        toast.success('Config sent to software!');
-      }
+      await handleSave();
+      toast.success('Config sent to software!');
     } catch (err) {
       console.error('Failed to run config:', err);
       toast.error('Failed to apply config to software');

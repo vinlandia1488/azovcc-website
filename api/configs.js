@@ -1,5 +1,7 @@
 import { createClient } from "@base44/sdk";
 
+const RAW_CONFIG_NAME = "__RAW_CONFIG__";
+
 export default async function handler(req, res) {
   // Set headers for raw plain text output
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -29,43 +31,83 @@ export default async function handler(req, res) {
       const parsedBody = typeof req.body === "string"
         ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })()
         : (req.body || {});
-      const { username, content, active_config_id, account_id } = parsedBody;
-      if (!username && !account_id) {
-        return res.status(400).send("[ERROR] Username or account_id required");
+      const username = String(parsedBody.username || "").trim();
+      const content = String(parsedBody.content || "");
+      if (!username) {
+        return res.status(400).send("[ERROR] Username required");
       }
 
-      let account = null;
-      if (account_id) {
-        try {
-          account = await client.entities.Account.get(account_id);
-        } catch {}
+      // Upsert a dedicated raw config row per username.
+      let rawRow = null;
+      const userRows = await client.entities.CloudConfig.filter({ owner_username: username });
+      if (Array.isArray(userRows) && userRows.length > 0) {
+        rawRow = userRows.find(
+          (r) => String(r.name || "") === RAW_CONFIG_NAME
+        );
       }
-      if (!account && username) {
-        const allAccounts = await client.entities.Account.filter({});
-        account = allAccounts.find(a =>
-          String(a.username || "").toLowerCase() === String(username).toLowerCase()
+      if (!rawRow) {
+        const allRows = await client.entities.CloudConfig.filter({});
+        rawRow = (allRows || []).find(
+          (r) =>
+            String(r.owner_username || "").toLowerCase() === username.toLowerCase() &&
+            String(r.name || "") === RAW_CONFIG_NAME
         );
       }
 
-      if (!account) return res.status(404).send("[ERROR] User not found");
+      if (rawRow) {
+        await client.entities.CloudConfig.update(rawRow.id, { content });
+      } else {
+        rawRow = await client.entities.CloudConfig.create({
+          owner_username: username,
+          name: RAW_CONFIG_NAME,
+          content
+        });
+      }
 
-      await client.entities.Account.update(account.id, {
-        selected_config_content: String(content || ""),
-        active_config_id: active_config_id,
-        run_id: Math.random().toString(36).substring(7)
-      });
+      // Backward compatibility with old consumer fields (best effort only).
+      try {
+        const allAccounts = await client.entities.Account.filter({});
+        const account = allAccounts.find(
+          (a) => String(a.username || "").toLowerCase() === username.toLowerCase()
+        );
+        if (account) {
+          await client.entities.Account.update(account.id, {
+            selected_config_content: content,
+            active_config_id: rawRow.id,
+            run_id: Math.random().toString(36).substring(7)
+          });
+        }
+      } catch {}
 
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
       return res.status(200).json({
         success: true,
-        account_id: account.id,
-        username: account.username || username || "",
-        active_config_id: active_config_id || ""
+        username,
+        config_id: rawRow.id
       });
     }
 
     // HANDLE LOADING (GET)
     const { username } = req.query;
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    if (!username) {
+      return res.status(400).send("[ERROR] Username required");
+    }
+
+    // Priority 1: dedicated raw config row (single source of truth).
+    const rowsByOwner = await client.entities.CloudConfig.filter({ owner_username: username });
+    let rawRow = (rowsByOwner || []).find((r) => String(r.name || "") === RAW_CONFIG_NAME);
+    if (!rawRow) {
+      const allRows = await client.entities.CloudConfig.filter({});
+      rawRow = (allRows || []).find(
+        (r) =>
+          String(r.owner_username || "").toLowerCase() === String(username).toLowerCase() &&
+          String(r.name || "") === RAW_CONFIG_NAME
+      );
+    }
+    if (rawRow && String(rawRow.content || "").length > 0) {
+      return res.status(200).send(String(rawRow.content || ""));
+    }
 
     // Find the user by username (case-insensitive)
     const allAccounts = await client.entities.Account.filter({});
