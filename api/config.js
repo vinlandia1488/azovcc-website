@@ -104,8 +104,12 @@ export default async function handler(req, res) {
           }
         }
 
+        const safeUsername = String(acc.username || "").trim();
         const payload = {
-          content: content || "",
+          username: safeUsername,
+          // Keep payload explicit for software consumers that want a direct raw endpoint.
+          raw_url: safeUsername ? `https://azovcc.vercel.app/${encodeURIComponent(safeUsername)}/configs` : "",
+          content: String(content || ""),
           run_id: acc.run_id || "default"
         };
         return res.status(200).send(Buffer.from(JSON.stringify(payload)).toString("base64"));
