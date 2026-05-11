@@ -162,6 +162,26 @@ export default function CloudConfigsTab({ session, accent }) {
         toast.success('Config saved');
       }
 
+      const appliedUpdate = {
+        selected_config_content: editorContent,
+        active_config_id: savedCfg.id,
+        run_id: 'updated-' + Date.now()
+      };
+
+      // Primary apply path: update account directly so /:username/configs reflects instantly.
+      let accountId = session?.id || null;
+      if (!accountId) {
+        const accounts = await db.entities.Account.filter({ username: session.username });
+        if (accounts && accounts.length > 0) {
+          accountId = accounts[0].id;
+        }
+      }
+      if (accountId) {
+        await db.entities.Account.update(accountId, appliedUpdate);
+      }
+      setSession({ ...session, ...appliedUpdate });
+      setActiveConfigId(savedCfg.id);
+
       // Direct Save to the Vercel API Endpoint
       console.log('--- Direct Vercel API Save Start ---');
       const response = await fetch('/api/configs', {
@@ -176,18 +196,9 @@ export default function CloudConfigsTab({ session, accent }) {
 
       if (response.ok) {
         console.log('Direct Vercel API Save Successful');
-        
-        // Update local session to keep UI in sync
-        const updateData = {
-          selected_config_content: editorContent,
-          active_config_id: savedCfg.id,
-          run_id: 'updated-' + Date.now()
-        };
-        setSession({ ...session, ...updateData });
-        setActiveConfigId(savedCfg.id);
       } else {
         const errorText = (await response.text()) || '';
-        throw new Error(errorText || 'Failed to save to Vercel API');
+        console.warn('Direct API sync failed, but account update succeeded:', errorText);
       }
 
       await loadConfigs();
