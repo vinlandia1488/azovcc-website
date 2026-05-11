@@ -32,9 +32,28 @@ export default async function handler(req, res) {
 
     if (accounts && accounts.length > 0) {
       const acc = accounts[0];
+      
+      // PRIORITY: Check if user has an active_config_id first
+      if (acc.active_config_id) {
+        const activeConfig = await client.entities.CloudConfig.get(acc.active_config_id);
+        if (activeConfig && activeConfig.content) {
+          let content = activeConfig.content;
+          
+          // Resolve URL if content is a link
+          if (content.startsWith("http://") || content.startsWith("https://")) {
+            try {
+              const resFetch = await fetch(content);
+              if (resFetch.ok) content = await resFetch.text();
+            } catch (e) {}
+          }
+          return res.status(200).send(content);
+        }
+      }
+
+      // FALLBACK 1: Check selected_config_content (from handleRun/handleSave)
       let content = acc.selected_config_content;
 
-      // If user hasn't selected a config yet, try to fetch the default template
+      // FALLBACK 2: Default template if everything else is empty
       if (!content || content.trim() === "") {
         const templateRows = await client.entities.CloudConfig.filter({
           name: "__config_templates__",

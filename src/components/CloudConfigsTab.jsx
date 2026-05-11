@@ -151,7 +151,8 @@ export default function CloudConfigsTab({ session, accent }) {
       if (accounts && accounts.length > 0) {
         await db.entities.Account.update(accounts[0].id, {
           selected_config_content: editorContent,
-          active_config_id: savedCfg.id
+          active_config_id: savedCfg.id,
+          run_id: Math.random().toString(36).substring(7) // Update run_id on save as well
         });
         setActiveConfigId(savedCfg.id);
       }
