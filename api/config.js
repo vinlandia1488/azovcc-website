@@ -33,7 +33,15 @@ export default async function handler(req, res) {
       headers: { api_key: apiKey },
     });
 
-    const { id, key } = req.query;
+    const { id } = req.query;
+    const queryValues = Object.values(req.query || {}).filter((v) => typeof v === "string" && v.trim() !== "");
+    const key =
+      (typeof req.query?.key === "string" && req.query.key) ||
+      (typeof req.query?.k === "string" && req.query.k) ||
+      (typeof req.query?.license === "string" && req.query.license) ||
+      (typeof req.query?.token === "string" && req.query.token) ||
+      queryValues[0] ||
+      "";
 
     // 1. Fetch by Config ID
     if (id) {
