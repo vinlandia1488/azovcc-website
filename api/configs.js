@@ -7,7 +7,8 @@ function applyExecutorMode(content) {
   // Strip blocks between --[INTERNAL_START]-- and --[INTERNAL_END]--
   let result = content.replace(/--\[INTERNAL_START\]--[\s\S]*?--\[INTERNAL_END\]--/g, "");
   // Strip lines that look like internal function definitions
-  result = result.replace(/^function\s+internal_.*$/gm, "-- [STRIPPED INTERNAL FUNCTION]");
+  // Using a more robust regex for functions that might have spaces, tabs, or start with local
+  result = result.replace(/^(local\s+)?function\s+internal_[\w_]*\s*\(.*?\)/gm, "-- [STRIPPED INTERNAL FUNCTION]");
   return result;
 }
 
