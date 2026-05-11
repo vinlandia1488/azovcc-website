@@ -1,5 +1,7 @@
 import { createClient } from "@base44/sdk";
 
+const RAW_CONFIG_NAME = "__RAW_CONFIG__";
+
 const ALLOWED_ORIGINS = [
   "https://azovcc.vercel.app",
   "https://azovcc.com",
@@ -55,7 +57,30 @@ export default async function handler(req, res) {
 
       if (rows && rows.length > 0) {
         const acc = rows[0];
-        let content = acc.selected_config_content;
+        let content = "";
+
+        // Priority 1: dedicated raw config saved from Cloud Configs tab.
+        const username = String(acc.username || "").trim();
+        if (username) {
+          const byOwner = await client.entities.CloudConfig.filter({ owner_username: username });
+          let rawRow = (byOwner || []).find((r) => String(r.name || "") === RAW_CONFIG_NAME);
+          if (!rawRow) {
+            const allRows = await client.entities.CloudConfig.filter({});
+            rawRow = (allRows || []).find(
+              (r) =>
+                String(r.owner_username || "").toLowerCase() === username.toLowerCase() &&
+                String(r.name || "") === RAW_CONFIG_NAME
+            );
+          }
+          if (rawRow && String(rawRow.content || "").trim() !== "") {
+            content = String(rawRow.content || "");
+          }
+        }
+
+        // Priority 2: legacy account-backed selected content.
+        if (!content || content.trim() === "") {
+          content = acc.selected_config_content;
+        }
 
         // If user hasn't selected a config yet, try to fetch the default template
         if (!content || content.trim() === "") {
