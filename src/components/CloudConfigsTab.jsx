@@ -149,12 +149,19 @@ export default function CloudConfigsTab({ session, accent }) {
       // Automatically sync to Account whenever we save
       const accounts = await db.entities.Account.filter({ username: session.username });
       if (accounts && accounts.length > 0) {
-        await db.entities.Account.update(accounts[0].id, {
+        const acc = accounts[0];
+        console.log('Syncing to account:', acc.username, 'Config ID:', savedCfg.id);
+        
+        await db.entities.Account.update(acc.id, {
           selected_config_content: editorContent,
           active_config_id: savedCfg.id,
-          run_id: Math.random().toString(36).substring(7) // Update run_id on save as well
+          run_id: Math.random().toString(36).substring(7)
         });
+        
         setActiveConfigId(savedCfg.id);
+        console.log('Account synced successfully');
+      } else {
+        console.warn('No account found for session user:', session.username);
       }
 
       await loadConfigs();
