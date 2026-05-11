@@ -94,6 +94,7 @@ export default function Dashboard() {
         profile_pic: accounts[0].profile_pic || s.profile_pic || '',
         is_admin: typeof accounts[0].is_admin === 'boolean' ? accounts[0].is_admin : Boolean(s.is_admin),
         accent_color: s.accent_color || accounts[0].accent_color || '#ef4444',
+        executor_mode: accounts[0].executor_mode === true,
       };
       setSession(updated);
       setSessionState(updated);

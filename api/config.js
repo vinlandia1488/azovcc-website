@@ -2,6 +2,15 @@ import { createClient } from "@base44/sdk";
 
 const RAW_CONFIG_NAME = "__RAW_CONFIG__";
 
+function applyExecutorMode(content) {
+  if (!content) return "";
+  // Strip blocks between --[INTERNAL_START]-- and --[INTERNAL_END]--
+  let result = content.replace(/--\[INTERNAL_START\]--[\s\S]*?--\[INTERNAL_END\]--/g, "");
+  // Strip lines that look like internal function definitions
+  result = result.replace(/^function\s+internal_.*$/gm, "-- [STRIPPED INTERNAL FUNCTION]");
+  return result;
+}
+
 const ALLOWED_ORIGINS = [
   "https://azovcc.vercel.app",
   "https://azovcc.com",
@@ -105,11 +114,17 @@ export default async function handler(req, res) {
         }
 
         const safeUsername = String(acc.username || "").trim();
+        let finalContent = String(content || "");
+        if (acc.executor_mode === true) {
+          finalContent = applyExecutorMode(finalContent);
+        }
+
         const payload = {
           username: safeUsername,
+          executor_mode: acc.executor_mode === true,
           // Keep payload explicit for software consumers that want a direct raw endpoint.
           raw_url: safeUsername ? `https://azovcc.vercel.app/${encodeURIComponent(safeUsername)}/configs` : "",
-          content: String(content || ""),
+          content: finalContent,
           run_id: acc.run_id || "default"
         };
         return res.status(200).send(Buffer.from(JSON.stringify(payload)).toString("base64"));

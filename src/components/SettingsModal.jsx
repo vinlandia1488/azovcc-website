@@ -22,6 +22,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('azov_effectSpeed') || '5'));
   const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
   const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') === 'true');
+  const [executorMode, setExecutorMode] = useState(session.executor_mode === true);
   const [saving, setSaving] = useState(false);
   const [profilePic, setProfilePic] = useState(session.profile_pic || '');
   
@@ -59,21 +60,33 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
     localStorage.setItem('azov_brandingShowCc', brandingShowCc);
   }, [brandingShowCc]);
 
-  async function saveColor() {
+  async function saveSettings() {
     setSaving(true);
     try {
+      const updates = { 
+        accent_color: accent,
+        executor_mode: executorMode
+      };
+      
       if (session?.id) {
-        await db.entities.Account.update(session.id, { accent_color: accent });
+        await db.entities.Account.update(session.id, updates);
       } else {
         const rows = await db.entities.Account.filter({ username: session?.username });
         if (rows && rows[0]?.id) {
-          await db.entities.Account.update(rows[0].id, { accent_color: accent });
+          await db.entities.Account.update(rows[0].id, updates);
         }
       }
-    } catch {}
-    setSession({ ...session, accent_color: accent });
-    await onSaved();
-    setSaving(false);
+      setSession({ ...session, ...updates });
+      await onSaved();
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveColor() {
+    await saveSettings();
   }
 
   async function handleUpgrade() {
@@ -316,6 +329,27 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
              </div>
            ) : activeTab === 'themes' ? (
              <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
+               <div>
+                 <h3 className="text-white text-sm font-semibold mb-4">Software Behavior</h3>
+                 <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4 flex items-center justify-between">
+                   <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-zinc-800/50 flex items-center justify-center text-zinc-400">
+                        <ZapOff size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-white text-sm font-semibold">Executor Mode</h4>
+                        <p className="text-zinc-500 text-xs mt-0.5">Don't load internal functions in software.</p>
+                      </div>
+                   </div>
+                   <button 
+                      onClick={() => setExecutorMode(!executorMode)}
+                      className={`w-10 h-5 rounded-full relative transition ${executorMode ? 'bg-white' : 'bg-zinc-700'}`}
+                   >
+                      <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all ${executorMode ? 'bg-black left-[22px]' : 'bg-zinc-400 left-0.5'}`} />
+                   </button>
+                 </div>
+               </div>
+               <div className="h-px bg-zinc-800/60" />
                <div>
                  <h3 className="text-white text-sm font-semibold mb-4">Performance</h3>
                  <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4 flex items-center justify-between">

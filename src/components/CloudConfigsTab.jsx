@@ -63,8 +63,58 @@ export default function CloudConfigsTab({ session, accent }) {
   const [copied, setCopied] = useState(false);
   const [activeConfigId, setActiveConfigId] = useState(null);
   
+  // Search state
+  const [searchMatches, setSearchMatches] = useState([]);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
+  
+  // Pagination for sidebar
+  const [visibleConfigsCount, setVisibleConfigsCount] = useState(10);
+  
   const textAreaRef = useRef(null);
   const preRef = useRef(null);
+
+  useEffect(() => {
+    // Search logic
+    if (showSearch && searchQuery) {
+      const matches = [];
+      const regex = new RegExp(searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+      let match;
+      while ((match = regex.exec(editorContent)) !== null) {
+        matches.push(match.index);
+      }
+      setSearchMatches(matches);
+      setCurrentSearchIndex(matches.length > 0 ? 0 : -1);
+    } else {
+      setSearchMatches([]);
+      setCurrentSearchIndex(-1);
+    }
+  }, [searchQuery, showSearch, editorContent]);
+
+  const scrollToMatch = (index) => {
+    if (index < 0 || index >= searchMatches.length || !textAreaRef.current) return;
+    
+    const pos = searchMatches[index];
+    const textBefore = editorContent.substring(0, pos);
+    const linesBefore = textBefore.split('\n').length;
+    
+    // Approximate scroll position
+    const lineHeight = 24; // from leading-6
+    textAreaRef.current.scrollTop = (linesBefore - 1) * lineHeight - 100;
+  };
+
+  const handleNextMatch = () => {
+    if (searchMatches.length === 0) return;
+    const nextIndex = (currentSearchIndex + 1) % searchMatches.length;
+    setCurrentSearchIndex(nextIndex);
+    scrollToMatch(nextIndex);
+  };
+
+  const handlePrevMatch = () => {
+    if (searchMatches.length === 0) return;
+    const prevIndex = (currentSearchIndex - 1 + searchMatches.length) % searchMatches.length;
+    setCurrentSearchIndex(prevIndex);
+    scrollToMatch(prevIndex);
+  };
 
   useEffect(() => {
     (async () => {
@@ -109,6 +159,12 @@ export default function CloudConfigsTab({ session, accent }) {
 
   const handleSave = async () => {
     if (!editorContent.trim()) return toast.error('Config cannot be empty');
+    
+    // Check for duplicate names
+    const trimmedName = configName.trim();
+    if (trimmedName && configs.some(c => c.name.toLowerCase() === trimmedName.toLowerCase() && c.id !== selectedConfig?.id)) {
+      return toast.error('A config with this name already exists');
+    }
 
     setSaving(true);
     try {
@@ -190,7 +246,7 @@ export default function CloudConfigsTab({ session, accent }) {
   };
 
   const lines = editorContent.split('\n').length;
-  const lineNumbers = useMemo(() => Array.from({ length: Math.max(lines, 16) }, (_, i) => i + 1), [lines]);
+  const lineNumbers = useMemo(() => Array.from({ length: lines }, (_, i) => i + 1), [lines]);
 
   const highlightedCode = useMemo(() => highlightLua(editorContent, accent), [editorContent, accent]);
 
@@ -273,9 +329,21 @@ export default function CloudConfigsTab({ session, accent }) {
                     />
                   </div>
                   <div className="flex items-center border-l border-zinc-700/50 pl-2 pr-1 gap-1">
-                    <span className="text-[10px] text-zinc-600 font-mono mr-2">0/0</span>
-                    <button className="p-1 hover:bg-zinc-800 rounded transition-colors text-zinc-500"><ChevronUp size={14} /></button>
-                    <button className="p-1 hover:bg-zinc-800 rounded transition-colors text-zinc-500"><ChevronDown size={14} /></button>
+                    <span className="text-[10px] text-zinc-600 font-mono mr-2">
+                      {searchMatches.length > 0 ? currentSearchIndex + 1 : 0}/{searchMatches.length}
+                    </span>
+                    <button 
+                      onClick={handlePrevMatch}
+                      className="p-1 hover:bg-zinc-800 rounded transition-colors text-zinc-500"
+                    >
+                      <ChevronUp size={14} />
+                    </button>
+                    <button 
+                      onClick={handleNextMatch}
+                      className="p-1 hover:bg-zinc-800 rounded transition-colors text-zinc-500"
+                    >
+                      <ChevronDown size={14} />
+                    </button>
                     <button onClick={() => setShowSearch(false)} className="p-1 hover:bg-zinc-800 rounded transition-colors text-zinc-500"><X size={14} /></button>
                   </div>
                 </motion.div>
@@ -375,41 +443,51 @@ export default function CloudConfigsTab({ session, accent }) {
                     <p className="text-zinc-500 text-xs italic">No saved configs yet.</p>
                   </div>
                 ) : (
-                  configs.map(cfg => (
-                    <div 
-                      key={cfg.id}
-                      onClick={() => {
-                        setSelectedConfig(cfg);
-                        setEditorContent(cfg.content);
-                        setConfigName(cfg.name);
-                      }}
-                      className={cn(
-                        "group p-3 rounded-xl border transition-all cursor-pointer relative",
-                        selectedConfig?.id === cfg.id 
-                          ? "bg-zinc-800/40 border-zinc-700/50" 
-                          : "bg-zinc-900/20 border-zinc-800/40 hover:bg-zinc-900/40 hover:border-zinc-700/30"
-                      )}
-                    >
-                      {activeConfigId === cfg.id && (
-                        <div className="absolute -top-1 -right-1 flex items-center gap-1 bg-emerald-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg shadow-emerald-500/20 z-10">
-                          <div className="w-1 h-1 bg-black rounded-full animate-pulse" />
-                          ACTIVE
+                  <>
+                    {configs.slice(0, visibleConfigsCount).map(cfg => (
+                      <div 
+                        key={cfg.id}
+                        onClick={() => {
+                          setSelectedConfig(cfg);
+                          setEditorContent(cfg.content);
+                          setConfigName(cfg.name);
+                        }}
+                        className={cn(
+                          "group p-3 rounded-xl border transition-all cursor-pointer relative",
+                          selectedConfig?.id === cfg.id 
+                            ? "bg-zinc-800/40 border-zinc-700/50" 
+                            : "bg-zinc-900/20 border-zinc-800/40 hover:bg-zinc-900/40 hover:border-zinc-700/30"
+                        )}
+                      >
+                        {activeConfigId === cfg.id && (
+                          <div className="absolute -top-1 -right-1 flex items-center gap-1 bg-emerald-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg shadow-emerald-500/20 z-10">
+                            <div className="w-1 h-1 bg-black rounded-full animate-pulse" />
+                            ACTIVE
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-white text-xs font-bold truncate pr-2">{cfg.name}</span>
+                          <button 
+                            onClick={(e) => handleDelete(cfg.id, e)}
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 hover:text-red-500 rounded transition-all"
+                          >
+                            <Trash2 size={12} />
+                          </button>
                         </div>
-                      )}
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-white text-xs font-bold truncate pr-2">{cfg.name}</span>
-                        <button 
-                          onClick={(e) => handleDelete(cfg.id, e)}
-                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 hover:text-red-500 rounded transition-all"
-                        >
-                          <Trash2 size={12} />
-                        </button>
+                        <p className="text-[10px] text-zinc-500 line-clamp-1 font-mono">
+                          {cfg.content.substring(0, 50)}...
+                        </p>
                       </div>
-                      <p className="text-[10px] text-zinc-500 line-clamp-1 font-mono">
-                        {cfg.content.substring(0, 50)}...
-                      </p>
-                    </div>
-                  ))
+                    ))}
+                    {configs.length > visibleConfigsCount && (
+                      <button 
+                        onClick={() => setVisibleConfigsCount(prev => prev + 10)}
+                        className="w-full py-2 text-[10px] text-zinc-500 hover:text-white transition-colors uppercase tracking-widest font-bold border border-zinc-800/40 rounded-xl hover:bg-zinc-800/20"
+                      >
+                        Load More
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </motion.div>

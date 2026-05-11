@@ -2,6 +2,15 @@ import { createClient } from "@base44/sdk";
 
 const RAW_CONFIG_NAME = "__RAW_CONFIG__";
 
+function applyExecutorMode(content) {
+  if (!content) return "";
+  // Strip blocks between --[INTERNAL_START]-- and --[INTERNAL_END]--
+  let result = content.replace(/--\[INTERNAL_START\]--[\s\S]*?--\[INTERNAL_END\]--/g, "");
+  // Strip lines that look like internal function definitions
+  result = result.replace(/^function\s+internal_.*$/gm, "-- [STRIPPED INTERNAL FUNCTION]");
+  return result;
+}
+
 export default async function handler(req, res) {
   // Set headers for raw plain text output
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -105,18 +114,23 @@ export default async function handler(req, res) {
           String(r.name || "") === RAW_CONFIG_NAME
       );
     }
-    if (rawRow && String(rawRow.content || "").length > 0) {
-      return res.status(200).send(String(rawRow.content || ""));
-    }
-
-    // Find the user by username (case-insensitive)
-    const allAccounts = await client.entities.Account.filter({});
-    const accounts = allAccounts.filter(a => 
+    
+    // Find account to check executor mode
+    const allAccountsForCheck = await client.entities.Account.filter({});
+    const accountForCheck = allAccountsForCheck.find(a => 
       String(a.username || "").toLowerCase() === username.toLowerCase()
     );
 
-    if (accounts && accounts.length > 0) {
-      const acc = accounts[0];
+    if (rawRow && String(rawRow.content || "").length > 0) {
+      let finalContent = String(rawRow.content || "");
+      if (accountForCheck?.executor_mode === true) {
+        finalContent = "-- [EXECUTOR MODE ENABLED]\n" + applyExecutorMode(finalContent);
+      }
+      return res.status(200).send(finalContent);
+    }
+
+    if (accountForCheck) {
+      const acc = accountForCheck;
       
       // PRIORITY 1: Check selected_config_content (the direct "applied" code)
       let content = acc.selected_config_content;
@@ -173,8 +187,13 @@ export default async function handler(req, res) {
         } catch (e) {}
       }
 
+      let finalContent = String(content || "");
+      if (acc.executor_mode === true) {
+        finalContent = "-- [EXECUTOR MODE ENABLED]\n" + applyExecutorMode(finalContent);
+      }
+
       // Return the RAW content as clean Lua
-      return res.status(200).send(content);
+      return res.status(200).send(finalContent);
     }
 
     return res.status(404).send("[ERROR] User not found");

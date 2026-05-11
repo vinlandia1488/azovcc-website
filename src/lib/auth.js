@@ -234,6 +234,7 @@ function normalizeSessionAccount(account, fallbackUsername = "") {
     script_license: scriptLicense,
     accent_color: account?.accent_color || "#6366f1",
     is_admin: Boolean(account?.is_admin),
+    executor_mode: Boolean(account?.executor_mode),
     last_login: account?.last_login || new Date().toISOString(),
   };
 }
