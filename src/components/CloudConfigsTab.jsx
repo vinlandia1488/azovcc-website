@@ -9,6 +9,7 @@ import { getDefaultCloudConfig, getConfigTemplatesShared } from '@/lib/config-te
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
+import { setSession } from '@/lib/auth';
 
 const db = getBackendDb();
 
@@ -132,6 +133,8 @@ export default function CloudConfigsTab({ session, accent }) {
       if (!name) return;
       setConfigName(name);
     }
+    name = String(name).trim();
+    if (!name) return toast.error('Config name is required');
 
     setSaving(true);
     try {
@@ -146,6 +149,7 @@ export default function CloudConfigsTab({ session, accent }) {
           content: editorContent,
           name: name 
         });
+        savedCfg = { ...selectedConfig, content: editorContent, name };
         toast.success('Config updated');
       } else {
         console.log('Creating new CloudConfig for user:', session.username);
@@ -182,16 +186,18 @@ export default function CloudConfigsTab({ session, accent }) {
         setSession({ ...session, ...updateData });
         setActiveConfigId(savedCfg.id);
       } else {
-        const errorText = await response.text();
+        const errorText = (await response.text()) || '';
         throw new Error(errorText || 'Failed to save to Vercel API');
       }
 
       await loadConfigs();
       console.log('--- Config Save End (Success) ---');
+      return savedCfg;
     } catch (err) {
       console.error('--- Config Save Failed ---');
       console.error('Error Details:', err);
       toast.error('Failed to save config: ' + (err.message || 'Check console for details'));
+      throw err;
     } finally {
       setSaving(false);
     }
@@ -199,7 +205,7 @@ export default function CloudConfigsTab({ session, accent }) {
 
   const handleRun = async () => {
     try {
-      await handleSave();
+      const savedCfg = await handleSave();
       
       // Update account with the current config content, a new run_id, and active_config_id
       const accounts = await db.entities.Account.filter({ username: session.username });
@@ -210,9 +216,10 @@ export default function CloudConfigsTab({ session, accent }) {
         };
 
         // If we have a selected config, save its ID as active
-        if (selectedConfig) {
-          updateData.active_config_id = selectedConfig.id;
-          setActiveConfigId(selectedConfig.id);
+        const configId = savedCfg?.id || selectedConfig?.id || null;
+        if (configId) {
+          updateData.active_config_id = configId;
+          setActiveConfigId(configId);
         }
 
         await db.entities.Account.update(accounts[0].id, updateData);
