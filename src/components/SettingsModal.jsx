@@ -65,21 +65,27 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
     try {
       const updates = { 
         accent_color: accent,
-        executor_mode: executorMode
+        executor_mode: Boolean(executorMode)
       };
       
-      if (session?.id) {
-        await db.entities.Account.update(session.id, updates);
-      } else {
+      let accountId = session?.id;
+      if (!accountId) {
         const rows = await db.entities.Account.filter({ username: session?.username });
         if (rows && rows[0]?.id) {
-          await db.entities.Account.update(rows[0].id, updates);
+          accountId = rows[0].id;
         }
       }
-      setSession({ ...session, ...updates });
-      await onSaved();
+
+      if (accountId) {
+        await db.entities.Account.update(accountId, updates);
+        setSession({ ...session, ...updates });
+        if (onSaved) await onSaved();
+      } else {
+        throw new Error('Could not find account to update');
+      }
     } catch (err) {
       console.error('Failed to save settings:', err);
+      alert('Failed to save settings: ' + err.message);
     } finally {
       setSaving(false);
     }

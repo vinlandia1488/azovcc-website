@@ -39,9 +39,9 @@ export default async function handler(req, res) {
     }
 
     // Return the settings as raw Lua variables
-    let output = `-- AZOV USER SETTINGS: ${account.username}\n`;
-    output += `AZOV_EXECUTOR_MODE = ${account.executor_mode === true ? "true" : "false"}\n`;
-    output += `AZOV_ACCENT_COLOR = "${account.accent_color || "#ef4444"}"\n`;
+    let output = `-- user settings: ${account.username}\n`;
+    output += `executor_mode = ${account.executor_mode === true ? "true" : "false"}\n`;
+    output += `accent_color = "${account.accent_color || "#ef4444"}"\n`;
     
     return res.status(200).send(output);
   } catch (err) {
