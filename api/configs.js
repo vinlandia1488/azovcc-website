@@ -42,13 +42,19 @@ export default async function handler(req, res) {
         });
         if (templateRows && templateRows.length > 0) {
           try {
-            const templates = JSON.parse(templateRows[0].content);
-            content = templates.defaultCloudConfig || "-- No config applied";
+            // Try parsing if it's JSON, otherwise use raw
+            let rawTemplate = templateRows[0].content;
+            try {
+              const templates = JSON.parse(rawTemplate);
+              content = templates.defaultCloudConfig || rawTemplate;
+            } catch (e) {
+              content = rawTemplate;
+            }
           } catch (e) {
-            content = "-- Error parsing default template";
+            content = "-- Error retrieving default template";
           }
         } else {
-          content = "-- No config applied";
+          content = "-- No config applied and no template found";
         }
       }
 

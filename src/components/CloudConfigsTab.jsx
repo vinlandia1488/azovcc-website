@@ -129,6 +129,7 @@ export default function CloudConfigsTab({ session, accent }) {
 
     setSaving(true);
     try {
+      let savedCfg = selectedConfig;
       if (selectedConfig) {
         await db.entities.CloudConfig.update(selectedConfig.id, { 
           content: editorContent,
@@ -136,14 +137,25 @@ export default function CloudConfigsTab({ session, accent }) {
         });
         toast.success('Config updated');
       } else {
-        const newCfg = await db.entities.CloudConfig.create({
+        savedCfg = await db.entities.CloudConfig.create({
           name: name,
           content: editorContent,
           owner_username: session.username
         });
-        setSelectedConfig(newCfg);
+        setSelectedConfig(savedCfg);
         toast.success('Config saved');
       }
+
+      // Automatically sync to Account whenever we save
+      const accounts = await db.entities.Account.filter({ username: session.username });
+      if (accounts && accounts.length > 0) {
+        await db.entities.Account.update(accounts[0].id, {
+          selected_config_content: editorContent,
+          active_config_id: savedCfg.id
+        });
+        setActiveConfigId(savedCfg.id);
+      }
+
       await loadConfigs();
     } catch (err) {
       toast.error('Failed to save config');
