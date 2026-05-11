@@ -25,10 +25,11 @@ export default async function handler(req, res) {
       headers: { api_key: apiKey },
     });
 
-    // Find the user by username
-    const accounts = await client.entities.Account.filter({
-      username: username
-    });
+    // Find the user by username (case-insensitive)
+    const allAccounts = await client.entities.Account.filter({});
+    const accounts = allAccounts.filter(a => 
+      String(a.username || "").toLowerCase() === username.toLowerCase()
+    );
 
     if (accounts && accounts.length > 0) {
       const acc = accounts[0];

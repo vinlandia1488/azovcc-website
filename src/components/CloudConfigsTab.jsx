@@ -77,9 +77,15 @@ export default function CloudConfigsTab({ session, accent }) {
         await loadConfigs();
         
         // Load active config from account if exists
-        const accounts = await db.entities.Account.filter({ username: session.username });
-        if (accounts && accounts.length > 0) {
-          const acc = accounts[0];
+        let acc = null;
+        if (session.id) {
+          acc = await db.entities.Account.get(session.id);
+        } else {
+          const accounts = await db.entities.Account.filter({});
+          acc = accounts.find(a => String(a.username || "").toLowerCase() === String(session.username || "").toLowerCase());
+        }
+
+        if (acc) {
           setActiveConfigId(acc.active_config_id);
           if (acc.selected_config_content) {
             setEditorContent(acc.selected_config_content);
@@ -147,26 +153,28 @@ export default function CloudConfigsTab({ session, accent }) {
       }
 
       // Automatically sync to Account whenever we save
-      const accounts = await db.entities.Account.filter({ username: session.username });
-      if (accounts && accounts.length > 0) {
-        const acc = accounts[0];
-        console.log('Syncing to account:', acc.username, 'Config ID:', savedCfg.id);
+      // Use session.id if available, otherwise fallback to username filter
+      let accountToUpdate = null;
+      if (session.id) {
+        accountToUpdate = await db.entities.Account.get(session.id);
+      } else {
+        const accounts = await db.entities.Account.filter({ username: session.username });
+        if (accounts && accounts.length > 0) accountToUpdate = accounts[0];
+      }
+
+      if (accountToUpdate) {
+        console.log('Syncing to account:', accountToUpdate.username, 'Config ID:', savedCfg.id);
         
-        const updatedAccount = {
-          ...acc,
+        const updatedAccountData = {
           selected_config_content: editorContent,
           active_config_id: savedCfg.id,
           run_id: Math.random().toString(36).substring(7)
         };
 
-        await db.entities.Account.update(acc.id, {
-          selected_config_content: updatedAccount.selected_config_content,
-          active_config_id: updatedAccount.active_config_id,
-          run_id: updatedAccount.run_id
-        });
+        await db.entities.Account.update(accountToUpdate.id, updatedAccountData);
         
         // IMPORTANT: Update the local session cache so the UI stays in sync
-        setSession(updatedAccount);
+        setSession({ ...session, ...updatedAccountData });
         
         setActiveConfigId(savedCfg.id);
         console.log('Account synced successfully and session updated');
