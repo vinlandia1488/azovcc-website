@@ -152,14 +152,24 @@ export default function CloudConfigsTab({ session, accent }) {
         const acc = accounts[0];
         console.log('Syncing to account:', acc.username, 'Config ID:', savedCfg.id);
         
-        await db.entities.Account.update(acc.id, {
+        const updatedAccount = {
+          ...acc,
           selected_config_content: editorContent,
           active_config_id: savedCfg.id,
           run_id: Math.random().toString(36).substring(7)
+        };
+
+        await db.entities.Account.update(acc.id, {
+          selected_config_content: updatedAccount.selected_config_content,
+          active_config_id: updatedAccount.active_config_id,
+          run_id: updatedAccount.run_id
         });
         
+        // IMPORTANT: Update the local session cache so the UI stays in sync
+        setSession(updatedAccount);
+        
         setActiveConfigId(savedCfg.id);
-        console.log('Account synced successfully');
+        console.log('Account synced successfully and session updated');
       } else {
         console.warn('No account found for session user:', session.username);
       }
