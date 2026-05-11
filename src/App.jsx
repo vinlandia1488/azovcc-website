@@ -10,6 +10,7 @@ import { getBackendDb } from '@/lib/backend';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
+import RawConfig from './pages/RawConfig';
 import MaintenanceScreen from '@/components/MaintenanceScreen';
 import { getMaintenance } from '@/lib/app-settings';
 
@@ -79,6 +80,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<Auth />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/:username/configs" element={<RawConfig />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
