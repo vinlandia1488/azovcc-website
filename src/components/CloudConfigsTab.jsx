@@ -153,33 +153,43 @@ export default function CloudConfigsTab({ session, accent }) {
       }
 
       // Automatically sync to Account whenever we save
-      // Use session.id if available, otherwise fallback to username filter
-      let accountToUpdate = null;
-      if (session.id) {
-        accountToUpdate = await db.entities.Account.get(session.id);
-      } else {
-        const accounts = await db.entities.Account.filter({ username: session.username });
-        if (accounts && accounts.length > 0) accountToUpdate = accounts[0];
-      }
+      try {
+        const currentUser = await db.auth.me();
+        if (currentUser) {
+          console.log('Syncing to account via db.auth.me():', currentUser.username, 'Config ID:', savedCfg.id);
+          
+          const updatedAccountData = {
+            selected_config_content: editorContent,
+            active_config_id: savedCfg.id,
+            run_id: Math.random().toString(36).substring(7)
+          };
 
-      if (accountToUpdate) {
-        console.log('Syncing to account:', accountToUpdate.username, 'Config ID:', savedCfg.id);
-        
-        const updatedAccountData = {
-          selected_config_content: editorContent,
-          active_config_id: savedCfg.id,
-          run_id: Math.random().toString(36).substring(7)
-        };
-
-        await db.entities.Account.update(accountToUpdate.id, updatedAccountData);
-        
-        // IMPORTANT: Update the local session cache so the UI stays in sync
-        setSession({ ...session, ...updatedAccountData });
-        
-        setActiveConfigId(savedCfg.id);
-        console.log('Account synced successfully and session updated');
-      } else {
-        console.warn('No account found for session user:', session.username);
+          await db.entities.Account.update(currentUser.id, updatedAccountData);
+          
+          // IMPORTANT: Update the local session cache so the UI stays in sync
+          setSession({ ...session, ...updatedAccountData });
+          
+          setActiveConfigId(savedCfg.id);
+          console.log('Account synced successfully via db.auth.me()');
+        } else {
+          // Fallback if db.auth.me() is not available or returns null
+          const accounts = await db.entities.Account.filter({});
+          const acc = accounts.find(a => String(a.username || "").toLowerCase() === String(session.username || "").toLowerCase());
+          
+          if (acc) {
+            console.log('Syncing to account via fallback filter:', acc.username);
+            const updatedAccountData = {
+              selected_config_content: editorContent,
+              active_config_id: savedCfg.id,
+              run_id: Math.random().toString(36).substring(7)
+            };
+            await db.entities.Account.update(acc.id, updatedAccountData);
+            setSession({ ...session, ...updatedAccountData });
+            setActiveConfigId(savedCfg.id);
+          }
+        }
+      } catch (syncErr) {
+        console.error('Account sync failed:', syncErr);
       }
 
       await loadConfigs();
