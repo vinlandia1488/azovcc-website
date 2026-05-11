@@ -2,14 +2,13 @@ import { createClient } from "@base44/sdk";
 
 export default async function handler(req, res) {
   // Set headers for raw plain text output
-  res.setHeader("Content-Type", "text/plain; charset=utf-8");
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
 
-  const { username } = req.query;
-
-  if (!username) {
-    return res.status(400).send("[ERROR] Username required");
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
   }
 
   try {
@@ -24,6 +23,31 @@ export default async function handler(req, res) {
       appId,
       headers: { api_key: apiKey },
     });
+
+    // HANDLE SAVING (POST)
+    if (req.method === "POST") {
+      const { username, content, active_config_id } = req.body;
+      if (!username) return res.status(400).send("[ERROR] Username required");
+
+      const allAccounts = await client.entities.Account.filter({});
+      const account = allAccounts.find(a => 
+        String(a.username || "").toLowerCase() === username.toLowerCase()
+      );
+
+      if (!account) return res.status(404).send("[ERROR] User not found");
+
+      await client.entities.Account.update(account.id, {
+        selected_config_content: content,
+        active_config_id: active_config_id,
+        run_id: Math.random().toString(36).substring(7)
+      });
+
+      return res.status(200).json({ success: true });
+    }
+
+    // HANDLE LOADING (GET)
+    const { username } = req.query;
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
 
     // Find the user by username (case-insensitive)
     const allAccounts = await client.entities.Account.filter({});

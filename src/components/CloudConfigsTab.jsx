@@ -158,24 +158,32 @@ export default function CloudConfigsTab({ session, accent }) {
         toast.success('Config saved');
       }
 
-      // Direct Sync to Account using the session ID
-      if (session.id) {
-        console.log('Syncing code to Account ID:', session.id);
+      // Direct Save to the Vercel API Endpoint
+      console.log('--- Direct Vercel API Save Start ---');
+      const response = await fetch('/api/configs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: session.username,
+          content: editorContent,
+          active_config_id: savedCfg.id
+        })
+      });
+
+      if (response.ok) {
+        console.log('Direct Vercel API Save Successful');
+        
+        // Update local session to keep UI in sync
         const updateData = {
           selected_config_content: editorContent,
           active_config_id: savedCfg.id,
-          run_id: Math.random().toString(36).substring(7)
+          run_id: 'updated-' + Date.now()
         };
-
-        await db.entities.Account.update(session.id, updateData);
-        
-        // Update local session to keep UI in sync
         setSession({ ...session, ...updateData });
         setActiveConfigId(savedCfg.id);
-        
-        console.log('Sync Successful');
       } else {
-        console.warn('Cannot sync to account: session.id is missing');
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to save to Vercel API');
       }
 
       await loadConfigs();
