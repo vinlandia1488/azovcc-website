@@ -1,5 +1,45 @@
 import { createClient } from "@base44/sdk";
 
+const SETTINGS_NAME = "__USER_SETTINGS__";
+
+function safeBool(val, fallback = false) {
+  if (typeof val === "boolean") return val;
+  if (typeof val === "string") {
+    const v = val.toLowerCase().trim();
+    if (v === "true") return true;
+    if (v === "false") return false;
+  }
+  return fallback;
+}
+
+function parseJsonOrEmpty(raw) {
+  if (!raw || typeof raw !== "string") return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+async function findUserSettingsRow(client, username) {
+  let rows = [];
+  try {
+    rows = await client.entities.CloudConfig.filter({ owner_username: username });
+  } catch {}
+
+  let row = (rows || []).find((r) => String(r.name || "") === SETTINGS_NAME);
+  if (row) return row;
+
+  const allRows = await client.entities.CloudConfig.filter({});
+  row = (allRows || []).find(
+    (r) =>
+      String(r.owner_username || "").toLowerCase() === String(username || "").toLowerCase() &&
+      String(r.name || "") === SETTINGS_NAME
+  );
+  return row || null;
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
@@ -38,12 +78,14 @@ export default async function handler(req, res) {
 
     // 2. Find account
     let account = null;
-    const filtered = await client.entities.Account.filter({ username });
-    if (filtered && filtered.length > 0) {
-      account = filtered[0];
-    } else {
+    try {
+      const filtered = await client.entities.Account.filter({ username });
+      if (filtered && filtered.length > 0) account = filtered[0];
+    } catch {}
+
+    if (!account) {
       const allAccounts = await client.entities.Account.filter({});
-      account = (allAccounts || []).find(a =>
+      account = (allAccounts || []).find((a) =>
         String(a.username || "").toLowerCase() === username.toLowerCase()
       );
     }
@@ -55,29 +97,68 @@ export default async function handler(req, res) {
 
     // 3. Handle POST (Save)
     if (req.method === "POST") {
-      const updates = {};
+      // Save toggles into CloudConfig (Account schema on Base44 may not include these fields)
+      const existingRow = await findUserSettingsRow(client, username);
+      const existing = existingRow ? parseJsonOrEmpty(existingRow.content) : {};
+
+      const next = {
+        ...existing,
+      };
+
       if (parsedBody.executor_mode !== undefined) {
-        updates.executor_mode = Boolean(parsedBody.executor_mode);
-        updates.is_executor = Boolean(parsedBody.executor_mode);
-      }
-      if (parsedBody.accent_color !== undefined) {
-        updates.accent_color = String(parsedBody.accent_color);
+        next.executor_mode = safeBool(parsedBody.executor_mode, false);
       }
       if (parsedBody.reveal_console !== undefined) {
-        updates.reveal_console = Boolean(parsedBody.reveal_console);
+        next.reveal_console = safeBool(parsedBody.reveal_console, false);
+      }
+      if (parsedBody.accent_color !== undefined) {
+        next.accent_color = String(parsedBody.accent_color);
+        // Accent color is a real Account field, so keep it synced there too.
+        try {
+          await client.entities.Account.update(account.id, { accent_color: String(parsedBody.accent_color) });
+        } catch {}
       }
 
-      await client.entities.Account.update(account.id, updates);
-      return res.status(200).json({ success: true, updates });
+      if (existingRow) {
+        await client.entities.CloudConfig.update(existingRow.id, { content: JSON.stringify(next) });
+      } else {
+        await client.entities.CloudConfig.create({
+          owner_username: username,
+          name: SETTINGS_NAME,
+          content: JSON.stringify(next),
+        });
+      }
+
+      return res.status(200).json({ success: true, settings: next });
     }
 
     // 4. Handle GET (Load)
+    const wantsJson =
+      String(req.query.format || "").toLowerCase() === "json" ||
+      String(req.headers.accept || "").toLowerCase().includes("application/json");
+
+    const row = await findUserSettingsRow(client, username);
+    const stored = row ? parseJsonOrEmpty(row.content) : {};
+
+    const executorMode = stored.executor_mode === true;
+    const revealConsole = stored.reveal_console === true;
+    const accentColor = String(stored.accent_color || account.accent_color || "#ef4444");
+
+    if (wantsJson) {
+      return res.status(200).json({
+        success: true,
+        username: account.username,
+        executor_mode: executorMode,
+        reveal_console: revealConsole,
+        accent_color: accentColor,
+      });
+    }
+
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     let output = `-- user settings: ${account.username}\n`;
-    output += `executor_mode = ${account.executor_mode === true || account.is_executor === true ? "true" : "false"}\n`;
-    output += `accent_color = "${account.accent_color || "#ef4444"}"\n`;
-    output += `reveal_console = ${account.reveal_console === true ? "true" : "false"}\n`;
-
+    output += `executor_mode = ${executorMode ? "true" : "false"}\n`;
+    output += `accent_color = "${accentColor}"\n`;
+    output += `reveal_console = ${revealConsole ? "true" : "false"}\n`;
     return res.status(200).send(output);
   } catch (err) {
     console.error(err);

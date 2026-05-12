@@ -94,10 +94,26 @@ export default function Dashboard() {
         profile_pic: accounts[0].profile_pic || s.profile_pic || '',
         is_admin: typeof accounts[0].is_admin === 'boolean' ? accounts[0].is_admin : Boolean(s.is_admin),
         accent_color: accounts[0].accent_color || s.accent_color || '#ef4444',
-        executor_mode: accounts[0].executor_mode === true || accounts[0].is_executor === true,
-        is_executor: accounts[0].executor_mode === true || accounts[0].is_executor === true,
-        reveal_console: accounts[0].reveal_console === true,
+        executor_mode: false,
+        is_executor: false,
+        reveal_console: false,
       };
+
+      try {
+        const resp = await fetch(`/api/user-settings?username=${encodeURIComponent(s.username)}&format=json`, {
+          headers: { 'Accept': 'application/json' }
+        });
+        if (resp.ok) {
+          const settings = await resp.json();
+          if (settings && settings.success) {
+            updated.executor_mode = settings.executor_mode === true;
+            updated.is_executor = settings.executor_mode === true;
+            updated.reveal_console = settings.reveal_console === true;
+            if (settings.accent_color) updated.accent_color = settings.accent_color;
+          }
+        }
+      } catch {}
+
       setSession(updated);
       setSessionState(updated);
     }

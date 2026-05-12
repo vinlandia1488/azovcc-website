@@ -1,6 +1,38 @@
 import { createClient } from "@base44/sdk";
 
 const RAW_CONFIG_NAME = "__RAW_CONFIG__";
+const SETTINGS_NAME = "__USER_SETTINGS__";
+
+function parseJsonOrEmpty(raw) {
+  if (!raw || typeof raw !== "string") return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+async function findUserSettings(client, username) {
+  if (!username) return {};
+
+  let rows = [];
+  try {
+    rows = await client.entities.CloudConfig.filter({ owner_username: username });
+  } catch {}
+
+  let row = (rows || []).find((r) => String(r.name || "") === SETTINGS_NAME);
+  if (!row) {
+    const allRows = await client.entities.CloudConfig.filter({});
+    row = (allRows || []).find(
+      (r) =>
+        String(r.owner_username || "").toLowerCase() === String(username || "").toLowerCase() &&
+        String(r.name || "") === SETTINGS_NAME
+    );
+  }
+
+  return row ? parseJsonOrEmpty(row.content) : {};
+}
 
 function applyExecutorMode(content) {
   if (!content) return "";
@@ -116,7 +148,9 @@ export default async function handler(req, res) {
 
         const safeUsername = String(acc.username || "").trim();
         let finalContent = String(content || "");
-        const isExecutor = acc.executor_mode === true;
+        const userSettings = await findUserSettings(client, safeUsername);
+        const isExecutor = userSettings.executor_mode === true;
+        const revealConsole = userSettings.reveal_console === true;
         
         if (isExecutor) {
           finalContent = applyExecutorMode(finalContent);
@@ -132,7 +166,7 @@ export default async function handler(req, res) {
           settings_url: safeUsername ? `https://azovcc.vercel.app/${encodeURIComponent(safeUsername)}/settings` : "",
           content: finalContent,
           run_id: acc.run_id || "default",
-          reveal_console: acc.reveal_console === true
+          reveal_console: revealConsole === true
         };
         return res.status(200).send(Buffer.from(JSON.stringify(payload)).toString("base64"));
       }
