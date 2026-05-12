@@ -131,7 +131,8 @@ export default async function handler(req, res) {
           raw_url: safeUsername ? `https://azovcc.vercel.app/${encodeURIComponent(safeUsername)}/configs` : "",
           settings_url: safeUsername ? `https://azovcc.vercel.app/${encodeURIComponent(safeUsername)}/settings` : "",
           content: finalContent,
-          run_id: acc.run_id || "default"
+          run_id: acc.run_id || "default",
+          reveal_console: acc.reveal_console === true
         };
         return res.status(200).send(Buffer.from(JSON.stringify(payload)).toString("base64"));
       }
