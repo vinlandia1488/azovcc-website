@@ -15,6 +15,7 @@ export default async function handler(req, res) {
     const apiKey = process.env.BASE44_API_KEY || process.env.VITE_BASE44_API_KEY;
 
     if (!appId || !apiKey) {
+      if (req.method === "POST") return res.status(500).json({ success: false, error: "Server configuration error" });
       return res.status(500).send("-- [ERROR] Server configuration error");
     }
 
@@ -22,6 +23,18 @@ export default async function handler(req, res) {
       appId,
       headers: { api_key: apiKey },
     });
+
+    const parsedBody = typeof req.body === "string"
+      ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })()
+      : (req.body || {});
+
+    const { username: queryUsername } = req.query;
+    const username = (queryUsername || parsedBody.username || "").trim();
+
+    if (!username) {
+      if (req.method === "POST") return res.status(400).json({ success: false, error: "Username required" });
+      return res.status(400).send("-- [ERROR] Username required");
+    }
 
     // Find account using a more robust filter if possible, otherwise fallback to finding in list
     let account = null;
@@ -42,15 +55,12 @@ export default async function handler(req, res) {
     }
 
     if (!account) {
-      return res.status(404).json({ success: false, error: "User not found" });
+      if (req.method === "POST") return res.status(404).json({ success: false, error: "User not found" });
+      return res.status(404).send("-- [ERROR] User not found");
     }
 
     // HANDLE SAVING (POST)
     if (req.method === "POST") {
-      const parsedBody = typeof req.body === "string"
-        ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })()
-        : (req.body || {});
-
       const updates = {};
       if (parsedBody.executor_mode !== undefined) {
         const val = Boolean(parsedBody.executor_mode);
@@ -81,6 +91,7 @@ export default async function handler(req, res) {
     return res.status(200).send(output);
   } catch (err) {
     console.error(err);
+    if (req.method === "POST") return res.status(500).json({ success: false, error: "Internal Server Error" });
     return res.status(500).send("-- [ERROR] Internal Server Error");
   }
 }
