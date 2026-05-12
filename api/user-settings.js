@@ -37,10 +37,16 @@ export default async function handler(req, res) {
     }
 
     // 2. Find account
-    const allAccounts = await client.entities.Account.filter({});
-    const account = (allAccounts || []).find(a =>
-      String(a.username || "").toLowerCase() === username.toLowerCase()
-    );
+    let account = null;
+    const filtered = await client.entities.Account.filter({ username });
+    if (filtered && filtered.length > 0) {
+      account = filtered[0];
+    } else {
+      const allAccounts = await client.entities.Account.filter({});
+      account = (allAccounts || []).find(a =>
+        String(a.username || "").toLowerCase() === username.toLowerCase()
+      );
+    }
 
     if (!account) {
       const msg = "-- [ERROR] User not found";

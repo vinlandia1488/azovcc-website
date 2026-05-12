@@ -61,6 +61,18 @@
     "active_config_id": {
       "type": "string",
       "description": "The ID of the currently applied cloud config"
+    },
+    "executor_mode": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_executor": {
+      "type": "boolean",
+      "default": false
+    },
+    "reveal_console": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [
