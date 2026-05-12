@@ -15,8 +15,8 @@ export default async function handler(req, res) {
     const apiKey = process.env.BASE44_API_KEY || process.env.VITE_BASE44_API_KEY;
 
     if (!appId || !apiKey) {
-      if (req.method === "POST") return res.status(500).json({ success: false, error: "Server configuration error" });
-      return res.status(500).send("-- [ERROR] Server configuration error");
+      const msg = "-- [ERROR] Server configuration error";
+      return req.method === "POST" ? res.status(500).json({ success: false, error: msg }) : res.status(500).send(msg);
     }
 
     const client = createClient({
@@ -24,48 +24,35 @@ export default async function handler(req, res) {
       headers: { api_key: apiKey },
     });
 
+    // 1. Determine username
     const parsedBody = typeof req.body === "string"
       ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })()
       : (req.body || {});
 
-    const { username: queryUsername } = req.query;
-    const username = (queryUsername || parsedBody.username || "").trim();
+    const username = (req.query.username || parsedBody.username || "").trim();
 
     if (!username) {
-      if (req.method === "POST") return res.status(400).json({ success: false, error: "Username required" });
-      return res.status(400).send("-- [ERROR] Username required");
+      const msg = "-- [ERROR] Username required";
+      return req.method === "POST" ? res.status(400).json({ success: false, error: msg }) : res.status(400).send(msg);
     }
 
-    // Find account using a more robust filter if possible, otherwise fallback to finding in list
-    let account = null;
-    try {
-      const filtered = await client.entities.Account.filter({ username });
-      if (filtered && filtered.length > 0) {
-        account = filtered[0];
-      }
-    } catch (e) {
-      console.warn("Filter failed, falling back to all accounts list", e);
-    }
+    // 2. Find account
+    const allAccounts = await client.entities.Account.filter({});
+    const account = (allAccounts || []).find(a =>
+      String(a.username || "").toLowerCase() === username.toLowerCase()
+    );
 
     if (!account) {
-      const allAccounts = await client.entities.Account.filter({});
-      account = (allAccounts || []).find(a =>
-        String(a.username || "").toLowerCase() === username.toLowerCase()
-      );
+      const msg = "-- [ERROR] User not found";
+      return req.method === "POST" ? res.status(404).json({ success: false, error: msg }) : res.status(404).send(msg);
     }
 
-    if (!account) {
-      if (req.method === "POST") return res.status(404).json({ success: false, error: "User not found" });
-      return res.status(404).send("-- [ERROR] User not found");
-    }
-
-    // HANDLE SAVING (POST)
+    // 3. Handle POST (Save)
     if (req.method === "POST") {
       const updates = {};
       if (parsedBody.executor_mode !== undefined) {
-        const val = Boolean(parsedBody.executor_mode);
-        updates.executor_mode = val;
-        updates.is_executor = val; // Set both for compatibility
+        updates.executor_mode = Boolean(parsedBody.executor_mode);
+        updates.is_executor = Boolean(parsedBody.executor_mode);
       }
       if (parsedBody.accent_color !== undefined) {
         updates.accent_color = String(parsedBody.accent_color);
@@ -75,14 +62,11 @@ export default async function handler(req, res) {
       }
 
       await client.entities.Account.update(account.id, updates);
-
       return res.status(200).json({ success: true, updates });
     }
 
-    // HANDLE LOADING (GET)
+    // 4. Handle GET (Load)
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
-
-    // Return the settings as raw Lua variables
     let output = `-- user settings: ${account.username}\n`;
     output += `executor_mode = ${account.executor_mode === true || account.is_executor === true ? "true" : "false"}\n`;
     output += `accent_color = "${account.accent_color || "#ef4444"}"\n`;
@@ -91,7 +75,7 @@ export default async function handler(req, res) {
     return res.status(200).send(output);
   } catch (err) {
     console.error(err);
-    if (req.method === "POST") return res.status(500).json({ success: false, error: "Internal Server Error" });
-    return res.status(500).send("-- [ERROR] Internal Server Error");
+    const msg = "-- [ERROR] Internal Server Error";
+    return req.method === "POST" ? res.status(500).json({ success: false, error: msg }) : res.status(500).send(msg);
   }
 }

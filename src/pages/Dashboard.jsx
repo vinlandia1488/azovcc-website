@@ -267,7 +267,15 @@ export default function Dashboard() {
         <SettingsModal
           session={session}
           onClose={() => setShowSettings(false)}
-          onSaved={() => { refreshSession(); triggerFeedback(); }}
+          onSaved={async (updatedData) => { 
+            if (updatedData) {
+              setSession(updatedData);
+              setSessionState(updatedData);
+            } else {
+              await refreshSession(); 
+            }
+            triggerFeedback(); 
+          }}
           onLogout={handleLogout}
         />
       )}

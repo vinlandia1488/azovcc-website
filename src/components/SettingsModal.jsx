@@ -94,7 +94,8 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
       
       setSession(updates); // Update localStorage
       
-      if (onSaved) await onSaved();
+      if (onSaved) await onSaved(updates);
+      onClose();
     } catch (err) {
       console.error('Failed to save settings:', err);
       alert('Failed to save settings: ' + err.message);
