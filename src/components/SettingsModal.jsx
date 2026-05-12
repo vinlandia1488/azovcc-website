@@ -83,7 +83,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
       const data = await response.json();
       if (!data.success) throw new Error(data.error || 'Failed to save');
 
-      // Update the session in localStorage and React state
+      // Update the session in localStorage and call onSaved to refresh Dashboard
       const updates = { 
         ...session,
         accent_color: accent,
@@ -93,7 +93,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
       };
       
       setSession(updates); // Update localStorage
-      setSessionState(updates); // Update Dashboard state
       
       if (onSaved) await onSaved();
     } catch (err) {
