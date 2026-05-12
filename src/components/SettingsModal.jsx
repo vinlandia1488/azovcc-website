@@ -83,13 +83,18 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
       const data = await response.json();
       if (!data.success) throw new Error(data.error || 'Failed to save');
 
+      // Update the session in localStorage and React state
       const updates = { 
+        ...session,
         accent_color: accent,
         executor_mode: Boolean(executorMode),
+        is_executor: Boolean(executorMode),
         reveal_console: Boolean(revealConsole)
       };
       
-      setSession({ ...session, ...updates });
+      setSession(updates); // Update localStorage
+      setSessionState(updates); // Update Dashboard state
+      
       if (onSaved) await onSaved();
     } catch (err) {
       console.error('Failed to save settings:', err);

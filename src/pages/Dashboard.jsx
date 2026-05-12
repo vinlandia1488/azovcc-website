@@ -93,7 +93,7 @@ export default function Dashboard() {
         unique_identifier: accounts[0].unique_identifier ?? s.unique_identifier ?? 0,
         profile_pic: accounts[0].profile_pic || s.profile_pic || '',
         is_admin: typeof accounts[0].is_admin === 'boolean' ? accounts[0].is_admin : Boolean(s.is_admin),
-        accent_color: s.accent_color || accounts[0].accent_color || '#ef4444',
+        accent_color: accounts[0].accent_color || s.accent_color || '#ef4444',
         executor_mode: accounts[0].executor_mode === true || accounts[0].is_executor === true,
         is_executor: accounts[0].executor_mode === true || accounts[0].is_executor === true,
         reveal_console: accounts[0].reveal_console === true,
