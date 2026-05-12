@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, LogOut, Check, Lock, ZapOff, Ban, Snowflake, Ghost, Leaf, CreditCard, Palette, Shield, User, ImagePlus } from 'lucide-react';
+import { X, LogOut, Check, Lock, ZapOff, Ban, Snowflake, Ghost, Leaf, CreditCard, Palette, Shield, User, ImagePlus, Eye, EyeOff } from 'lucide-react';
 import { setSession, upgradeToInternal, changePassword } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 import BrandingMark from '@/components/BrandingMark';
@@ -23,6 +23,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
   const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') === 'true');
   const [executorMode, setExecutorMode] = useState(session.executor_mode === true);
+  const [revealConsole, setRevealConsole] = useState(session.reveal_console === true);
   const [saving, setSaving] = useState(false);
   const [profilePic, setProfilePic] = useState(session.profile_pic || '');
   
@@ -69,7 +70,8 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
         body: JSON.stringify({
           username: session.username,
           executor_mode: Boolean(executorMode),
-          accent_color: accent
+          accent_color: accent,
+          reveal_console: Boolean(revealConsole)
         })
       });
 
@@ -78,7 +80,8 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
 
       const updates = { 
         accent_color: accent,
-        executor_mode: Boolean(executorMode)
+        executor_mode: Boolean(executorMode),
+        reveal_console: Boolean(revealConsole)
       };
       
       setSession({ ...session, ...updates });
@@ -354,11 +357,29 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                         <p className="text-zinc-500 text-xs mt-0.5">Don't load internal functions in software.</p>
                       </div>
                    </div>
-                   <button 
+                   <button
                       onClick={() => setExecutorMode(!executorMode)}
                       className={`w-10 h-5 rounded-full relative transition ${executorMode ? 'bg-white' : 'bg-zinc-700'}`}
                    >
                       <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all ${executorMode ? 'bg-black left-[22px]' : 'bg-zinc-400 left-0.5'}`} />
+                   </button>
+                 </div>
+
+                 <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4 flex items-center justify-between mt-4">
+                   <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-zinc-800/50 flex items-center justify-center text-zinc-400">
+                        <Eye size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-white text-sm font-semibold">Reveal Console</h4>
+                        <p className="text-zinc-500 text-xs mt-0.5">Show hidden console when clicking the button.</p>
+                      </div>
+                   </div>
+                   <button
+                      onClick={() => setRevealConsole(!revealConsole)}
+                      className={`w-10 h-5 rounded-full relative transition ${revealConsole ? 'bg-white' : 'bg-zinc-700'}`}
+                   >
+                      <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all ${revealConsole ? 'bg-black left-[22px]' : 'bg-zinc-400 left-0.5'}`} />
                    </button>
                  </div>
                </div>

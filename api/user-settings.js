@@ -28,14 +28,14 @@ export default async function handler(req, res) {
       const parsedBody = typeof req.body === "string"
         ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })()
         : (req.body || {});
-      
+
       const username = String(parsedBody.username || "").trim();
       if (!username) {
         return res.status(400).json({ success: false, error: "Username required" });
       }
 
       const allAccounts = await client.entities.Account.filter({});
-      const account = allAccounts.find(a => 
+      const account = allAccounts.find(a =>
         String(a.username || "").toLowerCase() === username.toLowerCase()
       );
 
@@ -49,6 +49,9 @@ export default async function handler(req, res) {
       }
       if (parsedBody.accent_color !== undefined) {
         updates.accent_color = String(parsedBody.accent_color);
+      }
+      if (parsedBody.reveal_console !== undefined) {
+        updates.reveal_console = Boolean(parsedBody.reveal_console);
       }
 
       await client.entities.Account.update(account.id, updates);
@@ -65,7 +68,7 @@ export default async function handler(req, res) {
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
 
     const allAccounts = await client.entities.Account.filter({});
-    const account = allAccounts.find(a => 
+    const account = allAccounts.find(a =>
       String(a.username || "").toLowerCase() === username.toLowerCase()
     );
 
@@ -77,7 +80,8 @@ export default async function handler(req, res) {
     let output = `-- user settings: ${account.username}\n`;
     output += `executor_mode = ${account.executor_mode === true ? "true" : "false"}\n`;
     output += `accent_color = "${account.accent_color || "#ef4444"}"\n`;
-    
+    output += `reveal_console = ${account.reveal_console === true ? "true" : "false"}\n`;
+
     return res.status(200).send(output);
   } catch (err) {
     console.error(err);
