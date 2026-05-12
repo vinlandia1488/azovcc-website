@@ -23,29 +23,39 @@ export default async function handler(req, res) {
       headers: { api_key: apiKey },
     });
 
+    // Find account using a more robust filter if possible, otherwise fallback to finding in list
+    let account = null;
+    try {
+      const filtered = await client.entities.Account.filter({ username });
+      if (filtered && filtered.length > 0) {
+        account = filtered[0];
+      }
+    } catch (e) {
+      console.warn("Filter failed, falling back to all accounts list", e);
+    }
+
+    if (!account) {
+      const allAccounts = await client.entities.Account.filter({});
+      account = (allAccounts || []).find(a =>
+        String(a.username || "").toLowerCase() === username.toLowerCase()
+      );
+    }
+
+    if (!account) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
     // HANDLE SAVING (POST)
     if (req.method === "POST") {
       const parsedBody = typeof req.body === "string"
         ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })()
         : (req.body || {});
 
-      const username = String(parsedBody.username || "").trim();
-      if (!username) {
-        return res.status(400).json({ success: false, error: "Username required" });
-      }
-
-      const allAccounts = await client.entities.Account.filter({});
-      const account = allAccounts.find(a =>
-        String(a.username || "").toLowerCase() === username.toLowerCase()
-      );
-
-      if (!account) {
-        return res.status(404).json({ success: false, error: "User not found" });
-      }
-
       const updates = {};
       if (parsedBody.executor_mode !== undefined) {
-        updates.executor_mode = Boolean(parsedBody.executor_mode);
+        const val = Boolean(parsedBody.executor_mode);
+        updates.executor_mode = val;
+        updates.is_executor = val; // Set both for compatibility
       }
       if (parsedBody.accent_color !== undefined) {
         updates.accent_color = String(parsedBody.accent_color);
@@ -60,25 +70,11 @@ export default async function handler(req, res) {
     }
 
     // HANDLE LOADING (GET)
-    const { username } = req.query;
-    if (!username) {
-      return res.status(400).send("-- [ERROR] Username required");
-    }
-
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
-
-    const allAccounts = await client.entities.Account.filter({});
-    const account = allAccounts.find(a =>
-      String(a.username || "").toLowerCase() === username.toLowerCase()
-    );
-
-    if (!account) {
-      return res.status(404).send("-- [ERROR] User not found");
-    }
 
     // Return the settings as raw Lua variables
     let output = `-- user settings: ${account.username}\n`;
-    output += `executor_mode = ${account.executor_mode === true ? "true" : "false"}\n`;
+    output += `executor_mode = ${account.executor_mode === true || account.is_executor === true ? "true" : "false"}\n`;
     output += `accent_color = "${account.accent_color || "#ef4444"}"\n`;
     output += `reveal_console = ${account.reveal_console === true ? "true" : "false"}\n`;
 

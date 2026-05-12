@@ -22,9 +22,14 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('azov_effectSpeed') || '5'));
   const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
   const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') === 'true');
-  const [executorMode, setExecutorMode] = useState(session.executor_mode === true);
+  const [executorMode, setExecutorMode] = useState(session.executor_mode === true || session.is_executor === true);
   const [revealConsole, setRevealConsole] = useState(session.reveal_console === true);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setExecutorMode(session.executor_mode === true || session.is_executor === true);
+    setRevealConsole(session.reveal_console === true);
+  }, [session]);
   const [profilePic, setProfilePic] = useState(session.profile_pic || '');
   
   const [internalKey, setInternalKey] = useState('');
