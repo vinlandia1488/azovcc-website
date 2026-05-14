@@ -22,14 +22,8 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('azov_effectSpeed') || '5'));
   const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
   const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') === 'true');
-  const [executorMode, setExecutorMode] = useState(session.executor_mode === true || session.is_executor === true);
-  const [revealConsole, setRevealConsole] = useState(session.reveal_console === true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    setExecutorMode(session.executor_mode === true || session.is_executor === true);
-    setRevealConsole(session.reveal_console === true);
-  }, [session]);
   const [profilePic, setProfilePic] = useState(session.profile_pic || '');
   
   const [internalKey, setInternalKey] = useState('');
@@ -74,9 +68,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: session.username,
-          executor_mode: Boolean(executorMode),
-          accent_color: accent,
-          reveal_console: Boolean(revealConsole)
+          accent_color: accent
         })
       });
 
@@ -86,10 +78,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
       // Update the session in localStorage and call onSaved to refresh Dashboard
       const updates = { 
         ...session,
-        accent_color: accent,
-        executor_mode: Boolean(executorMode),
-        is_executor: Boolean(executorMode),
-        reveal_console: Boolean(revealConsole)
+        accent_color: accent
       };
       
       setSession(updates); // Update localStorage
@@ -206,13 +195,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
             >
               <CreditCard size={16} />
               Redeem
-            </button>
-            <button 
-              onClick={() => setActiveTab('software')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === 'software' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
-            >
-              <ZapOff size={16} />
-              Software
             </button>
             <button 
               onClick={() => setActiveTab('themes')}
@@ -352,55 +334,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                    {saving ? 'Redeeming...' : 'Redeem Code'}
                  </button>
                </div>
-             </div>
-           ) : activeTab === 'software' ? (
-             <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
-               <div>
-                 <h3 className="text-white text-sm font-semibold mb-4">Software Settings</h3>
-                 <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4 flex items-center justify-between">
-                   <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-zinc-800/50 flex items-center justify-center text-zinc-400">
-                        <ZapOff size={18} />
-                      </div>
-                      <div>
-                        <h4 className="text-white text-sm font-semibold">Executor Mode</h4>
-                        <p className="text-zinc-500 text-xs mt-0.5">Don't load internal functions in software.</p>
-                      </div>
-                   </div>
-                   <button
-                      onClick={() => setExecutorMode(!executorMode)}
-                      className={`w-10 h-5 rounded-full relative transition ${executorMode ? 'bg-white' : 'bg-zinc-700'}`}
-                   >
-                      <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all ${executorMode ? 'bg-black left-[22px]' : 'bg-zinc-400 left-0.5'}`} />
-                   </button>
-                 </div>
-
-                 <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4 flex items-center justify-between mt-4">
-                   <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-zinc-800/50 flex items-center justify-center text-zinc-400">
-                        <Eye size={18} />
-                      </div>
-                      <div>
-                        <h4 className="text-white text-sm font-semibold">Reveal Console</h4>
-                        <p className="text-zinc-500 text-xs mt-0.5">Show hidden console when clicking the button.</p>
-                      </div>
-                   </div>
-                   <button
-                      onClick={() => setRevealConsole(!revealConsole)}
-                      className={`w-10 h-5 rounded-full relative transition ${revealConsole ? 'bg-white' : 'bg-zinc-700'}`}
-                   >
-                      <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all ${revealConsole ? 'bg-black left-[22px]' : 'bg-zinc-400 left-0.5'}`} />
-                   </button>
-                 </div>
-               </div>
-               
-               <button 
-                  onClick={saveSettings}
-                  disabled={saving}
-                  className="w-full mt-4 bg-white hover:bg-zinc-200 text-black font-bold rounded-xl px-4 py-3 text-sm transition disabled:opacity-50"
-               >
-                  {saving ? 'Saving...' : 'Save Software Settings'}
-               </button>
              </div>
            ) : activeTab === 'themes' ? (
              <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">

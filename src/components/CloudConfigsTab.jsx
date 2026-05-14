@@ -3,12 +3,14 @@ import { getBackendDb } from '@/lib/backend';
 import { 
   Plus, Play, RotateCcw, Trash2, Copy, Check, 
   Search, X, ChevronUp, ChevronDown, Save, Eye,
-  Layout, FileCode, History, Settings
+  Layout, FileCode, History, Settings, ZapOff, CheckCircle2
 } from 'lucide-react';
 import { getDefaultCloudConfig, getConfigTemplatesShared } from '@/lib/config-templates';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
+import { setSession } from '@/lib/auth';
+import { sendWSMessage } from '@/lib/ws';
 
 const db = getBackendDb();
 
@@ -62,6 +64,9 @@ export default function CloudConfigsTab({ session, accent }) {
   const [configName, setConfigName] = useState('');
   const [copied, setCopied] = useState(false);
   const [activeConfigId, setActiveConfigId] = useState(null);
+  const [executorMode, setExecutorMode] = useState(session.executor_mode === true || session.is_executor === true);
+  const [revealConsole, setRevealConsole] = useState(session.reveal_console === true);
+  const [showSoftwareSettings, setShowSoftwareSettings] = useState(false);
   
   // Search state
   const [searchMatches, setSearchMatches] = useState([]);
@@ -126,6 +131,16 @@ export default function CloudConfigsTab({ session, accent }) {
         // Load user's configs
         await loadConfigs();
 
+        // Load software settings
+        const settingsRes = await fetch(`/api/user-settings?username=${encodeURIComponent(session.username)}&format=json`);
+        if (settingsRes.ok) {
+          const settings = await settingsRes.json();
+          if (settings.success) {
+            setExecutorMode(settings.executor_mode);
+            setRevealConsole(settings.reveal_console);
+          }
+        }
+
         // Single source of truth: load the raw config directly from /api/configs.
         const res = await fetch(`/api/configs?username=${encodeURIComponent(session.username)}`, {
           cache: 'no-store'
@@ -160,14 +175,25 @@ export default function CloudConfigsTab({ session, accent }) {
   const handleSave = async () => {
     if (!editorContent.trim()) return toast.error('Config cannot be empty');
     
-    // Check for duplicate names
-    const trimmedName = configName.trim();
-    if (trimmedName && configs.some(c => c.name.toLowerCase() === trimmedName.toLowerCase() && c.id !== selectedConfig?.id)) {
-      return toast.error('A config with this name already exists');
-    }
-
     setSaving(true);
     try {
+      // 1. Save as a named config if configName is present
+      const name = configName.trim() || 'Untitled Config';
+      if (selectedConfig) {
+        await db.entities.CloudConfig.update(selectedConfig.id, { 
+          name,
+          content: editorContent 
+        });
+      } else {
+        const newCfg = await db.entities.CloudConfig.create({
+          owner_username: session.username,
+          name,
+          content: editorContent
+        });
+        setSelectedConfig(newCfg);
+      }
+
+      // 2. Sync to __RAW_CONFIG__ (The one the software actually runs)
       const response = await fetch('/api/configs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -177,28 +203,41 @@ export default function CloudConfigsTab({ session, accent }) {
         })
       });
 
-      if (response.ok) {
-        const contentType = String(response.headers.get('content-type') || '').toLowerCase();
-        if (!contentType.includes('application/json')) {
-          throw new Error('API returned non-JSON response');
-        }
-        const payload = await response.json();
-        if (!payload?.success) {
-          throw new Error('API save did not confirm success');
-        }
-        toast.success('Config saved');
-      } else {
-        const errorText = (await response.text()) || '';
-        throw new Error(errorText || 'Failed to sync with /api/configs');
+      if (!response.ok) {
+        throw new Error('Failed to sync with /api/configs');
       }
 
+      // 3. Save software settings
+      await fetch('/api/user-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: session.username,
+          executor_mode: Boolean(executorMode),
+          reveal_console: Boolean(revealConsole)
+        })
+      });
+
+      const updates = { 
+        ...session,
+        executor_mode: Boolean(executorMode),
+        is_executor: Boolean(executorMode),
+        reveal_console: Boolean(revealConsole)
+      };
+      setSession(updates);
+
+      // 4. Send WebSocket notification to software
+      sendWSMessage({ 
+        type: 'update', 
+        executor_mode: Boolean(executorMode),
+        reveal_console: Boolean(revealConsole)
+      });
+
+      toast.success('Config saved and applied');
       await loadConfigs();
-      await loadConfigs();
-      return savedCfg;
     } catch (err) {
-      console.error('--- Config Save Failed ---');
-      console.error('Error Details:', err);
-      throw err;
+      console.error('--- Config Save Failed ---', err);
+      toast.error(err.message || 'Failed to save');
     } finally {
       setSaving(false);
     }
@@ -207,10 +246,13 @@ export default function CloudConfigsTab({ session, accent }) {
   const handleRun = async () => {
     try {
       await handleSave();
-      toast.success('Config sent to software!');
+      
+      // Explicit run command for software via WS
+      sendWSMessage({ type: 'run', content: editorContent });
+      
+      toast.success('Execution command sent!');
     } catch (err) {
-      console.error('Failed to run config:', err);
-      toast.error('Failed to apply config to software');
+      toast.error('Failed to execute');
     }
   };
 
@@ -407,6 +449,16 @@ export default function CloudConfigsTab({ session, accent }) {
                 <Eye size={14} />
                 Preview
               </button>
+              <button 
+                onClick={() => setShowSoftwareSettings(!showSoftwareSettings)}
+                className={cn(
+                  "flex items-center gap-2 text-xs font-medium transition-colors ml-2",
+                  showSoftwareSettings ? "text-white" : "text-zinc-400 hover:text-white"
+                )}
+              >
+                <Settings size={14} />
+                Settings
+              </button>
             </div>
 
             <div className="flex items-center gap-3">
@@ -432,9 +484,17 @@ export default function CloudConfigsTab({ session, accent }) {
             >
               <div className="p-4 border-b border-zinc-800/40 flex items-center justify-between">
                 <h3 className="text-white font-bold text-sm">Your Configs</h3>
-                <span className="text-[10px] bg-zinc-800 px-2 py-0.5 rounded text-zinc-400 uppercase tracking-tighter">
-                  {configs.length} / 20
-                </span>
+                <button 
+                  onClick={() => {
+                    setSelectedConfig(null);
+                    setEditorContent(defaultConfig);
+                    setConfigName('');
+                  }}
+                  className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                  title="Create New"
+                >
+                  <Plus size={16} />
+                </button>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-2">
                 {configs.length === 0 ? (
@@ -494,6 +554,80 @@ export default function CloudConfigsTab({ session, accent }) {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Software Settings Overlay */}
+      <AnimatePresence>
+        {showSoftwareSettings && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowSoftwareSettings(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-[#0b0b0e] border border-zinc-800/60 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
+            >
+              <div className="p-6 border-b border-zinc-800/40 flex items-center justify-between bg-[#0d0d10]">
+                <h3 className="text-white font-bold text-lg">Software Settings</h3>
+                <button onClick={() => setShowSoftwareSettings(false)} className="text-zinc-500 hover:text-white"><X size={18} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-zinc-800/50 flex items-center justify-center text-zinc-400">
+                      <ZapOff size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-white text-sm font-semibold">Executor Mode</h4>
+                      <p className="text-zinc-500 text-[10px]">No internal functions.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setExecutorMode(!executorMode)}
+                    className={`w-10 h-5 rounded-full relative transition ${executorMode ? 'bg-white' : 'bg-zinc-700'}`}
+                  >
+                    <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all ${executorMode ? 'bg-black left-[22px]' : 'bg-zinc-400 left-0.5'}`} />
+                  </button>
+                </div>
+
+                <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-zinc-800/50 flex items-center justify-center text-zinc-400">
+                      <Eye size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-white text-sm font-semibold">Reveal Console</h4>
+                      <p className="text-zinc-500 text-[10px]">Show hidden console.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setRevealConsole(!revealConsole)}
+                    className={`w-10 h-5 rounded-full relative transition ${revealConsole ? 'bg-white' : 'bg-zinc-700'}`}
+                  >
+                    <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all ${revealConsole ? 'bg-black left-[22px]' : 'bg-zinc-400 left-0.5'}`} />
+                  </button>
+                </div>
+              </div>
+              <div className="p-4 bg-zinc-900/50 border-t border-zinc-800/40 flex justify-end">
+                <button 
+                  onClick={() => {
+                    setShowSoftwareSettings(false);
+                    handleSave();
+                  }}
+                  className="px-6 py-2 rounded-xl text-xs font-bold bg-white text-black hover:bg-zinc-200 transition-all"
+                >
+                  Save Settings
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Preview Modal/Overlay */}
       <AnimatePresence>

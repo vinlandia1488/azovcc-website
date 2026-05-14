@@ -47,22 +47,9 @@ export default async function handler(req, res) {
         return res.status(400).send("[ERROR] Username required");
       }
 
-      // Upsert a dedicated raw config row per username.
-      let rawRow = null;
+      // 1. Fetch ALL CloudConfigs for this owner to find the dedicated row
       const userRows = await client.entities.CloudConfig.filter({ owner_username: username });
-      if (Array.isArray(userRows) && userRows.length > 0) {
-        rawRow = userRows.find(
-          (r) => String(r.name || "") === RAW_CONFIG_NAME
-        );
-      }
-      if (!rawRow) {
-        const allRows = await client.entities.CloudConfig.filter({});
-        rawRow = (allRows || []).find(
-          (r) =>
-            String(r.owner_username || "").toLowerCase() === username.toLowerCase() &&
-            String(r.name || "") === RAW_CONFIG_NAME
-        );
-      }
+      let rawRow = (userRows || []).find(r => String(r.name || "") === RAW_CONFIG_NAME);
 
       if (rawRow) {
         await client.entities.CloudConfig.update(rawRow.id, { content });
@@ -74,20 +61,18 @@ export default async function handler(req, res) {
         });
       }
 
-      // Backward compatibility with old consumer fields (best effort only).
-      try {
-        const allAccounts = await client.entities.Account.filter({});
-        const account = allAccounts.find(
-          (a) => String(a.username || "").toLowerCase() === username.toLowerCase()
-        );
-        if (account) {
-          await client.entities.Account.update(account.id, {
-            selected_config_content: content,
-            active_config_id: rawRow.id,
-            run_id: Math.random().toString(36).substring(7)
-          });
-        }
-      } catch {}
+      // 2. Update Account with selected content and new run_id
+      const allAccounts = await client.entities.Account.filter({ username });
+      const account = allAccounts.find(
+        (a) => String(a.username || "").toLowerCase() === username.toLowerCase()
+      );
+      if (account) {
+        await client.entities.Account.update(account.id, {
+          selected_config_content: content,
+          active_config_id: rawRow.id,
+          run_id: Math.random().toString(36).substring(7)
+        });
+      }
 
       res.setHeader("Content-Type", "application/json; charset=utf-8");
       return res.status(200).json({
