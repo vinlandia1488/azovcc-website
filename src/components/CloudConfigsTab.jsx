@@ -3,7 +3,7 @@ import { getBackendDb } from '@/lib/backend';
 import { 
   Plus, Play, RotateCcw, Trash2, Copy, Check, 
   Search, X, ChevronUp, ChevronDown, Save, Eye,
-  Layout, FileCode, History, Settings, ZapOff, CheckCircle2
+  Layout, FileCode, History
 } from 'lucide-react';
 import { getDefaultCloudConfig, getConfigTemplatesShared } from '@/lib/config-templates';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -66,7 +66,6 @@ export default function CloudConfigsTab({ session, accent }) {
   const [activeConfigId, setActiveConfigId] = useState(null);
   const [executorMode, setExecutorMode] = useState(session.executor_mode === true || session.is_executor === true);
   const [revealConsole, setRevealConsole] = useState(session.reveal_console === true);
-  const [showSoftwareSettings, setShowSoftwareSettings] = useState(false);
   
   // Search state
   const [searchMatches, setSearchMatches] = useState([]);
@@ -431,6 +430,72 @@ export default function CloudConfigsTab({ session, accent }) {
                   className="bg-zinc-900/50 border border-zinc-800 text-xs px-3 py-1.5 rounded-lg text-zinc-300 outline-none focus:border-zinc-700 transition-colors w-40"
                 />
               </div>
+              
+              {/* Software Settings Toggles */}
+              <div className="flex items-center gap-3 border-l border-zinc-800/40 pl-4">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      const newValue = !executorMode;
+                      setExecutorMode(newValue);
+                      sendWSMessage({ type: 'update', executor_mode: newValue, reveal_console: revealConsole });
+                      // Save to backend
+                      await fetch('/api/user-settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          username: session.username,
+                          executor_mode: Boolean(newValue),
+                          reveal_console: Boolean(revealConsole)
+                        })
+                      });
+                      const updates = { 
+                        ...session,
+                        executor_mode: Boolean(newValue),
+                        is_executor: Boolean(newValue),
+                        reveal_console: Boolean(revealConsole)
+                      };
+                      setSession(updates);
+                    }}
+                    className={`w-8 h-4 rounded-full relative transition ${executorMode ? 'bg-white' : 'bg-zinc-700'}`}
+                    title="Executor Mode"
+                  >
+                    <div className={`w-3 h-3 rounded-full absolute top-0.5 transition-all ${executorMode ? 'bg-black left-[18px]' : 'bg-zinc-400 left-0.5'}`} />
+                  </button>
+                  <span className="text-[10px] text-zinc-400 font-medium">Executor</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      const newValue = !revealConsole;
+                      setRevealConsole(newValue);
+                      sendWSMessage({ type: 'update', executor_mode: executorMode, reveal_console: newValue });
+                      // Save to backend
+                      await fetch('/api/user-settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          username: session.username,
+                          executor_mode: Boolean(executorMode),
+                          reveal_console: Boolean(newValue)
+                        })
+                      });
+                      const updates = { 
+                        ...session,
+                        executor_mode: Boolean(executorMode),
+                        is_executor: Boolean(executorMode),
+                        reveal_console: Boolean(newValue)
+                      };
+                      setSession(updates);
+                    }}
+                    className={`w-8 h-4 rounded-full relative transition ${revealConsole ? 'bg-white' : 'bg-zinc-700'}`}
+                    title="Reveal Console"
+                  >
+                    <div className={`w-3 h-3 rounded-full absolute top-0.5 transition-all ${revealConsole ? 'bg-black left-[18px]' : 'bg-zinc-400 left-0.5'}`} />
+                  </button>
+                  <span className="text-[10px] text-zinc-400 font-medium">Console</span>
+                </div>
+              </div>
               <button 
                 onClick={handleSave}
                 disabled={saving}
@@ -448,16 +513,6 @@ export default function CloudConfigsTab({ session, accent }) {
               >
                 <Eye size={14} />
                 Preview
-              </button>
-              <button 
-                onClick={() => setShowSoftwareSettings(!showSoftwareSettings)}
-                className={cn(
-                  "flex items-center gap-2 text-xs font-medium transition-colors ml-2",
-                  showSoftwareSettings ? "text-white" : "text-zinc-400 hover:text-white"
-                )}
-              >
-                <Settings size={14} />
-                Settings
               </button>
             </div>
 
@@ -555,79 +610,6 @@ export default function CloudConfigsTab({ session, accent }) {
         </AnimatePresence>
       </div>
 
-      {/* Software Settings Overlay */}
-      <AnimatePresence>
-        {showSoftwareSettings && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowSoftwareSettings(false)}
-          >
-            <motion.div 
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              onClick={e => e.stopPropagation()}
-              className="bg-[#0b0b0e] border border-zinc-800/60 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
-            >
-              <div className="p-6 border-b border-zinc-800/40 flex items-center justify-between bg-[#0d0d10]">
-                <h3 className="text-white font-bold text-lg">Software Settings</h3>
-                <button onClick={() => setShowSoftwareSettings(false)} className="text-zinc-500 hover:text-white"><X size={18} /></button>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-zinc-800/50 flex items-center justify-center text-zinc-400">
-                      <ZapOff size={18} />
-                    </div>
-                    <div>
-                      <h4 className="text-white text-sm font-semibold">Executor Mode</h4>
-                      <p className="text-zinc-500 text-[10px]">No internal functions.</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setExecutorMode(!executorMode)}
-                    className={`w-10 h-5 rounded-full relative transition ${executorMode ? 'bg-white' : 'bg-zinc-700'}`}
-                  >
-                    <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all ${executorMode ? 'bg-black left-[22px]' : 'bg-zinc-400 left-0.5'}`} />
-                  </button>
-                </div>
-
-                <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-zinc-800/50 flex items-center justify-center text-zinc-400">
-                      <Eye size={18} />
-                    </div>
-                    <div>
-                      <h4 className="text-white text-sm font-semibold">Reveal Console</h4>
-                      <p className="text-zinc-500 text-[10px]">Show hidden console.</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setRevealConsole(!revealConsole)}
-                    className={`w-10 h-5 rounded-full relative transition ${revealConsole ? 'bg-white' : 'bg-zinc-700'}`}
-                  >
-                    <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all ${revealConsole ? 'bg-black left-[22px]' : 'bg-zinc-400 left-0.5'}`} />
-                  </button>
-                </div>
-              </div>
-              <div className="p-4 bg-zinc-900/50 border-t border-zinc-800/40 flex justify-end">
-                <button 
-                  onClick={() => {
-                    setShowSoftwareSettings(false);
-                    handleSave();
-                  }}
-                  className="px-6 py-2 rounded-xl text-xs font-bold bg-white text-black hover:bg-zinc-200 transition-all"
-                >
-                  Save Settings
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Preview Modal/Overlay */}
       <AnimatePresence>
