@@ -3,14 +3,14 @@ import { getBackendDb } from '@/lib/backend';
 import { 
   Plus, Play, RotateCcw, Trash2, Copy, Check, 
   Search, X, ChevronUp, ChevronDown, Save, Eye,
-  Layout, FileCode, History
+  Layout, FileCode, History, Wifi, WifiOff
 } from 'lucide-react';
 import { getDefaultCloudConfig, getConfigTemplatesShared } from '@/lib/config-templates';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 import { setSession } from '@/lib/auth';
-import { sendWSMessage } from '@/lib/ws';
+import { sendWSMessage, getConnectionStatus, onConnectionStatusChange } from '@/lib/ws';
 
 const db = getBackendDb();
 
@@ -66,6 +66,7 @@ export default function CloudConfigsTab({ session, accent }) {
   const [activeConfigId, setActiveConfigId] = useState(null);
   const [executorMode, setExecutorMode] = useState(session.executor_mode === true || session.is_executor === true);
   const [revealConsole, setRevealConsole] = useState(session.reveal_console === true);
+  const [wsStatus, setWsStatus] = useState('disconnected');
   
   // Search state
   const [searchMatches, setSearchMatches] = useState([]);
@@ -76,6 +77,18 @@ export default function CloudConfigsTab({ session, accent }) {
   
   const textAreaRef = useRef(null);
   const preRef = useRef(null);
+
+  useEffect(() => {
+    // Listen for websocket connection status changes
+    const unsubscribe = onConnectionStatusChange((status) => {
+      setWsStatus(status);
+    });
+    
+    // Initial status check
+    setWsStatus(getConnectionStatus());
+
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     // Search logic
@@ -303,7 +316,16 @@ export default function CloudConfigsTab({ session, accent }) {
     <div className="flex flex-col gap-4 w-full">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {/* Status removed as requested */}
+          {/* WebSocket Connection Status */}
+          <div className={cn(
+            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+            wsStatus === 'connected' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+            wsStatus === 'connecting' ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20" :
+            "bg-red-500/10 text-red-400 border border-red-500/20"
+          )}>
+            {wsStatus === 'connected' ? <Wifi size={14} /> : <WifiOff size={14} />}
+            <span>{wsStatus === 'connected' ? 'Connected' : wsStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}</span>
+          </div>
         </div>
         
         <div className="flex items-center gap-2">
@@ -437,8 +459,12 @@ export default function CloudConfigsTab({ session, accent }) {
                   <button
                     onClick={async () => {
                       const newValue = !executorMode;
+                      console.log('[Toggle] Executor mode:', newValue);
                       setExecutorMode(newValue);
-                      sendWSMessage({ type: 'update', executor_mode: newValue, reveal_console: revealConsole });
+                      const message = { type: 'update', executor_mode: newValue, reveal_console: revealConsole };
+                      console.log('[Toggle] Sending WS message:', message);
+                      const sent = sendWSMessage(message);
+                      console.log('[Toggle] WS message sent:', sent);
                       // Save to backend
                       await fetch('/api/user-settings', {
                         method: 'POST',
@@ -468,8 +494,12 @@ export default function CloudConfigsTab({ session, accent }) {
                   <button
                     onClick={async () => {
                       const newValue = !revealConsole;
+                      console.log('[Toggle] Reveal console:', newValue);
                       setRevealConsole(newValue);
-                      sendWSMessage({ type: 'update', executor_mode: executorMode, reveal_console: newValue });
+                      const message = { type: 'update', executor_mode: executorMode, reveal_console: newValue };
+                      console.log('[Toggle] Sending WS message:', message);
+                      const sent = sendWSMessage(message);
+                      console.log('[Toggle] WS message sent:', sent);
                       // Save to backend
                       await fetch('/api/user-settings', {
                         method: 'POST',
