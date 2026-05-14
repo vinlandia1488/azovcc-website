@@ -1,4 +1,5 @@
-// Utility for communicating with the local software via WebSocket (winsocket)
+// Utility for communicating with the local software via WebSocket
+// Note: Software must support WebSocket protocol on port 9002
 let socket = null;
 const WS_PORT = 9002;
 let connectionStatus = 'disconnected'; // 'disconnected', 'connecting', 'connected'
@@ -23,18 +24,18 @@ export const connectWS = () => {
 
   try {
     notifyStatusChange('connecting');
-    socket = new WebSocket(`ws://localhost:${WS_PORT}`);
+    socket = new WebSocket(`ws://127.0.0.1:${WS_PORT}`);
 
     socket.onopen = () => {
       console.log(`[WS] Connected to Azov software on port ${WS_PORT}`);
       notifyStatusChange('connected');
     };
 
-    socket.onclose = () => {
-      console.log('[WS] Disconnected from software');
+    socket.onclose = (event) => {
+      console.log('[WS] Disconnected from software. Code:', event.code, 'Reason:', event.reason);
       notifyStatusChange('disconnected');
       socket = null;
-      // Optional: auto-reconnect after some time
+      // Auto-reconnect after 5 seconds
       setTimeout(connectWS, 5000);
     };
 
@@ -60,6 +61,7 @@ export const sendWSMessage = (message) => {
     return true;
   } else {
     console.error('[WS] Cannot send message - socket not connected. State:', s ? s.readyState : 'null');
+    console.error('[WS] Software may not support WebSocket protocol. Ensure software is listening for WebSocket connections on port 9002.');
     return false;
   }
 };
