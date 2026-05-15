@@ -1,8 +1,8 @@
 import { createClient } from "@base44/sdk";
 
 const ALLOWED_ORIGINS = [
-  "https://azovcc.vercel.app",
-  "https://azovcc.com",
+  "https://adderalcc.vercel.app",
+  "https://adderalcc.com",
 ];
 
 function normalize(row) {

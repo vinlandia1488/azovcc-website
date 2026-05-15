@@ -31,8 +31,8 @@ export default function Dashboard() {
   const [feedbackActive, setFeedbackActive] = useState(false);
   const [dock, setDock] = useState({ side: 'left', orientation: 'vertical' });
   const [showIntro, setShowIntro] = useState(true);
-  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
-  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') === 'true');
+  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('adderal_brandingAnimation') || 'slide');
+  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('adderal_brandingShowCc') === 'true');
 
 
   const constraintsRef = useRef(null);
@@ -67,8 +67,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!session) return;
-    setBrandingAnimation(localStorage.getItem('azov_brandingAnimation') || 'slide');
-    setBrandingShowCc(localStorage.getItem('azov_brandingShowCc') === 'true');
+    setBrandingAnimation(localStorage.getItem('adderal_brandingAnimation') || 'slide');
+    setBrandingShowCc(localStorage.getItem('adderal_brandingShowCc') === 'true');
     setShowIntro(true);
     const timeout = setTimeout(() => setShowIntro(false), 1800);
     return () => clearTimeout(timeout);
@@ -154,7 +154,7 @@ export default function Dashboard() {
 
       <div className="fixed top-8 left-8 z-[60] flex items-center select-none pointer-events-none md:pointer-events-auto">
         <h1 className="text-2xl font-black tracking-[0.3em] text-white uppercase leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-          AZOV
+          ADDERAL
         </h1>
       </div>
 

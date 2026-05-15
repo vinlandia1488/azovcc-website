@@ -45,8 +45,8 @@ function applyExecutorMode(content) {
 }
 
 const ALLOWED_ORIGINS = [
-  "https://azovcc.vercel.app",
-  "https://azovcc.com",
+  "https://adderalcc.vercel.app",
+  "https://adderalcc.com",
 ];
 
 export default async function handler(req, res) {
@@ -162,8 +162,8 @@ export default async function handler(req, res) {
           executor_mode: isExecutor,
           is_executor: isExecutor, // Duplicate for compatibility
           // Keep payload explicit for software consumers that want a direct raw endpoint.
-          raw_url: safeUsername ? `https://azovcc.vercel.app/${encodeURIComponent(safeUsername)}/configs` : "",
-          settings_url: safeUsername ? `https://azovcc.vercel.app/${encodeURIComponent(safeUsername)}/settings` : "",
+          raw_url: safeUsername ? `https://adderalcc.vercel.app/${encodeURIComponent(safeUsername)}/configs` : "",
+          settings_url: safeUsername ? `https://adderalcc.vercel.app/${encodeURIComponent(safeUsername)}/settings` : "",
           content: finalContent,
           run_id: acc.run_id || "default",
           reveal_console: revealConsole === true

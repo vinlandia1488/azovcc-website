@@ -24,8 +24,8 @@ export default function Auth() {
 
   const [showIntro, setShowIntro] = useState(true);
   const [redirectToDashboard, setRedirectToDashboard] = useState(false);
-  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
-  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') === 'true');
+  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('adderal_brandingAnimation') || 'slide');
+  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('adderal_brandingShowCc') === 'true');
 
   useEffect(() => {
     const session = getSession();
@@ -63,8 +63,8 @@ export default function Auth() {
 
   useEffect(() => {
     const onStorage = () => {
-      setBrandingAnimation(localStorage.getItem('azov_brandingAnimation') || 'slide');
-      setBrandingShowCc(localStorage.getItem('azov_brandingShowCc') === 'true');
+      setBrandingAnimation(localStorage.getItem('adderal_brandingAnimation') || 'slide');
+      setBrandingShowCc(localStorage.getItem('adderal_brandingShowCc') === 'true');
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -186,7 +186,7 @@ export default function Auth() {
           <div className="relative z-10">
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-white/[0.03] border border-white/[0.08] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                <img src={ALogo} alt="Azov" className="w-10 h-10 object-contain" />
+                <img src={ALogo} alt="Adderal" className="w-10 h-10 object-contain" />
               </div>
               <h1 className="text-white text-2xl font-semibold mb-1">
                 {mode === 'login' ? 'Welcome back' : 'Create account'}

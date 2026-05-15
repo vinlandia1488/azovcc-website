@@ -2,7 +2,7 @@ import { getBackendDb } from "@/lib/backend";
 
 const db = getBackendDb();
 
-const STORAGE_KEY = "azov_download_items";
+const STORAGE_KEY = "adderal_download_items";
 const ENTITY_NAME = "DownloadItem";
 const FALLBACK_NAME = "__downloads__";
 const FALLBACK_OWNER = "__system__";
@@ -14,7 +14,7 @@ export function getDefaultDownloads() {
   return [
     {
       id: "default-internal",
-      name: "Azov Internal",
+      name: "Adderal Internal",
       version: "Version 1.0.0",
       status: "stable",
       detection_status: "UNSURE",
@@ -25,7 +25,7 @@ export function getDefaultDownloads() {
     },
     {
       id: "default-script",
-      name: "Azov Script",
+      name: "Adderal Script",
       version: "Version 0.0.1",
       status: "stable",
       action_label: "GET SCRIPT",

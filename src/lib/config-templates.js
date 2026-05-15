@@ -4,7 +4,7 @@ const TEMPLATES_NAME = "__config_templates__";
 
 import { getBackendDb } from "@/lib/backend";
 
-export const DEFAULT_CLOUD_CONFIG = `shared.azov = {
+export const DEFAULT_CLOUD_CONFIG = `shared.adderal = {
     ["Main"] = {
         ["Selection System"] = "Auto", -- Auto, Target
         ["Selection Color"] = Color3.fromRGB(0, 255, 0),
@@ -34,7 +34,7 @@ export const DEFAULT_CLOUD_CONFIG = `shared.azov = {
     },
 }`;
 
-export const DEFAULT_PREVIEW_CONFIG = `shared.azov = {
+export const DEFAULT_PREVIEW_CONFIG = `shared.adderal = {
     ["Main"] = {
         ["Selection System"] = "Auto", -- Auto, Target
         ["Selection Color"] = Color3.fromRGB(0, 255, 0),
@@ -126,8 +126,8 @@ export const DEFAULT_PREVIEW_CONFIG = `shared.azov = {
     },
 }`;
 
-export const DEFAULT_SCRIPT_PREVIEW_CONFIG = `-- shared.azov Script Table
-shared.azov = {
+export const DEFAULT_SCRIPT_PREVIEW_CONFIG = `-- shared.adderal Script Table
+shared.adderal = {
     ["Visuals"] = {
         ["Watermark"] = true,
         ["Keybind List"] = true,

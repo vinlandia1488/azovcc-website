@@ -16,12 +16,12 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   
   const [accent, setAccent] = useState(session.accent_color || '#6366f1');
   const [customColor, setCustomColor] = useState(session.accent_color || '#6366f1');
-  const [saveFps, setSaveFps] = useState(() => localStorage.getItem('azov_saveFps') === 'true');
-  const [currentPreset, setPreset] = useState(() => localStorage.getItem('azov_preset') || 'NONE');
-  const [effectAmount, setEffectAmount] = useState(() => parseInt(localStorage.getItem('azov_effectAmount') || '30'));
-  const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('azov_effectSpeed') || '5'));
-  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('azov_brandingAnimation') || 'slide');
-  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('azov_brandingShowCc') === 'true');
+  const [saveFps, setSaveFps] = useState(() => localStorage.getItem('adderal_saveFps') === 'true');
+  const [currentPreset, setPreset] = useState(() => localStorage.getItem('adderal_preset') || 'NONE');
+  const [effectAmount, setEffectAmount] = useState(() => parseInt(localStorage.getItem('adderal_effectAmount') || '30'));
+  const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('adderal_effectSpeed') || '5'));
+  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('adderal_brandingAnimation') || 'slide');
+  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('adderal_brandingShowCc') === 'true');
   const [saving, setSaving] = useState(false);
 
   const [profilePic, setProfilePic] = useState(session.profile_pic || '');
@@ -37,27 +37,27 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [securitySuccess, setSecuritySuccess] = useState('');
 
   useEffect(() => {
-    localStorage.setItem('azov_saveFps', saveFps);
+    localStorage.setItem('adderal_saveFps', saveFps);
   }, [saveFps]);
 
   useEffect(() => {
-    localStorage.setItem('azov_preset', currentPreset);
+    localStorage.setItem('adderal_preset', currentPreset);
   }, [currentPreset]);
 
   useEffect(() => {
-    localStorage.setItem('azov_effectAmount', effectAmount);
+    localStorage.setItem('adderal_effectAmount', effectAmount);
   }, [effectAmount]);
 
   useEffect(() => {
-    localStorage.setItem('azov_effectSpeed', effectSpeed);
+    localStorage.setItem('adderal_effectSpeed', effectSpeed);
   }, [effectSpeed]);
 
   useEffect(() => {
-    localStorage.setItem('azov_brandingAnimation', brandingAnimation);
+    localStorage.setItem('adderal_brandingAnimation', brandingAnimation);
   }, [brandingAnimation]);
 
   useEffect(() => {
-    localStorage.setItem('azov_brandingShowCc', brandingShowCc);
+    localStorage.setItem('adderal_brandingShowCc', brandingShowCc);
   }, [brandingShowCc]);
 
   async function saveSettings() {
@@ -268,7 +268,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                  <div className="space-y-3">
                    <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 flex items-center justify-between hover:border-zinc-700/50 transition">
                      <div>
-                       <h4 className="text-white text-sm font-semibold">Azov Internal</h4>
+                       <h4 className="text-white text-sm font-semibold">Adderal Internal</h4>
                        <p className="text-zinc-500 text-xs">{session.internal_license ? '******************' : 'Not Owned'}</p>
                      </div>
                      {session.internal_license ? (
@@ -285,7 +285,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                    </div>
                    <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 flex items-center justify-between hover:border-zinc-700/50 transition">
                      <div>
-                       <h4 className="text-white text-sm font-semibold">Azov Script</h4>
+                       <h4 className="text-white text-sm font-semibold">Adderal Script</h4>
                        <p className="text-zinc-500 text-xs">{session.script_license ? '******************' : 'Not Owned'}</p>
                      </div>
                      {session.script_license ? (

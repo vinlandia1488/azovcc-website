@@ -2,7 +2,7 @@ import { getBackendDb } from "@/lib/backend";
 
 const db = getBackendDb();
 
-const STORAGE_KEY = "azov_license_keys_v2";
+const STORAGE_KEY = "adderal_license_keys_v2";
 const FALLBACK_NAME = "__license_keys__";
 const FALLBACK_OWNER = "admin";
 

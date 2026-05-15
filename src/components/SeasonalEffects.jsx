@@ -3,18 +3,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Ghost, Leaf } from 'lucide-react';
 
 export default function SeasonalEffects() {
-  const [preset, setPreset] = useState(() => localStorage.getItem('azov_preset') || 'NONE');
-  const [saveFps, setSaveFps] = useState(() => localStorage.getItem('azov_saveFps') === 'true');
-  const [effectAmount, setEffectAmount] = useState(() => parseInt(localStorage.getItem('azov_effectAmount') || '30'));
-  const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('azov_effectSpeed') || '5'));
+  const [preset, setPreset] = useState(() => localStorage.getItem('adderal_preset') || 'NONE');
+  const [saveFps, setSaveFps] = useState(() => localStorage.getItem('adderal_saveFps') === 'true');
+  const [effectAmount, setEffectAmount] = useState(() => parseInt(localStorage.getItem('adderal_effectAmount') || '30'));
+  const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('adderal_effectSpeed') || '5'));
   const [particles, setParticles] = useState([]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const currentPreset = localStorage.getItem('azov_preset') || 'NONE';
-      const currentFps = localStorage.getItem('azov_saveFps') === 'true';
-      const currentAmount = parseInt(localStorage.getItem('azov_effectAmount') || '30');
-      const currentSpeed = parseInt(localStorage.getItem('azov_effectSpeed') || '5');
+      const currentPreset = localStorage.getItem('adderal_preset') || 'NONE';
+      const currentFps = localStorage.getItem('adderal_saveFps') === 'true';
+      const currentAmount = parseInt(localStorage.getItem('adderal_effectAmount') || '30');
+      const currentSpeed = parseInt(localStorage.getItem('adderal_effectSpeed') || '5');
 
       if (currentPreset !== preset) setPreset(currentPreset);
       if (currentFps !== saveFps) setSaveFps(currentFps);

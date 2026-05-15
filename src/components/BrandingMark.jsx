@@ -13,7 +13,7 @@ export default function BrandingMark({ animation = 'slide', showCc = false, clas
   const mode = String(animation || 'slide').toLowerCase();
 
   if (mode === 'off') {
-    return <span className={className}>AZOV{ccNode(showCc)}</span>;
+    return <span className={className}>ADDERAL{ccNode(showCc)}</span>;
   }
 
   if (mode === 'slide') {
@@ -44,7 +44,7 @@ export default function BrandingMark({ animation = 'slide', showCc = false, clas
           }}
           transition={{ duration: 2.4, repeat: loop ? Infinity : 0, ease: 'easeInOut' }}
         >
-          AZOV
+          ADDERAL
         </motion.span>
         {ccNode(showCc)}
       </span>
@@ -61,7 +61,7 @@ export default function BrandingMark({ animation = 'slide', showCc = false, clas
         }}
         transition={{ duration: 2.1, repeat: loop ? Infinity : 0, ease: 'easeInOut' }}
       >
-        AZOV{ccNode(showCc)}
+        ADDERAL{ccNode(showCc)}
       </motion.span>
     );
   }
@@ -73,7 +73,7 @@ export default function BrandingMark({ animation = 'slide', showCc = false, clas
         animate={{ opacity: [1, 0.25, 1] }}
         transition={{ duration: 1.2, repeat: loop ? Infinity : 0, repeatDelay: 0.4 }}
       >
-        AZOV{ccNode(showCc)}
+        ADDERAL{ccNode(showCc)}
       </motion.span>
     );
   }
@@ -85,7 +85,7 @@ export default function BrandingMark({ animation = 'slide', showCc = false, clas
         animate={{ x: [0, 6, 0, -6, 0], rotate: [0, 0.2, 0, -0.2, 0] }}
         transition={{ duration: 3.2, repeat: loop ? Infinity : 0, ease: 'easeInOut' }}
       >
-        AZOV{ccNode(showCc)}
+        ADDERAL{ccNode(showCc)}
       </motion.span>
     );
   }
@@ -106,7 +106,7 @@ export default function BrandingMark({ animation = 'slide', showCc = false, clas
           backgroundSize: '200% 100%',
         }}
       >
-        AZOV
+        ADDERAL
         {showCc ? (
           <span style={{ color: '#ef4444', textShadow: '0 0 12px rgba(239,68,68,0.55)' }}>.CC</span>
         ) : null}
@@ -123,7 +123,7 @@ export default function BrandingMark({ animation = 'slide', showCc = false, clas
           transition={{ duration: 1.2, repeat: loop ? Infinity : 0, repeatDelay: 1.5, ease: 'easeOut' }}
           className="inline-block overflow-hidden whitespace-nowrap align-bottom"
         >
-          AZOV
+          ADDERAL
         </motion.span>
         {ccNode(showCc)}
       </span>
@@ -145,13 +145,13 @@ export default function BrandingMark({ animation = 'slide', showCc = false, clas
         }}
         transition={{ duration: 2.1, repeat: loop ? Infinity : 0, ease: 'easeInOut' }}
       >
-        AZOV{ccNode(showCc)}
+        ADDERAL{ccNode(showCc)}
       </motion.span>
     );
   }
 
   return (
-    <span className={className}>AZOV{ccNode(showCc)}</span>
+    <span className={className}>ADDERAL{ccNode(showCc)}</span>
   );
 }
 

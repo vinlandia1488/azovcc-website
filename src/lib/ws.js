@@ -27,7 +27,7 @@ export const connectWS = () => {
     socket = new WebSocket(`ws://127.0.0.1:${WS_PORT}`);
 
     socket.onopen = () => {
-      console.log(`[WS] Connected to Azov software on port ${WS_PORT}`);
+      console.log(`[WS] Connected to Adderal software on port ${WS_PORT}`);
       notifyStatusChange('connected');
     };
 
