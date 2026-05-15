@@ -26,7 +26,7 @@ export default function BrandingMark({ animation = 'slide', showCc = false, clas
           transition={{ duration: 1.5, repeat: loop ? Infinity : 0, repeatDelay: 1.2, ease: 'easeOut' }}
           className="inline-block"
         >
-          ZOV
+          DDERAL
         </motion.span>
         {ccNode(showCc)}
       </span>

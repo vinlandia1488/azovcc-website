@@ -415,65 +415,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                 </div>
                <div className="h-px bg-zinc-800/60" />
                <div>
-                 <h3 className="text-white text-sm font-semibold mb-4">Branding Animation</h3>
-                 <div className="space-y-4">
-                   <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4 grid grid-cols-2 gap-3">
-                     <div>
-                       <label className="text-zinc-400 text-[10px] uppercase tracking-widest block mb-2">Style</label>
-                       <select
-                         value={brandingAnimation}
-                         onChange={(e) => setBrandingAnimation(e.target.value)}
-                         className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-zinc-500 transition"
-                       >
-                         <option value="off">Off</option>
-                         <option value="slide">Slide (A -&gt; ZOV)</option>
-                         <option value="blur">Blur Fade</option>
-                         <option value="pulse">Pulse</option>
-                         <option value="blink">Blink</option>
-                         <option value="shimmer">Shimmer</option>
-                       </select>
-                     </div>
-                     <div className="flex items-end">
-                       <button
-                         type="button"
-                         onClick={() => setBrandingShowCc(!brandingShowCc)}
-                         className={`w-full h-[38px] rounded-xl border text-xs font-bold uppercase tracking-widest transition ${
-                           brandingShowCc
-                             ? 'bg-red-500/10 border-red-500/30 text-red-300'
-                             : 'bg-zinc-900/60 border-zinc-800 text-zinc-500'
-                         }`}
-                       >
-                         {brandingShowCc ? 'With .CC' : 'Without .CC'}
-                       </button>
-                     </div>
-                   </div>
-                   <p className="text-zinc-500 text-[10px]">js some fun animations to play around with</p>
-                   <div className="grid grid-cols-2 gap-3">
-                     {['off', 'slide', 'blur', 'pulse', 'blink', 'shimmer'].map((style) => (
-                       <button
-                         key={style}
-                         type="button"
-                         onClick={() => setBrandingAnimation(style)}
-                         className={`bg-[#111114] border rounded-2xl p-3 transition text-left ${
-                           brandingAnimation === style
-                             ? 'border-zinc-500'
-                             : 'border-zinc-800/60 hover:border-zinc-700/70'
-                         }`}
-                       >
-                         <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">{style}</p>
-                         <BrandingMark
-                           animation={style}
-                           showCc={brandingShowCc}
-                           className="text-white text-sm font-black tracking-[0.16em] uppercase"
-                           compact
-                         />
-                       </button>
-                     ))}
-                   </div>
-                 </div>
-               </div>
-               <div className="h-px bg-zinc-800/60" />
-               <div>
                  <div className="flex items-center justify-between mb-4">
                    <h3 className="text-white text-sm font-semibold">Color Palette</h3>
                    <span className="text-zinc-500 text-xs">Custom</span>
