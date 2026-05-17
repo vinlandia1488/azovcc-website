@@ -317,8 +317,7 @@ export default function SupportTab({ session, accent }) {
                           <img
                             src={m.image_url}
                             alt="Shared"
-                            className="max-w-full h-auto max-h-64 object-contain rounded-xl mt-2 cursor-pointer"
-                            onClick={() => window.open(m.image_url, '_blank')}
+                            className="max-w-full h-auto max-h-64 object-contain rounded-xl mt-2"
                           />
                         )}
                       </div>

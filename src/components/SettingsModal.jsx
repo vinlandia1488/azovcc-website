@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, LogOut, Check, Lock, ZapOff, Ban, Snowflake, Ghost, Leaf, CreditCard, Palette, Shield, User, ImagePlus, Eye, EyeOff } from 'lucide-react';
-import { setSession, upgradeToInternal, changePassword } from '@/lib/auth';
+import { X, LogOut, Ban, Snowflake, Leaf, Palette, User, ImagePlus } from 'lucide-react';
+import { setSession } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
-import BrandingMark from '@/components/BrandingMark';
 
 const db = getBackendDb();
 
@@ -16,29 +15,15 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   
   const [accent, setAccent] = useState(session.accent_color || '#6366f1');
   const [customColor, setCustomColor] = useState(session.accent_color || '#6366f1');
-  const [saveFps, setSaveFps] = useState(() => localStorage.getItem('adderal_saveFps') === 'true');
-  const [currentPreset, setPreset] = useState(() => localStorage.getItem('adderal_preset') || 'NONE');
+  const [currentPreset, setPreset] = useState(() => {
+    const val = localStorage.getItem('adderal_preset') || 'NONE';
+    return val === 'HALLOWEEN' ? 'NONE' : val;
+  });
   const [effectAmount, setEffectAmount] = useState(() => parseInt(localStorage.getItem('adderal_effectAmount') || '30'));
   const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('adderal_effectSpeed') || '5'));
-  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('adderal_brandingAnimation') || 'slide');
-  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('adderal_brandingShowCc') === 'true');
   const [saving, setSaving] = useState(false);
 
   const [profilePic, setProfilePic] = useState(session.profile_pic || '');
-  
-  const [internalKey, setInternalKey] = useState('');
-  const [upgradeError, setUpgradeError] = useState('');
-  const [upgradeSuccess, setUpgradeSuccess] = useState('');
-  
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [securityError, setSecurityError] = useState('');
-  const [securitySuccess, setSecuritySuccess] = useState('');
-
-  useEffect(() => {
-    localStorage.setItem('adderal_saveFps', saveFps);
-  }, [saveFps]);
 
   useEffect(() => {
     localStorage.setItem('adderal_preset', currentPreset);
@@ -51,14 +36,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   useEffect(() => {
     localStorage.setItem('adderal_effectSpeed', effectSpeed);
   }, [effectSpeed]);
-
-  useEffect(() => {
-    localStorage.setItem('adderal_brandingAnimation', brandingAnimation);
-  }, [brandingAnimation]);
-
-  useEffect(() => {
-    localStorage.setItem('adderal_brandingShowCc', brandingShowCc);
-  }, [brandingShowCc]);
 
   async function saveSettings() {
     setSaving(true);
@@ -75,13 +52,12 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
       const data = await response.json();
       if (!data.success) throw new Error(data.error || 'Failed to save');
 
-      // Update the session in localStorage and call onSaved to refresh Dashboard
       const updates = { 
         ...session,
         accent_color: accent
       };
       
-      setSession(updates); // Update localStorage
+      setSession(updates);
       
       if (onSaved) await onSaved(updates);
       onClose();
@@ -95,54 +71,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
 
   async function saveColor() {
     await saveSettings();
-  }
-
-  async function handleUpgrade() {
-    setUpgradeError('');
-    setUpgradeSuccess('');
-    if (!internalKey.trim()) return;
-
-    setSaving(true);
-    try {
-      await upgradeToInternal(session.username, internalKey.trim());
-      setUpgradeSuccess('Successfully upgraded to Internal License!');
-      setInternalKey('');
-      await onSaved();
-    } catch (err) {
-      setUpgradeError(err.message || 'Upgrade failed');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handlePasswordChange() {
-    setSecurityError('');
-    setSecuritySuccess('');
-    if (!oldPassword || !newPassword || !confirmPassword) {
-      setSecurityError('All fields are required');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setSecurityError('Passwords do not match');
-      return;
-    }
-    if (newPassword.length < 6) {
-      setSecurityError('New password must be at least 6 characters');
-      return;
-    }
-    setSaving(true);
-    try {
-      await changePassword(session.username, oldPassword, newPassword);
-      setSecuritySuccess('Password successfully updated!');
-      setOldPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      await onSaved();
-    } catch (err) {
-      setSecurityError(err.message || 'Failed to update password');
-    } finally {
-      setSaving(false);
-    }
   }
 
   async function handlePfpUpload(e) {
@@ -190,25 +118,11 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
               Profile
             </button>
             <button 
-              onClick={() => setActiveTab('redeem')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === 'redeem' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
-            >
-              <CreditCard size={16} />
-              Redeem
-            </button>
-            <button 
               onClick={() => setActiveTab('themes')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === 'themes' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
             >
               <Palette size={16} />
               Themes
-            </button>
-            <button 
-              onClick={() => setActiveTab('security')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === 'security' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
-            >
-              <Shield size={16} />
-              Security
             </button>
           </div>
           
@@ -245,276 +159,113 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                  <p className="text-zinc-500 text-xs">UID: #{session.unique_identifier || '0'}</p>
                </div>
 
-               <div className="grid grid-cols-2 gap-4">
-                 <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4">
-                   <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block mb-1">Rank</span>
-                   <div className="flex flex-col">
-                     <span className="text-white text-sm font-medium">{session.is_admin ? 'Administrator' : 'User'}</span>
-                     <span className="text-zinc-500 text-[10px] uppercase tracking-tighter">
-                       {session.internal_license ? 'Internal License' : (session.script_license ? 'Script License' : 'No License')}
-                     </span>
-                   </div>
-                 </div>
-                 <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4">
-                   <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block mb-1">Status</span>
-                   <span className="text-green-500 text-sm font-medium">Active</span>
-                 </div>
-               </div>
-             </div>
-           ) : activeTab === 'redeem' ? (
-             <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
-               <div>
-                 <h3 className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-4">Your Products</h3>
-                 <div className="space-y-3">
-                   <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 flex items-center justify-between hover:border-zinc-700/50 transition">
-                     <div>
-                       <h4 className="text-white text-sm font-semibold">Adderal Internal</h4>
-                       <p className="text-zinc-500 text-xs">{session.internal_license ? '******************' : 'Not Owned'}</p>
-                     </div>
-                     {session.internal_license ? (
-                       <div className="px-3 py-1.5 rounded-md bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-bold flex items-center gap-1.5">
-                         <Check size={12} />
-                         OWNED
-                       </div>
-                     ) : (
-                       <div className="px-3 py-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-bold flex items-center gap-1.5">
-                         <Lock size={12} />
-                         LOCKED
-                       </div>
-                     )}
-                   </div>
-                   <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 flex items-center justify-between hover:border-zinc-700/50 transition">
-                     <div>
-                       <h4 className="text-white text-sm font-semibold">Adderal Script</h4>
-                       <p className="text-zinc-500 text-xs">{session.script_license ? '******************' : 'Not Owned'}</p>
-                     </div>
-                     {session.script_license ? (
-                       <div className="px-3 py-1.5 rounded-md bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-bold flex items-center gap-1.5">
-                         <Check size={12} />
-                         OWNED
-                       </div>
-                     ) : (
-                       <div className="px-3 py-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-bold flex items-center gap-1.5">
-                         <Lock size={12} />
-                         LOCKED
-                       </div>
-                     )}
-                   </div>
-                 </div>
-               </div>
-               <div className="h-px bg-zinc-800/60" />
-               <div>
-                 <h3 className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-4">License Key</h3>
-                {!session.internal_license && session.assigned_internal_key && (
-                  <div className="mb-3 p-3 rounded-xl border border-indigo-500/30 bg-indigo-500/10">
-                    <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest mb-1">Assigned Internal Key</p>
-                    <p className="text-white text-xs break-all font-mono">{session.assigned_internal_key}</p>
-                    <button
-                      onClick={() => setInternalKey(session.assigned_internal_key)}
-                      className="mt-2 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-indigo-500/20 border border-indigo-500/30 text-indigo-200 hover:bg-indigo-500/30 transition"
-                    >
-                      USE ASSIGNED KEY
-                    </button>
-                  </div>
-                )}
-                 <input 
-                    type="text"
-                    value={internalKey}
-                    onChange={e => setInternalKey(e.target.value)}
-                    placeholder="Enter Key..."
-                    className="w-full bg-[#111114] border border-zinc-800/60 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition mb-3"
-                 />
-                 {upgradeError && <p className="text-red-400 text-[10px] mb-3">{upgradeError}</p>}
-                 {upgradeSuccess && <p className="text-green-400 text-[10px] mb-3">{upgradeSuccess}</p>}
-                 <button
-                   onClick={handleUpgrade}
-                   disabled={saving || !internalKey.trim()}
-                   className="w-full bg-[#9ca3af] hover:bg-[#d4d4d8] text-black font-semibold rounded-xl px-4 py-3 text-sm transition disabled:opacity-50"
-                 >
-                   {saving ? 'Redeeming...' : 'Redeem Code'}
-                 </button>
-               </div>
-             </div>
-           ) : activeTab === 'themes' ? (
-             <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
-               <div>
-                 <h3 className="text-white text-sm font-semibold mb-4">Performance</h3>
-                 <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4 flex items-center justify-between">
-                   <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-zinc-800/50 flex items-center justify-center text-zinc-400">
-                        <ZapOff size={18} />
-                      </div>
-                      <div>
-                        <h4 className="text-white text-sm font-semibold">Save FPS</h4>
-                        <p className="text-zinc-500 text-xs mt-0.5">Disables visual effects to save resources.</p>
-                      </div>
-                   </div>
-                   <button 
-                      onClick={() => setSaveFps(!saveFps)}
-                      className={`w-10 h-5 rounded-full relative transition ${saveFps ? 'bg-white' : 'bg-zinc-700'}`}
-                   >
-                      <div className={`w-4 h-4 rounded-full absolute top-0.5 transition-all ${saveFps ? 'bg-black left-[22px]' : 'bg-zinc-400 left-0.5'}`} />
-                   </button>
-                 </div>
-               </div>
-               <div className="h-px bg-zinc-800/60" />
-               <div>
-                 <h3 className="text-white text-sm font-semibold mb-4">Seasonal Presets</h3>
-                 <div className="grid grid-cols-4 gap-3">
-                    {['NONE', 'CHRISTMAS', 'HALLOWEEN', 'FALL'].map(preset => (
-                      <button 
-                        key={preset}
-                        onClick={() => setPreset(preset)}
-                        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition ${currentPreset === preset ? 'bg-zinc-800 border-zinc-600' : 'bg-[#111114] border-zinc-800/60 hover:border-zinc-700/50'}`}
-                      >
-                        {preset === 'NONE' && <Ban size={20} className="text-zinc-500" />}
-                        {preset === 'CHRISTMAS' && <Snowflake size={20} className="text-white" />}
-                        {preset === 'HALLOWEEN' && <Ghost size={20} className="text-zinc-500" />}
-                        {preset === 'FALL' && <Leaf size={20} className="text-zinc-500" />}
-                        <span className="text-[9px] font-bold text-zinc-400 tracking-wider">{preset}</span>
-                      </button>
-                    ))}
-                 </div>
-                 <p className="text-zinc-500 text-[10px] mt-4 text-center">Presets automatically apply a theme and background effect.</p>
-               </div>
-               <div className="h-px bg-zinc-800/60" />
-                <div>
-                  <h3 className="text-white text-sm font-semibold mb-4">Effect Settings</h3>
-                  <div className="space-y-6">
-                    <div>
-                      <div className="flex justify-between items-center mb-3">
-                        <label className="text-zinc-400 text-xs font-medium uppercase tracking-wider">Effect Amount</label>
-                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-white text-[10px] font-bold border border-zinc-700">{effectAmount}%</span>
-                      </div>
-                      <div className="relative h-6 flex items-center">
-                        <input 
-                          type="range" 
-                          min="1" max="100" 
-                          value={effectAmount} 
-                          onChange={(e) => setEffectAmount(parseInt(e.target.value))}
-                          className="w-full custom-slider"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between items-center mb-3">
-                        <label className="text-zinc-400 text-xs font-medium uppercase tracking-wider">Effect Speed</label>
-                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-white text-[10px] font-bold border border-zinc-700">{effectSpeed}x</span>
-                      </div>
-                      <div className="relative h-6 flex items-center">
-                        <input 
-                          type="range" 
-                          min="1" max="10" 
-                          value={effectSpeed} 
-                          onChange={(e) => setEffectSpeed(parseInt(e.target.value))}
-                          className="w-full custom-slider"
-                        />
-                      </div>
-                    </div>
+                <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4 w-full">
+                  <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block mb-1">Rank</span>
+                  <div className="flex flex-col">
+                    <span className="text-white text-sm font-medium">{session.is_admin ? 'Administrator' : 'User'}</span>
+                    <span className="text-zinc-500 text-[10px] uppercase tracking-tighter">
+                      {session.internal_license ? 'Internal License' : (session.script_license ? 'Script License' : 'No License')}
+                    </span>
                   </div>
                 </div>
-               <div className="h-px bg-zinc-800/60" />
-               <div>
-                 <div className="flex items-center justify-between mb-4">
-                   <h3 className="text-white text-sm font-semibold">Color Palette</h3>
-                   <span className="text-zinc-500 text-xs">Custom</span>
-                 </div>
-                 <div className="grid grid-cols-5 gap-3 mb-6">
-                    {PALETTE.map(c => (
-                       <button 
-                         key={c}
-                         onClick={() => { setAccent(c); setCustomColor(c); }}
-                         className="w-10 h-10 rounded-full transition relative flex items-center justify-center"
-                         style={{ background: c }}
-                       >
-                         {accent === c && <div className="absolute inset-0 rounded-full border-[3px] border-black/40" />}
-                       </button>
-                    ))}
-                 </div>
-                 <div className="flex items-center justify-between pt-4 border-t border-zinc-800/60">
-                    <span className="text-zinc-400 text-xs">Primary</span>
-                    <div className="flex items-center gap-3 bg-[#111114] border border-zinc-800/60 rounded-xl px-2 py-1.5">
-                      <div className="w-6 h-6 rounded-md relative overflow-hidden" style={{ background: customColor }}>
-                        <input 
-                          type="color" 
-                          value={customColor} 
-                          onChange={e => { setCustomColor(e.target.value); setAccent(e.target.value); }}
-                          className="absolute inset-[-10px] w-20 h-20 cursor-pointer opacity-0"
-                        />
-                      </div>
-                      <span className="text-zinc-300 text-xs font-mono">{customColor}</span>
-                    </div>
-                 </div>
-               </div>
-               <button 
-                  onClick={saveColor}
-                  disabled={saving}
-                  className="w-full mt-4 bg-transparent border border-zinc-800/60 hover:bg-zinc-800 text-white font-semibold rounded-xl px-4 py-3 text-sm transition disabled:opacity-50"
-               >
-                  {saving ? 'Applying Theme...' : 'Apply Theme'}
-               </button>
              </div>
            ) : (
-             <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
-               <div>
-                 <h3 className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-6">Change Password</h3>
-                 <div className="space-y-4">
-                   <div>
-                     <label className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1.5 block">Current Password</label>
-                     <input 
-                       type="password"
-                       value={oldPassword}
-                       onChange={e => setOldPassword(e.target.value)}
-                       placeholder="••••••••"
-                       className="w-full bg-[#111114] border border-zinc-800/60 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-                     />
-                   </div>
-                   <div className="grid grid-cols-2 gap-4">
+             <div className="space-y-6 animate-in fade-in slide-in-from-right-2 duration-300 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
+                <div>
+                  <h3 className="text-white text-sm font-semibold mb-4">Seasonal Presets</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                     {['NONE', 'CHRISTMAS', 'FALL'].map(preset => (
+                       <button 
+                         key={preset}
+                         onClick={() => setPreset(preset)}
+                         className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition ${currentPreset === preset ? 'bg-zinc-800 border-zinc-600' : 'bg-[#111114] border-zinc-800/60 hover:border-zinc-700/50'}`}
+                       >
+                         {preset === 'NONE' && <Ban size={20} className="text-zinc-500" />}
+                         {preset === 'CHRISTMAS' && <Snowflake size={20} className="text-white" />}
+                         {preset === 'FALL' && <Leaf size={20} className="text-zinc-500" />}
+                         <span className="text-[9px] font-bold text-zinc-400 tracking-wider">{preset}</span>
+                       </button>
+                     ))}
+                  </div>
+                  <p className="text-zinc-500 text-[10px] mt-4 text-center">Presets automatically apply a theme and background effect.</p>
+                </div>
+                <div className="h-px bg-zinc-800/60" />
+                 <div>
+                   <h3 className="text-white text-sm font-semibold mb-4">Effect Settings</h3>
+                   <div className="space-y-6">
                      <div>
-                       <label className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1.5 block">New Password</label>
-                       <input 
-                         type="password"
-                         value={newPassword}
-                         onChange={e => setNewPassword(e.target.value)}
-                         placeholder="••••••••"
-                         className="w-full bg-[#111114] border border-zinc-800/60 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-                       />
+                       <div className="flex justify-between items-center mb-3">
+                         <label className="text-zinc-400 text-xs font-medium uppercase tracking-wider">Effect Amount</label>
+                         <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-white text-[10px] font-bold border border-zinc-700">{effectAmount}%</span>
+                       </div>
+                       <div className="relative h-6 flex items-center">
+                         <input 
+                           type="range" 
+                           min="1" max="100" 
+                           value={effectAmount} 
+                           onChange={(e) => setEffectAmount(parseInt(e.target.value))}
+                           className="w-full custom-slider"
+                         />
+                       </div>
                      </div>
                      <div>
-                       <label className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1.5 block">Confirm Password</label>
-                       <input 
-                         type="password"
-                         value={confirmPassword}
-                         onChange={e => setConfirmPassword(e.target.value)}
-                         placeholder="••••••••"
-                         className="w-full bg-[#111114] border border-zinc-800/60 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-                       />
+                       <div className="flex justify-between items-center mb-3">
+                         <label className="text-zinc-400 text-xs font-medium uppercase tracking-wider">Effect Speed</label>
+                         <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-white text-[10px] font-bold border border-zinc-700">{effectSpeed}x</span>
+                       </div>
+                       <div className="relative h-6 flex items-center">
+                         <input 
+                           type="range" 
+                           min="1" max="10" 
+                           value={effectSpeed} 
+                           onChange={(e) => setEffectSpeed(parseInt(e.target.value))}
+                           className="w-full custom-slider"
+                         />
+                       </div>
                      </div>
                    </div>
                  </div>
-                 {securityError && <p className="text-red-400 text-[10px] mt-4">{securityError}</p>}
-                 {securitySuccess && <p className="text-green-400 text-[10px] mt-4">{securitySuccess}</p>}
-                 <button
-                   onClick={handlePasswordChange}
+                <div className="h-px bg-zinc-800/60" />
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-white text-sm font-semibold">Color Palette</h3>
+                    <span className="text-zinc-500 text-xs">Custom</span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-3 mb-6">
+                     {PALETTE.map(c => (
+                        <button 
+                          key={c}
+                          onClick={() => { setAccent(c); setCustomColor(c); }}
+                          className="w-10 h-10 rounded-full transition relative flex items-center justify-center"
+                          style={{ background: c }}
+                        >
+                          {accent === c && <div className="absolute inset-0 rounded-full border-[3px] border-black/40" />}
+                        </button>
+                     ))}
+                  </div>
+                  <div className="flex items-center justify-between pt-4 border-t border-zinc-800/60">
+                     <span className="text-zinc-400 text-xs">Primary</span>
+                     <div className="flex items-center gap-3 bg-[#111114] border border-zinc-800/60 rounded-xl px-2 py-1.5">
+                       <div className="w-6 h-6 rounded-md relative overflow-hidden" style={{ background: customColor }}>
+                         <input 
+                           type="color" 
+                           value={customColor} 
+                           onChange={e => { setCustomColor(e.target.value); setAccent(e.target.value); }}
+                           className="absolute inset-[-10px] w-20 h-20 cursor-pointer opacity-0"
+                         />
+                       </div>
+                       <span className="text-zinc-300 text-xs font-mono">{customColor}</span>
+                     </div>
+                  </div>
+                </div>
+                <button 
+                   onClick={saveColor}
                    disabled={saving}
-                   className="w-full mt-6 bg-[#ef4444] hover:bg-[#dc2626] text-white font-semibold rounded-xl px-4 py-3 text-sm transition disabled:opacity-50"
-                 >
-                   {saving ? 'Updating...' : 'Update Password'}
-                 </button>
-               </div>
-               <div className="h-px bg-zinc-800/60" />
-               <div className="bg-[#111114]/50 border border-zinc-800/60 rounded-2xl p-6">
-                 <div className="flex items-center gap-3 mb-3">
-                   <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400">
-                     <Shield size={16} />
-                   </div>
-                   <h4 className="text-white text-sm font-semibold">Account Security</h4>
-                 </div>
-                 <p className="text-zinc-500 text-xs leading-relaxed">
-                   Protect your account by using a strong password. We recommend a mix of letters, numbers, and symbols. 
-                 </p>
-               </div>
-             </div>
+                   className="w-full mt-4 bg-transparent border border-zinc-800/60 hover:bg-zinc-800 text-white font-semibold rounded-xl px-4 py-3 text-sm transition disabled:opacity-50"
+                >
+                   {saving ? 'Applying Theme...' : 'Apply Theme'}
+                </button>
+              </div>
            )}
         </div>
       </div>

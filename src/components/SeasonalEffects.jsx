@@ -1,32 +1,36 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Ghost, Leaf } from 'lucide-react';
+import { Leaf } from 'lucide-react';
 
 export default function SeasonalEffects() {
-  const [preset, setPreset] = useState(() => localStorage.getItem('adderal_preset') || 'NONE');
-  const [saveFps, setSaveFps] = useState(() => localStorage.getItem('adderal_saveFps') === 'true');
+  const [preset, setPreset] = useState(() => {
+    const val = localStorage.getItem('adderal_preset') || 'NONE';
+    return val === 'HALLOWEEN' ? 'NONE' : val;
+  });
   const [effectAmount, setEffectAmount] = useState(() => parseInt(localStorage.getItem('adderal_effectAmount') || '30'));
   const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('adderal_effectSpeed') || '5'));
   const [particles, setParticles] = useState([]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const currentPreset = localStorage.getItem('adderal_preset') || 'NONE';
-      const currentFps = localStorage.getItem('adderal_saveFps') === 'true';
+      let currentPreset = localStorage.getItem('adderal_preset') || 'NONE';
+      if (currentPreset === 'HALLOWEEN') {
+        localStorage.setItem('adderal_preset', 'NONE');
+        currentPreset = 'NONE';
+      }
       const currentAmount = parseInt(localStorage.getItem('adderal_effectAmount') || '30');
       const currentSpeed = parseInt(localStorage.getItem('adderal_effectSpeed') || '5');
 
       if (currentPreset !== preset) setPreset(currentPreset);
-      if (currentFps !== saveFps) setSaveFps(currentFps);
       if (currentAmount !== effectAmount) setEffectAmount(currentAmount);
       if (currentSpeed !== effectSpeed) setEffectSpeed(currentSpeed);
     }, 500);
 
     return () => clearInterval(interval);
-  }, [preset, saveFps, effectAmount, effectSpeed]);
+  }, [preset, effectAmount, effectSpeed]);
 
   useEffect(() => {
-    if (preset === 'NONE' || saveFps) {
+    if (preset === 'NONE') {
       setParticles([]);
       return;
     }
@@ -42,19 +46,15 @@ export default function SeasonalEffects() {
     }));
 
     setParticles(newParticles);
-  }, [preset, saveFps, effectAmount, effectSpeed]);
+  }, [preset, effectAmount, effectSpeed]);
 
-  if (preset === 'NONE' || saveFps) return null;
+  if (preset === 'NONE') return null;
 
   return (
     <div className={`fixed inset-0 pointer-events-none z-[1] overflow-hidden transition-colors duration-1000 ${
-      preset === 'HALLOWEEN' ? 'bg-black/20' :
       preset === 'CHRISTMAS' ? 'bg-white/[0.02]' :
       preset === 'FALL' ? 'bg-orange-900/[0.02]' : ''
     }`}>
-      {preset === 'HALLOWEEN' && (
-        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/10 via-transparent to-black/40 shadow-[inset_0_0_150px_rgba(0,0,0,0.8)]" />
-      )}
       {preset === 'CHRISTMAS' && (
         <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-transparent shadow-[inset_0_0_100px_rgba(255,255,255,0.1)]" />
       )}
@@ -87,11 +87,6 @@ export default function SeasonalEffects() {
                 style={{ width: p.size / 4, height: p.size / 4, opacity: 0.6 }}
               />
             )}
-            {preset === 'HALLOWEEN' && (
-              <div className="text-orange-500/30">
-                <Ghost size={p.size} />
-              </div>
-            )}
             {preset === 'FALL' && (
               <div className="text-orange-700/40">
                 <Leaf size={p.size} />
@@ -100,14 +95,6 @@ export default function SeasonalEffects() {
           </motion.div>
         ))}
       </AnimatePresence>
-
-      {preset === 'HALLOWEEN' && (
-        <motion.div
-          animate={{ x: ['-10%', '10%'] }}
-          transition={{ duration: 20, repeat: Infinity, repeatType: 'reverse', ease: 'linear' }}
-          className="absolute bottom-0 left-[-20%] right-[-20%] h-64 bg-gradient-to-t from-zinc-900/40 to-transparent blur-3xl opacity-50"
-        />
-      )}
     </div>
   );
 }
