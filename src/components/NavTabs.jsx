@@ -12,7 +12,6 @@ function isLight(hex) {
 
 const tabs = [
   { id: 'dashboard', label: 'DASHBOARD', icon: Home },
-  { id: 'forums', label: 'FORUMS', icon: MessagesSquare },
   { id: 'downloads', label: 'DOWNLOADS', icon: Download },
   { id: 'cloud-configs', label: 'CLOUD CONFIGS', icon: CloudUpload },
   { id: 'chat', label: 'CHAT', icon: MessageSquare },

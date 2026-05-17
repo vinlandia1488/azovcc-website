@@ -316,16 +316,6 @@ export default function CloudConfigsTab({ session, accent }) {
     <div className="flex flex-col gap-4 w-full">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {/* WebSocket Connection Status */}
-          <div className={cn(
-            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-            wsStatus === 'connected' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-            wsStatus === 'connecting' ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20" :
-            "bg-red-500/10 text-red-400 border border-red-500/20"
-          )}>
-            {wsStatus === 'connected' ? <Wifi size={14} /> : <WifiOff size={14} />}
-            <span>{wsStatus === 'connected' ? 'Connected' : wsStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}</span>
-          </div>
         </div>
         
         <div className="flex items-center gap-2">
@@ -453,79 +443,7 @@ export default function CloudConfigsTab({ session, accent }) {
                 />
               </div>
               
-              {/* Software Settings Toggles */}
-              <div className="flex items-center gap-3 border-l border-zinc-800/40 pl-4">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={async () => {
-                      const newValue = !executorMode;
-                      console.log('[Toggle] Executor mode:', newValue);
-                      setExecutorMode(newValue);
-                      const message = { type: 'update', executor_mode: newValue, reveal_console: revealConsole };
-                      console.log('[Toggle] Sending WS message:', message);
-                      const sent = sendWSMessage(message);
-                      console.log('[Toggle] WS message sent:', sent);
-                      // Save to backend
-                      await fetch('/api/user-settings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          username: session.username,
-                          executor_mode: Boolean(newValue),
-                          reveal_console: Boolean(revealConsole)
-                        })
-                      });
-                      const updates = { 
-                        ...session,
-                        executor_mode: Boolean(newValue),
-                        is_executor: Boolean(newValue),
-                        reveal_console: Boolean(revealConsole)
-                      };
-                      setSession(updates);
-                    }}
-                    className={`w-8 h-4 rounded-full relative transition ${executorMode ? 'bg-white' : 'bg-zinc-700'}`}
-                    title="Executor Mode"
-                  >
-                    <div className={`w-3 h-3 rounded-full absolute top-0.5 transition-all ${executorMode ? 'bg-black left-[18px]' : 'bg-zinc-400 left-0.5'}`} />
-                  </button>
-                  <span className="text-[10px] text-zinc-400 font-medium">Executor</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={async () => {
-                      const newValue = !revealConsole;
-                      console.log('[Toggle] Reveal console:', newValue);
-                      setRevealConsole(newValue);
-                      const message = { type: 'update', executor_mode: executorMode, reveal_console: newValue };
-                      console.log('[Toggle] Sending WS message:', message);
-                      const sent = sendWSMessage(message);
-                      console.log('[Toggle] WS message sent:', sent);
-                      // Save to backend
-                      await fetch('/api/user-settings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          username: session.username,
-                          executor_mode: Boolean(executorMode),
-                          reveal_console: Boolean(newValue)
-                        })
-                      });
-                      const updates = { 
-                        ...session,
-                        executor_mode: Boolean(executorMode),
-                        is_executor: Boolean(executorMode),
-                        reveal_console: Boolean(newValue)
-                      };
-                      setSession(updates);
-                    }}
-                    className={`w-8 h-4 rounded-full relative transition ${revealConsole ? 'bg-white' : 'bg-zinc-700'}`}
-                    title="Reveal Console"
-                  >
-                    <div className={`w-3 h-3 rounded-full absolute top-0.5 transition-all ${revealConsole ? 'bg-black left-[18px]' : 'bg-zinc-400 left-0.5'}`} />
-                  </button>
-                  <span className="text-[10px] text-zinc-400 font-medium">Console</span>
-                </div>
-              </div>
+
               <button 
                 onClick={handleSave}
                 disabled={saving}
