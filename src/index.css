@@ -183,3 +183,18 @@
     );
   }
 }
+
+:root {
+  --background: 240 10% 3.9% !important;
+  --foreground: 0 0% 98% !important;
+}
+
+.dark {
+  --background: 0 0% 3.9% !important;
+  --foreground: 0 0% 98% !important;
+}
+
+body {
+  background-color: #07070a !important;
+  color: white !important;
+}
