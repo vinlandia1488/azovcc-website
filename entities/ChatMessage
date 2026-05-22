@@ -1,0 +1,37 @@
+{
+  "name": "ChatMessage",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "Unique session ID for the registration chat"
+    },
+    "sender": {
+      "type": "string",
+      "description": "Sender identifier (e.g., username, 'registerer', 'system')"
+    },
+    "content": {
+      "type": "string",
+      "description": "The message content"
+    },
+    "type": {
+      "type": "string",
+      "description": "Message type: text, image, file, system",
+      "default": "text"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "type": "string",
+      "description": "JSON string for extra data like file URLs"
+    }
+  },
+  "required": [
+    "session_id",
+    "sender",
+    "content",
+    "created_at"
+  ]
+}

@@ -1,7 +1,8 @@
-import { Eye, EyeOff, Copy, Check, Settings, Music } from 'lucide-react';
+import { Eye, EyeOff, Copy, Check, Settings, Music, Plus, CalendarClock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { getSpotifyUrl } from '@/lib/app-settings';
+import { generateInviteCode, getUserInvites, isInviteSystemEnabled } from '@/lib/invites';
 
 
 const fadeUp = (delay = 0) => ({
@@ -52,10 +53,19 @@ export default function DashboardTab({ session, onSettings, accent, announcement
   const internalLicense = session.internal_license || session.internalKey || '';
   const scriptLicense = session.script_license || session.scriptKey || '';
   const [spotifyUrl, setSpotifyUrl] = useState('');
+  const [invites, setInvites] = useState([]);
+  const [inviteEnabled, setInviteEnabled] = useState(true);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState('');
 
   useEffect(() => {
     async function load() {
-      const url = await getSpotifyUrl();
+      const [url, enabled, userInvites] = await Promise.all([
+        getSpotifyUrl(),
+        isInviteSystemEnabled(),
+        getUserInvites(session.username)
+      ]);
+      
       let finalUrl = url;
       if (url.includes('spotify.com/playlist/') && !url.includes('/embed/')) {
         finalUrl = url.replace('spotify.com/playlist/', 'spotify.com/embed/playlist/');
@@ -63,9 +73,24 @@ export default function DashboardTab({ session, onSettings, accent, announcement
         finalUrl = url.replace('spotify.com/track/', 'spotify.com/embed/track/');
       }
       setSpotifyUrl(finalUrl);
+      setInviteEnabled(enabled);
+      setInvites(userInvites || []);
     }
     load();
-  }, []);
+  }, [session.username]);
+
+  async function handleGenerateInvite() {
+    setInviteLoading(true);
+    setInviteError('');
+    try {
+      const newInvite = await generateInviteCode(session);
+      setInvites(prev => [newInvite, ...prev]);
+    } catch (err) {
+      setInviteError(err.message);
+    } finally {
+      setInviteLoading(false);
+    }
+  }
 
 
   return (
@@ -151,6 +176,64 @@ export default function DashboardTab({ session, onSettings, accent, announcement
         )}
         <MaskedField value={scriptLicense} label="Script License" copyable={true} accent={accent} />
       </motion.div>
+
+      {/* Invites Section */}
+      {inviteEnabled && (
+        <motion.div {...fadeUp(0.26)} className="bg-[#111114] border border-zinc-800/60 rounded-xl p-5"
+          style={{ boxShadow: `0 0 0 1px rgba(255,255,255,0.03)` }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <CalendarClock size={16} className="text-zinc-500" />
+              <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Invites</p>
+            </div>
+            <button
+              onClick={handleGenerateInvite}
+              disabled={inviteLoading}
+              className="flex items-center gap-2 bg-[#1a1a1e] border border-zinc-700/50 text-zinc-300 hover:text-white hover:border-zinc-500 px-3 py-1.5 rounded-lg text-[10px] font-bold transition disabled:opacity-50"
+            >
+              <Plus size={12} />
+              {inviteLoading ? 'GENERATING...' : 'GENERATE CODE'}
+            </button>
+          </div>
+
+          {inviteError && (
+            <p className="text-red-400 text-[10px] mb-3 bg-red-500/10 border border-red-500/20 rounded px-3 py-1.5">
+              {inviteError}
+            </p>
+          )}
+
+          <div className="space-y-2">
+            {invites.length === 0 ? (
+              <p className="text-zinc-600 text-[11px] italic">You haven't generated any invite codes yet.</p>
+            ) : (
+              invites.map(inv => (
+                <div key={inv.id} className="flex items-center justify-between bg-black/20 border border-zinc-800/40 rounded-lg px-4 py-2.5">
+                  <div className="flex items-center gap-3">
+                    <code className="text-indigo-400 font-mono text-xs">{inv.code}</code>
+                    <span className="text-zinc-600 text-[9px] uppercase font-bold">
+                      {inv.used_by ? `USED BY @${inv.used_by}` : 'AVAILABLE'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-700 text-[9px]">{new Date(inv.created_at).toLocaleDateString()}</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(inv.code);
+                        // Optional: show toast
+                      }}
+                      className="text-zinc-600 hover:text-zinc-400 transition"
+                    >
+                      <Copy size={13} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <p className="text-zinc-600 text-[9px] mt-4 italic">Note: Regular users can generate 1 invite code per week.</p>
+        </motion.div>
+      )}
 
     </div>
   );

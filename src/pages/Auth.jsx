@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginUser, registerUser, getSession, ensureAdminExists, getDiscordAuthUrl, fetchDiscordUser } from '@/lib/auth';
-import { Eye, EyeOff, MessageSquare, CheckCircle2, User, Lock } from 'lucide-react';
+import { Eye, EyeOff, MessageSquare, CheckCircle2, User, Lock, Ticket, MessageCircle, ArrowRight, SendHorizontal, Key } from 'lucide-react';
 import PreviewTablesModal from '@/components/PreviewTablesModal';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import BrandingMark from '@/components/BrandingMark';
 import ALogo from '@/assets/alogo.png';
+import { validateInviteCode, useInviteCode, isInviteSystemEnabled } from '@/lib/invites';
+import { getBackendDb } from '@/lib/backend';
+
+const db = getBackendDb();
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -21,6 +25,14 @@ export default function Auth() {
   const [showPreview, setShowPreview] = useState(false);
   const [discordLinked, setDiscordLinked] = useState(false);
   const [discordInfo, setDiscordInfo] = useState(null);
+
+  const [regStep, setRegStep] = useState('invite'); // invite, choice, chat, register
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteSystemEnabled, setInviteSystemEnabledState] = useState(true);
+  const [chatSessionId, setChatSessionId] = useState('');
+  const [chatMessages, setChatMessages] = useState([]);
+  const [newChatMessage, setNewChatMessage] = useState('');
+  const [chatPolling, setChatPolling] = useState(null);
 
   const [showIntro, setShowIntro] = useState(true);
   const [redirectToDashboard, setRedirectToDashboard] = useState(false);
@@ -39,6 +51,7 @@ export default function Auth() {
     }, 2200);
 
     if (!hasSession) {
+      isInviteSystemEnabled().then(setInviteSystemEnabledState);
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -46,6 +59,7 @@ export default function Auth() {
 
       if (code || token) {
         setMode('register');
+        setRegStep('register'); // Skip steps if returning from Discord
         setLoading(true);
         fetchDiscordUser(token || code)
           .then(info => {
@@ -60,6 +74,33 @@ export default function Auth() {
 
     return () => clearTimeout(timeout);
   }, []);
+
+  useEffect(() => {
+    if (regStep === 'chat' && chatSessionId) {
+      const poll = setInterval(async () => {
+        try {
+          const msgs = await db.entities.ChatMessage.filter({ session_id: chatSessionId });
+          const sorted = (msgs || []).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+          setChatMessages(sorted);
+
+          // Check for license key message
+          const licenseMsg = sorted.find(m => m.type === 'license');
+          if (licenseMsg) {
+            const metadata = JSON.parse(licenseMsg.metadata || '{}');
+            if (metadata.key) {
+              setScriptLicenseKey(metadata.key);
+              setRegStep('register');
+              clearInterval(poll);
+            }
+          }
+        } catch (err) {
+          console.error('Chat polling error:', err);
+        }
+      }, 3000);
+      setChatPolling(poll);
+      return () => clearInterval(poll);
+    }
+  }, [regStep, chatSessionId]);
 
   useEffect(() => {
     const onStorage = () => {
@@ -110,6 +151,10 @@ export default function Auth() {
           discord_username: discordInfo.username,
           discord_avatar: discordInfo.avatar,
         });
+        
+        if (inviteSystemEnabled && inviteCode) {
+          await useInviteCode(inviteCode, username);
+        }
       }
       navigate('/dashboard');
     } catch (err) {
@@ -118,6 +163,294 @@ export default function Auth() {
       setLoading(false);
     }
   }
+
+  async function handleInviteSubmit(e) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      await validateInviteCode(inviteCode);
+      setRegStep('choice');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function startWebsiteChat() {
+    setError('');
+    setLoading(true);
+    try {
+      const sessionId = `reg_${Math.random().toString(36).substring(2, 15)}`;
+      setChatSessionId(sessionId);
+      await db.entities.ChatMessage.create({
+        session_id: sessionId,
+        sender: 'system',
+        content: 'Registration chat started. Please wait for an admin to assist you.',
+        created_at: new Date().toISOString()
+      });
+      setRegStep('chat');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function sendChatMessage(e) {
+    e.preventDefault();
+    if (!newChatMessage.trim() || !chatSessionId) return;
+    try {
+      await db.entities.ChatMessage.create({
+        session_id: chatSessionId,
+        sender: 'registerer',
+        content: newChatMessage.trim(),
+        created_at: new Date().toISOString()
+      });
+      setNewChatMessage('');
+    } catch (err) {
+      setError('Failed to send message: ' + err.message);
+    }
+  }
+
+  const renderRegisterSteps = () => {
+    switch (regStep) {
+      case 'invite':
+        return (
+          <form onSubmit={handleInviteSubmit} className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="text-center mb-6">
+              <Ticket size={24} className="mx-auto text-indigo-400 mb-2" />
+              <p className="text-zinc-400 text-xs">Enter your invitation code to proceed.</p>
+            </div>
+            <div className="relative">
+              <Ticket size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <input
+                type="text"
+                value={inviteCode}
+                onChange={e => setInviteCode(e.target.value.toUpperCase())}
+                placeholder="INVITE-CODE"
+                required
+                className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono tracking-widest"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2"
+            >
+              {loading ? 'Validating...' : 'Continue'}
+              <ArrowRight size={16} />
+            </button>
+          </form>
+        );
+      case 'choice':
+        return (
+          <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="text-center mb-6">
+              <p className="text-zinc-400 text-xs">How would you like to get your license key?</p>
+            </div>
+            <button
+              onClick={startWebsiteChat}
+              className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-medium py-3 rounded-xl text-sm transition flex items-center justify-center gap-3 border border-zinc-700/50"
+            >
+              <MessageCircle size={18} className="text-indigo-400" />
+              Website Chat (Talk to Admin)
+            </button>
+            <a
+              href="https://discord.gg/ycymTeFWBd"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-medium py-3 rounded-xl text-sm transition flex items-center justify-center gap-3 shadow-lg shadow-[#5865F2]/20"
+            >
+              <MessageSquare size={18} />
+              Join Discord Server
+            </a>
+            <button
+              onClick={() => setRegStep('invite')}
+              className="w-full text-zinc-500 hover:text-zinc-300 text-xs transition mt-2"
+            >
+              Back
+            </button>
+          </div>
+        );
+      case 'chat':
+        return (
+          <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 h-[400px] flex flex-col">
+            <div className="flex-1 overflow-y-auto space-y-3 p-3 border border-zinc-800/50 rounded-xl bg-zinc-900/30 custom-scrollbar">
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={`flex flex-col ${msg.sender === 'registerer' ? 'items-end' : msg.sender === 'system' ? 'items-center' : 'items-start'}`}>
+                  {msg.sender === 'system' ? (
+                    <div className="bg-zinc-800/50 text-zinc-500 text-[9px] px-2 py-0.5 rounded-full border border-zinc-700/30 my-1">
+                      {msg.content}
+                    </div>
+                  ) : (
+                    <div className={`max-w-[85%] rounded-xl px-3 py-1.5 text-xs ${msg.sender === 'registerer' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-zinc-800 text-zinc-300 rounded-tl-none'}`}>
+                      {msg.content}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <form onSubmit={sendChatMessage} className="flex gap-2">
+              <input
+                value={newChatMessage}
+                onChange={e => setNewChatMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="flex-1 bg-zinc-900 border border-zinc-800 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-indigo-500"
+              />
+              <button
+                type="submit"
+                disabled={!newChatMessage.trim()}
+                className="p-2 bg-indigo-600 rounded-lg text-white disabled:opacity-50"
+              >
+                <SendHorizontal size={14} />
+              </button>
+            </form>
+            <p className="text-[9px] text-zinc-500 text-center animate-pulse italic">Admin will send you a key here. Don't close this window.</p>
+          </div>
+        );
+      case 'register':
+        return (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-zinc-400 text-xs mb-1.5 block">Username</label>
+              <div className="relative">
+                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                <input
+                  type="text"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  placeholder="Username"
+                  required
+                  autoComplete="username"
+                  maxLength={32}
+                  className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-zinc-400 text-xs mb-1.5 block">Password</label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="new-password"
+                  className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-10 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                >
+                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              {!discordLinked ? (
+                <a
+                  href={getDiscordAuthUrl()}
+                  className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-xl px-4 py-3 text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-[#5865F2]/20"
+                >
+                  <MessageSquare size={18} />
+                  Connect Discord
+                </a>
+              ) : (
+                <div className="w-full bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 size={18} className="text-green-500" />
+                    <div className="flex flex-col">
+                      <span className="text-green-500 text-[10px] font-bold uppercase tracking-wider">Discord Linked</span>
+                      <span className="text-zinc-300 text-xs font-mono">{discordInfo?.username}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setDiscordLinked(false); setDiscordInfo(null); }}
+                    className="text-zinc-500 hover:text-zinc-300 text-[10px] underline"
+                  >
+                    Change
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="text-zinc-400 text-xs mb-1.5 block">License Type</label>
+                  <select
+                    value={licenseType}
+                    onChange={e => setLicenseType(e.target.value)}
+                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-zinc-500 transition"
+                  >
+                    <option value="script">Script</option>
+                    <option value="internal">Internal</option>
+                  </select>
+                </div>
+                {licenseType === 'internal' && (
+                  <div>
+                    <label className="text-zinc-400 text-xs mb-1.5 block">Internal License Key</label>
+                    <input
+                      type="text"
+                      value={internalLicenseKey}
+                      onChange={e => setInternalLicenseKey(e.target.value)}
+                      placeholder="Internal key..."
+                      required={licenseType === 'internal'}
+                      maxLength={64}
+                      className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono"
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className="text-zinc-400 text-xs mb-1.5 block">Script License Key</label>
+                  <div className="relative">
+                    <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                    <input
+                      type="text"
+                      value={scriptLicenseKey}
+                      onChange={e => setScriptLicenseKey(e.target.value)}
+                      placeholder="Script key..."
+                      required
+                      maxLength={64}
+                      className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg pl-10 pr-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {error && (
+              <p className="text-red-400 text-xs bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-b from-zinc-100 to-zinc-300 hover:from-white hover:to-zinc-200 disabled:opacity-50 text-black font-medium py-2.5 rounded-xl text-sm transition"
+            >
+              {loading ? 'Please wait...' : 'Register'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setRegStep(inviteSystemEnabled ? 'invite' : 'choice')}
+              className="w-full text-zinc-500 hover:text-zinc-300 text-xs transition"
+            >
+              Back
+            </button>
+          </form>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#07070a] flex items-center justify-center relative overflow-hidden">
@@ -154,6 +487,19 @@ export default function Auth() {
           );
           pointer-events: none;
           border-radius: inherit;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.2);
         }
       `}</style>
       <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
@@ -192,138 +538,75 @@ export default function Auth() {
                 {mode === 'login' ? 'Welcome back' : 'Create account'}
               </h1>
               <p className="text-zinc-500 text-sm">
-                {mode === 'login' ? 'Enter your credentials to continue.' : 'Register with your license key.'}
+                {mode === 'login' 
+                  ? 'Enter your credentials to continue.' 
+                  : regStep === 'invite' 
+                    ? 'Enter your invitation code.' 
+                    : regStep === 'choice' 
+                      ? 'Choose how to get your key.' 
+                      : regStep === 'chat' 
+                        ? 'Talk to an admin for a key.' 
+                        : 'Complete your registration.'}
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="text-zinc-400 text-xs mb-1.5 block">Username</label>
-                <div className="relative">
-                  <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    placeholder="Username"
-                    required
-                    autoComplete="username"
-                    maxLength={32}
-                    className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-zinc-400 text-xs mb-1.5 block">Password</label>
-                <div className="relative">
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-                  <input
-                    type={showPass ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                    className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-10 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass(!showPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-                  >
-                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              {mode === 'register' && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                  {!discordLinked ? (
-                    <a
-                      href={getDiscordAuthUrl()}
-                      className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-xl px-4 py-3 text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-[#5865F2]/20"
-                    >
-                      <MessageSquare size={18} />
-                      Connect Discord
-                    </a>
-                  ) : (
-                    <div className="w-full bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 size={18} className="text-green-500" />
-                        <div className="flex flex-col">
-                          <span className="text-green-500 text-[10px] font-bold uppercase tracking-wider">Discord Linked</span>
-                          <span className="text-zinc-300 text-xs font-mono">{discordInfo?.username}</span>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => { setDiscordLinked(false); setDiscordInfo(null); }}
-                        className="text-zinc-500 hover:text-zinc-300 text-[10px] underline"
-                      >
-                        Change
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {mode === 'register' && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <label className="text-zinc-400 text-xs mb-1.5 block">License Type</label>
-                      <select
-                        value={licenseType}
-                        onChange={e => setLicenseType(e.target.value)}
-                        className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-zinc-500 transition"
-                      >
-                        <option value="script">Script</option>
-                        <option value="internal">Internal</option>
-                      </select>
-                    </div>
-                    {licenseType === 'internal' && (
-                      <div>
-                        <label className="text-zinc-400 text-xs mb-1.5 block">Internal License Key</label>
-                        <input
-                          type="text"
-                          value={internalLicenseKey}
-                          onChange={e => setInternalLicenseKey(e.target.value)}
-                          placeholder="Internal key..."
-                          required={licenseType === 'internal'}
-                          maxLength={64}
-                          className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono"
-                        />
-                      </div>
-                    )}
-                    <div>
-                      <label className="text-zinc-400 text-xs mb-1.5 block">Script License Key</label>
-                      <input
-                        type="text"
-                        value={scriptLicenseKey}
-                        onChange={e => setScriptLicenseKey(e.target.value)}
-                        placeholder="Script key..."
-                        required
-                        maxLength={64}
-                        className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono"
-                      />
-                    </div>
+            {mode === 'login' ? (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="text-zinc-400 text-xs mb-1.5 block">Username</label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={e => setUsername(e.target.value)}
+                      placeholder="Username"
+                      required
+                      autoComplete="username"
+                      maxLength={32}
+                      className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+                    />
                   </div>
                 </div>
-              )}
 
-              {error && (
-                <p className="text-red-400 text-xs bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</p>
-              )}
+                <div>
+                  <label className="text-zinc-400 text-xs mb-1.5 block">Password</label>
+                  <div className="relative">
+                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                    <input
+                      type={showPass ? 'text' : 'password'}
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      autoComplete="current-password"
+                      className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-10 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass(!showPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                    >
+                      {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-b from-zinc-100 to-zinc-300 hover:from-white hover:to-zinc-200 disabled:opacity-50 text-black font-medium py-2.5 rounded-xl text-sm transition"
-              >
-                {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Register'}
-              </button>
-            </form>
+                {error && (
+                  <p className="text-red-400 text-xs bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-b from-zinc-100 to-zinc-300 hover:from-white hover:to-zinc-200 disabled:opacity-50 text-black font-medium py-2.5 rounded-xl text-sm transition"
+                >
+                  {loading ? 'Please wait...' : 'Sign in'}
+                </button>
+              </form>
+            ) : (
+              renderRegisterSteps()
+            )}
 
             <div className="mt-4 text-center space-y-2">
               <p className="text-zinc-500 text-xs">

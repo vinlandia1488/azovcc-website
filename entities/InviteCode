@@ -1,0 +1,35 @@
+{
+  "name": "InviteCode",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "The unique invite code"
+    },
+    "generated_by": {
+      "type": "string",
+      "description": "Username of the person who generated the code"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "used_by": {
+      "type": "string",
+      "description": "Username of the person who used the code"
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_mod_generated": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "code",
+    "generated_by",
+    "created_at"
+  ]
+}

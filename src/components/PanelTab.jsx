@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { deleteUserAccount, generateInternalLicense, generateScriptLicense, normalizeAccountDiscordLink, upgradeToInternal } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 import { getAnnouncement, setAnnouncement, getMaintenance, setMaintenance, getSpotifyUrl, setSpotifyUrl } from '@/lib/app-settings';
+import { isInviteSystemEnabled, setInviteSystemEnabled, generateInviteCode, getUserInvites } from '@/lib/invites';
 
 import {
   getDefaultCloudConfig,
@@ -98,6 +99,12 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
   const [maintenance, setMaintenanceState] = useState({ active: false, from: '', to: '' });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [spotifyUrl, setSpotifyUrlState] = useState('');
+  const [inviteSystemEnabled, setInviteSystemEnabledState] = useState(true);
+  const [allInvites, setAllInvites] = useState([]);
+  const [allChats, setAllChats] = useState([]);
+  const [selectedChatId, setSelectedChatId] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
 
 
 
@@ -145,12 +152,15 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
   }
 
   async function loadData() {
-    const [keysResult, accountsResult, downloadsResult, announcementResult, spotifyResult] = await Promise.allSettled([
+    const [keysResult, accountsResult, downloadsResult, announcementResult, spotifyResult, inviteSystemResult, invitesResult, chatsResult] = await Promise.allSettled([
       getLicenseKeys(),
       getEntityRows('Account'),
       getDownloadItems(),
       getAnnouncement(),
       getSpotifyUrl(),
+      isInviteSystemEnabled(),
+      getEntityRows('InviteCode'),
+      getEntityRows('ChatMessage'),
     ]);
 
     setKeys(keysResult.status === 'fulfilled' ? (keysResult.value || []) : []);
@@ -162,6 +172,28 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
     setDownloads(downloadsResult.status === 'fulfilled' ? (downloadsResult.value || []) : []);
     setAnnouncementState(announcementResult.status === 'fulfilled' ? announcementResult.value : '');
     setSpotifyUrlState(spotifyResult.status === 'fulfilled' ? spotifyResult.value : '');
+    setInviteSystemEnabledState(inviteSystemResult.status === 'fulfilled' ? inviteSystemResult.value : true);
+    setAllInvites(invitesResult.status === 'fulfilled' ? invitesResult.value : []);
+    
+    if (chatsResult.status === 'fulfilled') {
+      const messages = chatsResult.value || [];
+      // Group messages by session_id to get unique chats
+      const sessions = {};
+      messages.forEach(m => {
+        if (!sessions[m.session_id]) {
+          sessions[m.session_id] = {
+            id: m.session_id,
+            lastMessage: m,
+            messages: []
+          };
+        }
+        sessions[m.session_id].messages.push(m);
+        if (new Date(m.created_at) > new Date(sessions[m.session_id].lastMessage.created_at)) {
+          sessions[m.session_id].lastMessage = m;
+        }
+      });
+      setAllChats(Object.values(sessions).sort((a, b) => new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at)));
+    }
 
     try { const m = await getMaintenance(); setMaintenanceState(m); } catch {}
 
@@ -413,6 +445,85 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
     }
   }
 
+  async function toggleInviteSystem() {
+    const next = !inviteSystemEnabled;
+    setInviteSystemEnabledState(next);
+    try {
+      await setInviteSystemEnabled(next);
+    } catch (err) {
+      setPanelError(err.message);
+    }
+  }
+
+  async function adminGenerateInvite() {
+    try {
+      await generateInviteCode(session);
+      await loadData();
+    } catch (err) {
+      setPanelError(err.message);
+    }
+  }
+
+  async function deleteInvite(id) {
+    try {
+      await db.entities.InviteCode.delete(id);
+      await loadData();
+    } catch (err) {
+      setPanelError(err.message);
+    }
+  }
+
+  async function selectChat(sessionId) {
+    setSelectedChatId(sessionId);
+    const msgs = await getEntityRows('ChatMessage');
+    setChatMessages(msgs.filter(m => m.session_id === sessionId).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
+  }
+
+  async function sendChatMessage() {
+    if (!newMessage.trim() || !selectedChatId) return;
+    try {
+      const msg = {
+        session_id: selectedChatId,
+        sender: session.username,
+        content: newMessage.trim(),
+        created_at: new Date().toISOString(),
+        type: 'text'
+      };
+      await db.entities.ChatMessage.create(msg);
+      setNewMessage('');
+      const msgs = await getEntityRows('ChatMessage');
+      setChatMessages(msgs.filter(m => m.session_id === selectedChatId).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
+    } catch (err) {
+      setPanelError(err.message);
+    }
+  }
+
+  async function endChatAndSendKey() {
+    if (!selectedChatId) return;
+    try {
+      const key = generateScriptLicense();
+      await createLicenseKeyRecord({
+        type: 'script',
+        key: key,
+        script_key: key,
+        note: `Generated for registration chat ${selectedChatId}`,
+        used: false
+      });
+      await db.entities.ChatMessage.create({
+        session_id: selectedChatId,
+        sender: 'system',
+        content: `Your license key has been generated: ${key}. You can now proceed to registration.`,
+        type: 'license',
+        metadata: JSON.stringify({ key }),
+        created_at: new Date().toISOString()
+      });
+      setSelectedChatId(null);
+      await loadData();
+    } catch (err) {
+      setPanelError(err.message);
+    }
+  }
+
 
 
   return (
@@ -433,6 +544,8 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
           { id: 'keys', label: 'license keys', icon: Key },
           { id: 'users', label: 'users', icon: Users },
           { id: 'downloads', label: 'downloads', icon: Download },
+          { id: 'invites', label: 'invites', icon: CalendarClock },
+          { id: 'chats', label: 'chats', icon: MessageSquare },
           { id: 'announcement', label: 'announcement', icon: Megaphone },
           { id: 'configs', label: 'configs', icon: FileText },
           { id: 'music', label: 'music', icon: Music },
@@ -1182,6 +1295,187 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
           </div>
         );
       })()}
+
+      {tab === 'invites' && (
+        <div className="space-y-6">
+          <div className={`rounded-2xl p-5 border flex items-center justify-between ${inviteSystemEnabled ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-zinc-900/40 border-zinc-800/60'}`}>
+            <div className="flex items-center gap-4">
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${inviteSystemEnabled ? 'bg-indigo-500/20' : 'bg-zinc-800'}`}>
+                <CalendarClock size={20} className={inviteSystemEnabled ? 'text-indigo-400' : 'text-zinc-500'} />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm">invite system</p>
+                <p className="text-xs font-semibold tracking-wider text-zinc-500">
+                  {inviteSystemEnabled ? 'currently enabled' : 'currently disabled'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={toggleInviteSystem}
+              className="px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2"
+              style={{ background: inviteSystemEnabled ? '#ef4444' : accent, color: '#fff' }}
+            >
+              {inviteSystemEnabled ? 'disable system' : 'enable system'}
+            </button>
+          </div>
+
+          <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-bold text-lg">active invites</h3>
+              <button
+                onClick={adminGenerateInvite}
+                className="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2"
+                style={{ background: accent, color: accentText }}
+              >
+                <Plus size={14} />
+                generate invite code
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-800/60 text-[10px] uppercase font-bold tracking-widest text-zinc-600">
+                    <th className="px-6 py-4">code</th>
+                    <th className="px-6 py-4">generated by</th>
+                    <th className="px-6 py-4">created</th>
+                    <th className="px-6 py-4">status</th>
+                    <th className="px-6 py-4 text-right">actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/30">
+                  {allInvites.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-zinc-600 text-sm italic">
+                        no invite codes generated yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    allInvites.map(inv => (
+                      <tr key={inv.id} className="hover:bg-zinc-800/10 transition group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <code className="text-indigo-400 font-mono text-xs">{inv.code}</code>
+                            <CopyBtn value={inv.code} />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-zinc-400 text-xs">@{inv.generated_by}</td>
+                        <td className="px-6 py-4 text-zinc-500 text-[10px]">{new Date(inv.created_at).toLocaleDateString()}</td>
+                        <td className="px-6 py-4">
+                          {inv.used_by ? (
+                            <span className="text-red-400 text-[10px] font-bold uppercase">used by @{inv.used_by}</span>
+                          ) : (
+                            <span className="text-green-400 text-[10px] font-bold uppercase">available</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button onClick={() => deleteInvite(inv.id)} className="text-zinc-600 hover:text-red-400 transition">
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'chats' && (
+        <div className="grid grid-cols-12 gap-6 h-[600px]">
+          <div className="col-span-4 bg-[#111114] border border-zinc-800/60 rounded-2xl overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20">
+              <h3 className="text-white text-xs font-bold tracking-wider uppercase">registration chats</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto divide-y divide-zinc-800/30">
+              {allChats.length === 0 ? (
+                <div className="p-8 text-center text-zinc-600 text-xs italic">no active registration chats.</div>
+              ) : (
+                allChats.map(chat => (
+                  <button
+                    key={chat.id}
+                    onClick={() => selectChat(chat.id)}
+                    className={`w-full p-4 text-left transition hover:bg-zinc-800/20 ${selectedChatId === chat.id ? 'bg-indigo-500/10' : ''}`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-white text-xs font-bold truncate">Session {chat.id.substring(0, 8)}</span>
+                      <span className="text-zinc-600 text-[9px]">{new Date(chat.lastMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <p className="text-zinc-500 text-[11px] truncate">{chat.lastMessage.content}</p>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="col-span-8 bg-[#111114] border border-zinc-800/60 rounded-2xl overflow-hidden flex flex-col relative">
+            {!selectedChatId ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-zinc-600 space-y-4">
+                <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800/60">
+                  <MessageSquare size={24} />
+                </div>
+                <p className="text-sm">select a chat to start talking</p>
+              </div>
+            ) : (
+              <>
+                <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-white text-xs font-bold">Chat with Registerer</h3>
+                    <p className="text-zinc-500 text-[9px] font-mono">{selectedChatId}</p>
+                  </div>
+                  <button
+                    onClick={endChatAndSendKey}
+                    className="px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 text-[10px] font-bold transition flex items-center gap-2"
+                  >
+                    <Key size={12} />
+                    send key & end chat
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {chatMessages.map((msg, i) => (
+                    <div key={i} className={`flex flex-col ${msg.sender === session.username ? 'items-end' : msg.sender === 'system' ? 'items-center' : 'items-start'}`}>
+                      {msg.sender === 'system' ? (
+                        <div className="bg-zinc-800/50 text-zinc-400 text-[10px] px-3 py-1 rounded-full border border-zinc-700/50">
+                          {msg.content}
+                        </div>
+                      ) : (
+                        <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender === session.username ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-zinc-800 text-zinc-200 rounded-tl-none'}`}>
+                          {msg.content}
+                        </div>
+                      )}
+                      <span className="text-zinc-600 text-[9px] mt-1">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-4 border-t border-zinc-800/60 bg-zinc-900/10">
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); sendChatMessage(); }}
+                    className="flex gap-2"
+                  >
+                    <input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Type a message..."
+                      className="flex-1 bg-zinc-900 border border-zinc-800 text-white rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!newMessage.trim()}
+                      className="p-2 rounded-xl transition disabled:opacity-50"
+                      style={{ background: accent, color: accentText }}
+                    >
+                      <SendHorizontal size={18} />
+                    </button>
+                  </form>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {selectedUser && (
         <UserDetailModal
