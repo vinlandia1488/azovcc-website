@@ -136,12 +136,14 @@ export async function getUserInvites(username) {
 export async function getAllInvitesAdmin() {
   const allConfigs = await db.entities.CloudConfig.filter({});
   return (allConfigs || [])
-    .filter(c => c.name.startsWith("INVITE:"))
+    .filter(c => c.name && c.name.startsWith("INVITE:"))
     .map(c => {
-      const code = c.name.split(":")[1];
-      const genMatch = c.content.match(/\[GEN:([^\]]+)\]/);
-      const dateMatch = c.content.match(/\[DATE:([^\]]+)\]/);
-      const usedMatch = c.content.match(/\[USED_BY:([^\]]+)\]/);
+      const nameParts = c.name.split(":");
+      const code = nameParts[1] || "unknown";
+      const content = c.content || "";
+      const genMatch = content.match(/\[GEN:([^\]]+)\]/);
+      const dateMatch = content.match(/\[DATE:([^\]]+)\]/);
+      const usedMatch = content.match(/\[USED_BY:([^\]]+)\]/);
       return {
         id: c.id,
         code,
@@ -164,17 +166,17 @@ export async function sendChatMessage(sessionId, sender, content, type = 'text')
 export async function getChatMessages(sessionId) {
   const configs = await db.entities.CloudConfig.filter({});
   return (configs || [])
-    .filter(c => c.name.startsWith(`CHAT:${sessionId}:`))
+    .filter(c => c.name && c.name.startsWith(`CHAT:${sessionId}:`))
     .map(c => {
       const parts = c.name.split(':');
       return {
         id: c.id,
         session_id: sessionId,
-        timestamp: parseInt(parts[2]),
+        timestamp: parseInt(parts[2]) || Date.now(),
         type: parts[3] || 'text',
         sender: c.owner_username,
-        content: c.content,
-        created_at: new Date(parseInt(parts[2])).toISOString()
+        content: c.content || "",
+        created_at: new Date(parseInt(parts[2]) || Date.now()).toISOString()
       };
     })
     .sort((a, b) => a.timestamp - b.timestamp);
@@ -182,13 +184,15 @@ export async function getChatMessages(sessionId) {
 
 export async function getAllChats() {
   const configs = await db.entities.CloudConfig.filter({});
-  const chatConfigs = (configs || []).filter(c => c.name.startsWith('CHAT:'));
+  const chatConfigs = (configs || []).filter(c => c.name && c.name.startsWith('CHAT:'));
   
   const sessions = {};
   chatConfigs.forEach(c => {
     const parts = c.name.split(':');
     const sessionId = parts[1];
-    const timestamp = parseInt(parts[2]);
+    if (!sessionId) return;
+
+    const timestamp = parseInt(parts[2]) || 0;
     
     if (!sessions[sessionId] || timestamp > sessions[sessionId].lastTimestamp) {
       sessions[sessionId] = {
@@ -196,8 +200,8 @@ export async function getAllChats() {
         lastTimestamp: timestamp,
         lastMessage: {
           sender: c.owner_username,
-          content: c.content,
-          created_at: new Date(timestamp).toISOString()
+          content: c.content || "",
+          created_at: new Date(timestamp || Date.now()).toISOString()
         }
       };
     }

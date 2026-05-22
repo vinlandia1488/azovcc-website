@@ -479,27 +479,35 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
 
   async function endChatAndSendKey() {
     if (!selectedChatId || !customKey.trim()) return;
+    
+    // 1. Capture context
+    const chatId = selectedChatId;
+    const key = customKey.trim();
+    const type = keyType;
+
+    // 2. Immediate UI feedback
     setPanelWorking(true);
+    setShowEndChatModal(false);
+    setSelectedChatId(null);
+    setCustomKey('');
+
     try {
-      const key = customKey.trim();
-      
-      // Use the existing library function to avoid manual field mapping issues
+      // 3. Perform database operations
       await createLicenseKeyRecord({
-        type: keyType,
-        internal_key: keyType === 'internal' ? key : '',
-        script_key: keyType === 'script' ? key : '',
-        note: `Generated for registration chat ${selectedChatId}`,
+        type: type,
+        internal_key: type === 'internal' ? key : '',
+        script_key: type === 'script' ? key : '',
+        note: `Generated for registration chat ${chatId}`,
         used: false
       });
       
-      await sendChatMessage(selectedChatId, 'system', `Your ${keyType} license key has been generated: ${key}. You can now proceed to registration.`, 'license');
+      await sendChatMessage(chatId, 'system', `Your ${type} license key has been generated: ${key}. You can now proceed to registration.`, 'license');
       
-      setShowEndChatModal(false);
-      setCustomKey('');
-      setSelectedChatId(null);
+      // 4. Refresh data
       await loadData();
     } catch (err) {
       console.error("End chat error:", err);
+      // If it fails, we might want to restore the modal or show a global error
       setPanelError(err.message || "Failed to end chat and send key.");
     } finally {
       setPanelWorking(false);
@@ -1398,7 +1406,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     className={`w-full p-4 text-left transition hover:bg-zinc-800/20 ${selectedChatId === chat.id ? 'bg-indigo-500/10' : ''}`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-white text-xs font-bold truncate">Session {chat.id.substring(0, 8)}</span>
+                      <span className="text-white text-xs font-bold truncate">Session {String(chat.id || '').substring(0, 8)}</span>
                       <span className="text-zinc-600 text-[9px]">{new Date(chat.lastMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <p className="text-zinc-500 text-[11px] truncate">{chat.lastMessage.content}</p>
