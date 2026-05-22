@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { deleteUserAccount, generateInternalLicense, generateScriptLicense, normalizeAccountDiscordLink, upgradeToInternal } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 import { getAnnouncement, setAnnouncement, getMaintenance, setMaintenance, getSpotifyUrl, setSpotifyUrl } from '@/lib/app-settings';
-import { isInviteSystemEnabled, setInviteSystemEnabled, generateInviteCode, getUserInvites } from '@/lib/invites';
+import { isInviteSystemEnabled, setInviteSystemEnabled, generateInviteCode, getUserInvites, getAllChats, getChatMessages, sendChatMessage, deleteChat } from '@/lib/invites';
 
 import {
   getDefaultCloudConfig,
@@ -152,48 +152,37 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
   }
 
   async function loadData() {
-    const [keysResult, accountsResult, downloadsResult, announcementResult, spotifyResult, inviteSystemResult, invitesResult, chatsResult] = await Promise.allSettled([
+    const [keysResult, accountsResult, downloadsResult, announcementResult, spotifyResult, inviteSystemResult, chatsResult] = await Promise.allSettled([
       getLicenseKeys(),
       getEntityRows('Account'),
       getDownloadItems(),
       getAnnouncement(),
       getSpotifyUrl(),
       isInviteSystemEnabled(),
-      getEntityRows('InviteCode'),
-      getEntityRows('ChatMessage'),
+      getAllChats(),
     ]);
 
-    setKeys(keysResult.status === 'fulfilled' ? (keysResult.value || []) : []);
-    setAccounts(
-      accountsResult.status === 'fulfilled' && Array.isArray(accountsResult.value)
-        ? accountsResult.value.map((row) => normalizeAccountDiscordLink(row))
-        : []
-    );
-    setDownloads(downloadsResult.status === 'fulfilled' ? (downloadsResult.value || []) : []);
-    setAnnouncementState(announcementResult.status === 'fulfilled' ? announcementResult.value : '');
-    setSpotifyUrlState(spotifyResult.status === 'fulfilled' ? spotifyResult.value : '');
-    setInviteSystemEnabledState(inviteSystemResult.status === 'fulfilled' ? inviteSystemResult.value : true);
-    setAllInvites(invitesResult.status === 'fulfilled' ? invitesResult.value : []);
+    const allKeys = keysResult.status === 'fulfilled' ? (keysResult.value || []) : [];
+    setKeys(allKeys);
     
-    if (chatsResult.status === 'fulfilled') {
-      const messages = chatsResult.value || [];
-      // Group messages by session_id to get unique chats
-      const sessions = {};
-      messages.forEach(m => {
-        if (!sessions[m.session_id]) {
-          sessions[m.session_id] = {
-            id: m.session_id,
-            lastMessage: m,
-            messages: []
-          };
-        }
-        sessions[m.session_id].messages.push(m);
-        if (new Date(m.created_at) > new Date(sessions[m.session_id].lastMessage.created_at)) {
-          sessions[m.session_id].lastMessage = m;
-        }
-      });
-      setAllChats(Object.values(sessions).sort((a, b) => new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at)));
-    }
+    // Filter out invites for the invites list
+    setAllInvites(allKeys.filter(k => k.note?.includes('[INVITE]')).map(k => ({
+      ...k,
+      code: k.key,
+      generated_by: k.note?.match(/\[GEN:([^\]]+)\]/)?.[1] || 'unknown',
+      created_at: k.created_date || new Date().toISOString()
+     })));
+     
+     setAccounts(
+       accountsResult.status === 'fulfilled' && Array.isArray(accountsResult.value)
+         ? accountsResult.value.map((row) => normalizeAccountDiscordLink(row))
+         : []
+     );
+     setDownloads(downloadsResult.status === 'fulfilled' ? (downloadsResult.value || []) : []);
+     setAnnouncementState(announcementResult.status === 'fulfilled' ? announcementResult.value : '');
+     setSpotifyUrlState(spotifyResult.status === 'fulfilled' ? spotifyResult.value : '');
+     setInviteSystemEnabledState(inviteSystemResult.status === 'fulfilled' ? inviteSystemResult.value : true);
+     setAllChats(chatsResult.status === 'fulfilled' ? chatsResult.value : []);
 
     try { const m = await getMaintenance(); setMaintenanceState(m); } catch {}
 
@@ -466,7 +455,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
 
   async function deleteInvite(id) {
     try {
-      await db.entities.InviteCode.delete(id);
+      await deleteLicenseKeyRecord(id);
       await loadData();
     } catch (err) {
       setPanelError(err.message);
@@ -475,24 +464,17 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
 
   async function selectChat(sessionId) {
     setSelectedChatId(sessionId);
-    const msgs = await getEntityRows('ChatMessage');
-    setChatMessages(msgs.filter(m => m.session_id === sessionId).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
+    const msgs = await getChatMessages(sessionId);
+    setChatMessages(msgs);
   }
 
-  async function sendChatMessage() {
+  async function sendChatMessageAdmin() {
     if (!newMessage.trim() || !selectedChatId) return;
     try {
-      const msg = {
-        session_id: selectedChatId,
-        sender: session.username,
-        content: newMessage.trim(),
-        created_at: new Date().toISOString(),
-        type: 'text'
-      };
-      await db.entities.ChatMessage.create(msg);
+      await sendChatMessage(selectedChatId, session.username, newMessage.trim());
       setNewMessage('');
-      const msgs = await getEntityRows('ChatMessage');
-      setChatMessages(msgs.filter(m => m.session_id === selectedChatId).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
+      const msgs = await getChatMessages(selectedChatId);
+      setChatMessages(msgs);
     } catch (err) {
       setPanelError(err.message);
     }
@@ -509,14 +491,11 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
         note: `Generated for registration chat ${selectedChatId}`,
         used: false
       });
-      await db.entities.ChatMessage.create({
-        session_id: selectedChatId,
-        sender: 'system',
-        content: `Your license key has been generated: ${key}. You can now proceed to registration.`,
-        type: 'license',
-        metadata: JSON.stringify({ key }),
-        created_at: new Date().toISOString()
-      });
+      await sendChatMessage(selectedChatId, 'system', `Your license key has been generated: ${key}. You can now proceed to registration.`, 'license', JSON.stringify({ key }));
+      
+      // Optional: clear the chat after some time or just leave it
+      // await deleteChat(selectedChatId); 
+      
       setSelectedChatId(null);
       await loadData();
     } catch (err) {
@@ -1452,7 +1431,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
 
                 <div className="p-4 border-t border-zinc-800/60 bg-zinc-900/10">
                   <form
-                    onSubmit={(e) => { e.preventDefault(); sendChatMessage(); }}
+                    onSubmit={(e) => { e.preventDefault(); sendChatMessageAdmin(); }}
                     className="flex gap-2"
                   >
                     <input

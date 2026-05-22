@@ -6,7 +6,7 @@ import PreviewTablesModal from '@/components/PreviewTablesModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import BrandingMark from '@/components/BrandingMark';
 import ALogo from '@/assets/alogo.png';
-import { validateInviteCode, useInviteCode, isInviteSystemEnabled } from '@/lib/invites';
+import { validateInviteCode, useInviteCode, isInviteSystemEnabled, getChatMessages, sendChatMessage } from '@/lib/invites';
 import { getBackendDb } from '@/lib/backend';
 
 const db = getBackendDb();
@@ -79,16 +79,17 @@ export default function Auth() {
     if (regStep === 'chat' && chatSessionId) {
       const poll = setInterval(async () => {
         try {
-          const msgs = await db.entities.ChatMessage.filter({ session_id: chatSessionId });
-          const sorted = (msgs || []).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+          const sorted = await getChatMessages(chatSessionId);
           setChatMessages(sorted);
 
           // Check for license key message
           const licenseMsg = sorted.find(m => m.type === 'license');
           if (licenseMsg) {
-            const metadata = JSON.parse(licenseMsg.metadata || '{}');
-            if (metadata.key) {
-              setScriptLicenseKey(metadata.key);
+            // content might contain the key or it might be in the name parts
+            // in our new system, we send it as content
+            const keyMatch = licenseMsg.content.match(/license key has been generated: ([^.]+)/);
+            if (keyMatch) {
+              setScriptLicenseKey(keyMatch[1]);
               setRegStep('register');
               clearInterval(poll);
             }
@@ -184,12 +185,7 @@ export default function Auth() {
     try {
       const sessionId = `reg_${Math.random().toString(36).substring(2, 15)}`;
       setChatSessionId(sessionId);
-      await db.entities.ChatMessage.create({
-        session_id: sessionId,
-        sender: 'system',
-        content: 'Registration chat started. Please wait for an admin to assist you.',
-        created_at: new Date().toISOString()
-      });
+      await sendChatMessage(sessionId, 'system', 'Registration chat started. Please wait for an admin to assist you.', 'system');
       setRegStep('chat');
     } catch (err) {
       setError(err.message);
@@ -198,16 +194,11 @@ export default function Auth() {
     }
   }
 
-  async function sendChatMessage(e) {
+  async function sendChatMessageUser(e) {
     e.preventDefault();
     if (!newChatMessage.trim() || !chatSessionId) return;
     try {
-      await db.entities.ChatMessage.create({
-        session_id: chatSessionId,
-        sender: 'registerer',
-        content: newChatMessage.trim(),
-        created_at: new Date().toISOString()
-      });
+      await sendChatMessage(chatSessionId, 'registerer', newChatMessage.trim());
       setNewChatMessage('');
     } catch (err) {
       setError('Failed to send message: ' + err.message);
@@ -292,7 +283,7 @@ export default function Auth() {
                 </div>
               ))}
             </div>
-            <form onSubmit={sendChatMessage} className="flex gap-2">
+            <form onSubmit={sendChatMessageUser} className="flex gap-2">
               <input
                 value={newChatMessage}
                 onChange={e => setNewChatMessage(e.target.value)}
