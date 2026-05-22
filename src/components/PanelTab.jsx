@@ -480,34 +480,42 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
   async function endChatAndSendKey() {
     if (!selectedChatId || !customKey.trim()) return;
     
-    // 1. Capture context
     const chatId = selectedChatId;
     const key = customKey.trim();
     const type = keyType;
 
-    // 2. Immediate UI feedback
     setPanelWorking(true);
-    setShowEndChatModal(false);
-    setSelectedChatId(null);
-    setCustomKey('');
-
     try {
-      // 3. Perform database operations
-      await createLicenseKeyRecord({
-        type: type,
-        internal_key: type === 'internal' ? key : '',
-        script_key: type === 'script' ? key : '',
-        note: `Generated for registration chat ${chatId}`,
-        used: false
-      });
+      // 1. Create the license key record
+      if (type === 'bundle') {
+        // For bundle, we generate a script key and use the custom key as internal
+        const sKey = generateScriptLicense();
+        await createLicenseKeyRecord({
+          type: 'internal',
+          internal_key: key,
+          script_key: sKey,
+          note: `Generated for registration chat ${chatId} (Bundle)`,
+          used: false
+        });
+        await sendChatMessage(chatId, 'system', `Your bundle has been generated! Internal: ${key} | Script: ${sKey}. You can now proceed to registration.`, 'license');
+      } else {
+        await createLicenseKeyRecord({
+          type: type,
+          internal_key: type === 'internal' ? key : '',
+          script_key: type === 'script' ? key : '',
+          note: `Generated for registration chat ${chatId}`,
+          used: false
+        });
+        await sendChatMessage(chatId, 'system', `Your ${type} license key has been generated: ${key}. You can now proceed to registration.`, 'license');
+      }
       
-      await sendChatMessage(chatId, 'system', `Your ${type} license key has been generated: ${key}. You can now proceed to registration.`, 'license');
-      
-      // 4. Refresh data
+      // 2. Clear UI state ONLY after successful DB operations
+      setShowEndChatModal(false);
+      setCustomKey('');
+      setSelectedChatId(null);
       await loadData();
     } catch (err) {
       console.error("End chat error:", err);
-      // If it fails, we might want to restore the modal or show a global error
       setPanelError(err.message || "Failed to end chat and send key.");
     } finally {
       setPanelWorking(false);
@@ -1531,18 +1539,24 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
             <div className="p-6 space-y-5">
               <div className="space-y-2">
                 <label className="text-zinc-400 text-xs font-bold uppercase tracking-widest px-1">License Type</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button 
                     onClick={() => setKeyType('script')}
-                    className={`py-3 rounded-xl text-xs font-bold transition border ${keyType === 'script' ? 'bg-indigo-500/10 border-indigo-500 text-white' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10'}`}
+                    className={`py-3 rounded-xl text-[10px] font-bold transition border ${keyType === 'script' ? 'bg-indigo-500/10 border-indigo-500 text-white' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10'}`}
                   >
-                    Script License
+                    Script
                   </button>
                   <button 
                     onClick={() => setKeyType('internal')}
-                    className={`py-3 rounded-xl text-xs font-bold transition border ${keyType === 'internal' ? 'bg-indigo-500/10 border-indigo-500 text-white' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10'}`}
+                    className={`py-3 rounded-xl text-[10px] font-bold transition border ${keyType === 'internal' ? 'bg-indigo-500/10 border-indigo-500 text-white' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10'}`}
                   >
-                    Internal License
+                    Internal
+                  </button>
+                  <button 
+                    onClick={() => setKeyType('bundle')}
+                    className={`py-3 rounded-xl text-[10px] font-bold transition border ${keyType === 'bundle' ? 'bg-indigo-500/10 border-indigo-500 text-white' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10'}`}
+                  >
+                    Bundle
                   </button>
                 </div>
               </div>
