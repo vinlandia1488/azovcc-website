@@ -362,7 +362,6 @@ export default function Auth() {
                 </button>
               </form>
               <div className="flex items-center justify-center gap-4 text-[10px] text-zinc-500 font-medium">
-                <span className="flex items-center gap-1"><CheckCircle2 size={10} className="text-green-500" /> End-to-end encrypted</span>
                 <span className="animate-pulse flex items-center gap-1 italic"><User size={10} /> Admin is viewing</span>
               </div>
             </div>

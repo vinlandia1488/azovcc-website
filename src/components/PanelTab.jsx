@@ -479,16 +479,19 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
 
   async function endChatAndSendKey() {
     if (!selectedChatId || !customKey.trim()) return;
+    setPanelWorking(true);
     try {
       const key = customKey.trim();
+      
+      // Use the existing library function to avoid manual field mapping issues
       await createLicenseKeyRecord({
         type: keyType,
-        key: key,
-        script_key: keyType === 'script' ? key : '',
         internal_key: keyType === 'internal' ? key : '',
+        script_key: keyType === 'script' ? key : '',
         note: `Generated for registration chat ${selectedChatId}`,
         used: false
       });
+      
       await sendChatMessage(selectedChatId, 'system', `Your ${keyType} license key has been generated: ${key}. You can now proceed to registration.`, 'license');
       
       setShowEndChatModal(false);
@@ -496,7 +499,10 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
       setSelectedChatId(null);
       await loadData();
     } catch (err) {
-      setPanelError(err.message);
+      console.error("End chat error:", err);
+      setPanelError(err.message || "Failed to end chat and send key.");
+    } finally {
+      setPanelWorking(false);
     }
   }
 
