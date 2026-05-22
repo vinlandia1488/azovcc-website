@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { loginUser, registerUser, getSession, ensureAdminExists, getDiscordAuthUrl, fetchDiscordUser } from '@/lib/auth';
-import { Eye, EyeOff, MessageSquare, CheckCircle2, User, Lock, Ticket, MessageCircle, ArrowRight, SendHorizontal, Key } from 'lucide-react';
+import { Eye, EyeOff, MessageSquare, CheckCircle2, User, Lock, Ticket, MessageCircle, ArrowRight, SendHorizontal, Key, ImagePlus, X, Paperclip } from 'lucide-react';
 import PreviewTablesModal from '@/components/PreviewTablesModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import BrandingMark from '@/components/BrandingMark';
@@ -13,6 +13,7 @@ const db = getBackendDb();
 
 export default function Auth() {
   const navigate = useNavigate();
+  const { chatId } = useParams();
   const [mode, setMode] = useState('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -33,6 +34,24 @@ export default function Auth() {
   const [chatMessages, setChatMessages] = useState([]);
   const [newChatMessage, setNewChatMessage] = useState('');
   const [chatPolling, setChatPolling] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    if (chatId) {
+      setMode('register');
+      setRegStep('chat');
+      setChatSessionId(chatId);
+    }
+  }, [chatId]);
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages]);
 
   const [showIntro, setShowIntro] = useState(true);
   const [redirectToDashboard, setRedirectToDashboard] = useState(false);
@@ -187,10 +206,26 @@ export default function Auth() {
       setChatSessionId(sessionId);
       await sendChatMessage(sessionId, 'system', 'Registration chat started. Please wait for an admin to assist you.', 'system');
       setRegStep('chat');
+      navigate(`/register/chat/${sessionId}`);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file || !chatSessionId) return;
+    
+    setUploadingImage(true);
+    try {
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
+      await sendChatMessage(chatSessionId, 'registerer', file_url, 'image');
+    } catch (err) {
+      setError('Failed to upload image: ' + err.message);
+    } finally {
+      setUploadingImage(false);
     }
   }
 
@@ -267,38 +302,70 @@ export default function Auth() {
         );
       case 'chat':
         return (
-          <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 h-[400px] flex flex-col">
-            <div className="flex-1 overflow-y-auto space-y-3 p-3 border border-zinc-800/50 rounded-xl bg-zinc-900/30 custom-scrollbar">
+          <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 h-[500px] flex flex-col">
+            <div className="flex-1 overflow-y-auto space-y-4 p-4 border border-zinc-800/50 rounded-2xl bg-zinc-900/30 custom-scrollbar">
               {chatMessages.map((msg, i) => (
                 <div key={i} className={`flex flex-col ${msg.sender === 'registerer' ? 'items-end' : msg.sender === 'system' ? 'items-center' : 'items-start'}`}>
                   {msg.sender === 'system' ? (
-                    <div className="bg-zinc-800/50 text-zinc-500 text-[9px] px-2 py-0.5 rounded-full border border-zinc-700/30 my-1">
+                    <div className="bg-zinc-800/50 text-zinc-500 text-[10px] px-3 py-1 rounded-full border border-zinc-700/30 my-2">
                       {msg.content}
                     </div>
                   ) : (
-                    <div className={`max-w-[85%] rounded-xl px-3 py-1.5 text-xs ${msg.sender === 'registerer' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-zinc-800 text-zinc-300 rounded-tl-none'}`}>
-                      {msg.content}
+                    <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender === 'registerer' ? 'bg-indigo-600 text-white rounded-tr-none shadow-lg shadow-indigo-600/20' : 'bg-zinc-800 text-zinc-200 rounded-tl-none border border-zinc-700/50'}`}>
+                      {msg.type === 'image' ? (
+                        <div className="rounded-lg overflow-hidden border border-white/10">
+                          <img 
+                            src={msg.content} 
+                            alt="Sent image" 
+                            className="max-w-full h-auto cursor-pointer hover:scale-[1.02] transition-transform" 
+                            onClick={() => window.open(msg.content, '_blank')}
+                          />
+                        </div>
+                      ) : (
+                        msg.content
+                      )}
                     </div>
                   )}
+                  <span className="text-[9px] text-zinc-600 mt-1 px-1">
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
                 </div>
               ))}
+              <div ref={chatEndRef} />
             </div>
-            <form onSubmit={sendChatMessageUser} className="flex gap-2">
-              <input
-                value={newChatMessage}
-                onChange={e => setNewChatMessage(e.target.value)}
-                placeholder="Type a message..."
-                className="flex-1 bg-zinc-900 border border-zinc-800 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-indigo-500"
-              />
-              <button
-                type="submit"
-                disabled={!newChatMessage.trim()}
-                className="p-2 bg-indigo-600 rounded-lg text-white disabled:opacity-50"
-              >
-                <SendHorizontal size={14} />
-              </button>
-            </form>
-            <p className="text-[9px] text-zinc-500 text-center animate-pulse italic">Admin will send you a key here. Don't close this window.</p>
+            <div className="flex flex-col gap-2 pt-2">
+              {error && (
+                <p className="text-red-400 text-[10px] bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-1.5 flex items-center justify-between">
+                  {error}
+                  <button onClick={() => setError('')}><X size={12} /></button>
+                </p>
+              )}
+              <form onSubmit={sendChatMessageUser} className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    value={newChatMessage}
+                    onChange={e => setNewChatMessage(e.target.value)}
+                    placeholder="Type a message..."
+                    className="w-full bg-zinc-900 border border-zinc-800 text-white rounded-xl pl-4 pr-10 py-3 text-sm focus:outline-none focus:border-indigo-500 transition"
+                  />
+                  <label className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-zinc-500 hover:text-indigo-400 transition">
+                    <Paperclip size={18} />
+                    <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} />
+                  </label>
+                </div>
+                <button
+                  type="submit"
+                  disabled={!newChatMessage.trim() || uploadingImage}
+                  className="p-3 bg-indigo-600 rounded-xl text-white disabled:opacity-50 hover:bg-indigo-500 transition shadow-lg shadow-indigo-600/20"
+                >
+                  <SendHorizontal size={20} />
+                </button>
+              </form>
+              <div className="flex items-center justify-center gap-4 text-[10px] text-zinc-500 font-medium">
+                <span className="flex items-center gap-1"><CheckCircle2 size={10} className="text-green-500" /> End-to-end encrypted</span>
+                <span className="animate-pulse flex items-center gap-1 italic"><User size={10} /> Admin is viewing</span>
+              </div>
+            </div>
           </div>
         );
       case 'register':
@@ -517,8 +584,8 @@ export default function Auth() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] h-[640px] bg-black/40 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full max-w-[360px] mx-4">
-        <div className="bg-black border border-white/10 rounded-[28px] p-10 shadow-2xl spotlight-border overflow-hidden">
+      <div className={`relative z-10 w-full transition-all duration-500 ${regStep === 'chat' && mode === 'register' ? 'max-w-[800px]' : 'max-w-[360px]'} mx-4`}>
+        <div className="bg-black border border-white/10 rounded-[28px] p-6 md:p-10 shadow-2xl spotlight-border overflow-hidden">
           <div className="card-shimmer" />
           <div className="relative z-10">
             <div className="text-center mb-8">

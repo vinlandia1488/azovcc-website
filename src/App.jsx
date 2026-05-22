@@ -79,6 +79,7 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/" element={<Auth />} />
+      <Route path="/register/chat/:chatId" element={<Auth />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/:username/configs" element={<RawConfig />} />
       <Route path="*" element={<PageNotFound />} />

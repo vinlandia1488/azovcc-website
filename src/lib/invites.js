@@ -3,10 +3,10 @@ import { createLicenseKeyRecord, deleteLicenseKeyRecord } from "./license-keys";
 
 const db = getBackendDb();
 
-// Repurposing CloudConfig for settings
-// name: "SETTING:invite_system_enabled"
-// content: "true" | "false"
-// owner_username: "system"
+// Repurposing CloudConfig for everything to avoid SDK schema errors
+// Settings: name: "SETTING:invite_system_enabled"
+// Invites: name: "INVITE:[CODE]" content: "[GEN:username] [MOD:true/false]"
+// Chats: name: "CHAT:[SESSION_ID]:[TIMESTAMP]:[TYPE]" content: message
 
 export async function isInviteSystemEnabled() {
   try {
@@ -39,11 +39,6 @@ export function generateRandomCode(length = 8) {
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
-// Repurposing LicenseKey for invites
-// type: "script"
-// key: "INVITE-XXXX"
-// note: "[INVITE] [GEN:username] [MOD:true/false]"
-
 export async function generateInviteCode(user) {
   if (!user) throw new Error("User not authenticated");
 
@@ -51,34 +46,42 @@ export async function generateInviteCode(user) {
   
   if (!user.is_admin) {
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const allKeys = await db.entities.LicenseKey.filter({ type: "script" });
-    const userInvites = (allKeys || []).filter(k => 
-      k.note?.includes(`[INVITE]`) && 
-      k.note?.includes(`[GEN:${user.username}]`) &&
-      !k.note?.includes(`[MOD:true]`)
+    const allConfigs = await db.entities.CloudConfig.filter({});
+    const userInvites = (allConfigs || []).filter(c => 
+      c.name.startsWith("INVITE:") && 
+      c.content?.includes(`[GEN:${user.username}]`) &&
+      !c.content?.includes(`[MOD:true]`)
     );
     
-    const recentCode = userInvites.find(c => new Date(c.created_date || now) > oneWeekAgo);
+    // We don't have created_at on CloudConfig directly in the filterable properties usually, 
+    // but we can store it in content
+    const recentCode = userInvites.find(c => {
+      const match = c.content.match(/\[DATE:([^\]]+)\]/);
+      if (match) {
+        return new Date(match[1]) > oneWeekAgo;
+      }
+      return false;
+    });
+
     if (recentCode) {
-      const nextAvailable = new Date(new Date(recentCode.created_date).getTime() + 7 * 24 * 60 * 60 * 1000);
+      const dateStr = recentCode.content.match(/\[DATE:([^\]]+)\]/)[1];
+      const nextAvailable = new Date(new Date(dateStr).getTime() + 7 * 24 * 60 * 60 * 1000);
       throw new Error(`You can only generate one invite code per week. Next available: ${nextAvailable.toLocaleDateString()}`);
     }
   }
 
-  const code = `INVITE-${generateRandomCode()}`;
-  const newInvite = await createLicenseKeyRecord({
-    type: "script",
-    key: code,
-    script_key: code,
-    note: `[INVITE] [GEN:${user.username}] [MOD:${!!user.is_admin}]`,
-    used: false
+  const code = generateRandomCode();
+  const newInvite = await db.entities.CloudConfig.create({
+    name: `INVITE:${code}`,
+    content: `[GEN:${user.username}] [MOD:${!!user.is_admin}] [DATE:${now.toISOString()}]`,
+    owner_username: user.username
   });
 
   return {
-    ...newInvite,
-    code: newInvite.key,
+    id: newInvite.id,
+    code,
     generated_by: user.username,
-    created_at: newInvite.created_date || now.toISOString(),
+    created_at: now.toISOString(),
     is_mod_generated: !!user.is_admin
   };
 }
@@ -89,14 +92,13 @@ export async function validateInviteCode(code) {
   const enabled = await isInviteSystemEnabled();
   if (!enabled) return true;
 
-  const matches = await db.entities.LicenseKey.filter({ key: code });
-  const invite = (matches || []).find(k => k.note?.includes("[INVITE]"));
-  
-  if (!invite) {
+  const matches = await db.entities.CloudConfig.filter({ name: `INVITE:${code}` });
+  if (!matches || matches.length === 0) {
     throw new Error("Invalid invite code");
   }
 
-  if (invite.used) {
+  const invite = matches[0];
+  if (invite.content.includes("[USED_BY:")) {
     throw new Error("This invite code has already been used");
   }
 
@@ -104,41 +106,58 @@ export async function validateInviteCode(code) {
 }
 
 export async function useInviteCode(code, username) {
-  const matches = await db.entities.LicenseKey.filter({ key: code });
-  const invite = (matches || []).find(k => k.note?.includes("[INVITE]"));
-  if (!invite) throw new Error("Invite code not found");
+  const matches = await db.entities.CloudConfig.filter({ name: `INVITE:${code}` });
+  if (!matches || matches.length === 0) throw new Error("Invite code not found");
   
-  await db.entities.LicenseKey.update(invite.id, {
-    used: true,
-    used_by_username: username,
-    used_at: new Date().toISOString()
+  const invite = matches[0];
+  await db.entities.CloudConfig.update(invite.id, {
+    content: `${invite.content} [USED_BY:${username}] [USED_AT:${new Date().toISOString()}]`
   });
 }
 
 export async function getUserInvites(username) {
-  const allKeys = await db.entities.LicenseKey.filter({ type: "script" });
-  return (allKeys || [])
-    .filter(k => k.note?.includes("[INVITE]") && k.note?.includes(`[GEN:${username}]`))
-    .map(k => ({
-      ...k,
-      code: k.key,
-      generated_by: username,
-      created_at: k.created_date || new Date().toISOString()
-    }));
+  const allConfigs = await db.entities.CloudConfig.filter({ owner_username: username });
+  return (allConfigs || [])
+    .filter(c => c.name.startsWith("INVITE:"))
+    .map(c => {
+      const code = c.name.split(":")[1];
+      const dateMatch = c.content.match(/\[DATE:([^\]]+)\]/);
+      const usedMatch = c.content.match(/\[USED_BY:([^\]]+)\]/);
+      return {
+        id: c.id,
+        code,
+        generated_by: username,
+        created_at: dateMatch ? dateMatch[1] : new Date().toISOString(),
+        used_by: usedMatch ? usedMatch[1] : null
+      };
+    });
 }
 
-// Repurposing CloudConfig for Chat
-// name: "CHAT:[SESSION_ID]:[TIMESTAMP]"
-// content: message text
-// owner_username: sender
+export async function getAllInvitesAdmin() {
+  const allConfigs = await db.entities.CloudConfig.filter({});
+  return (allConfigs || [])
+    .filter(c => c.name.startsWith("INVITE:"))
+    .map(c => {
+      const code = c.name.split(":")[1];
+      const genMatch = c.content.match(/\[GEN:([^\]]+)\]/);
+      const dateMatch = c.content.match(/\[DATE:([^\]]+)\]/);
+      const usedMatch = c.content.match(/\[USED_BY:([^\]]+)\]/);
+      return {
+        id: c.id,
+        code,
+        generated_by: genMatch ? genMatch[1] : 'unknown',
+        created_at: dateMatch ? dateMatch[1] : new Date().toISOString(),
+        used_by: usedMatch ? usedMatch[1] : null
+      };
+    });
+}
 
-export async function sendChatMessage(sessionId, sender, content, type = 'text', metadata = '') {
+export async function sendChatMessage(sessionId, sender, content, type = 'text') {
   const timestamp = Date.now();
   await db.entities.CloudConfig.create({
     name: `CHAT:${sessionId}:${timestamp}:${type}`,
     content: content,
-    owner_username: sender,
-    // Store metadata in a separate config if needed, but for now we'll pack it into name if small or ignore
+    owner_username: sender
   });
 }
 
