@@ -460,9 +460,15 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
   }
 
   async function selectChat(sessionId) {
-    setSelectedChatId(sessionId);
-    const msgs = await getChatMessages(sessionId);
-    setChatMessages(msgs);
+    if (!sessionId) return;
+    try {
+      setSelectedChatId(sessionId);
+      const msgs = await getChatMessages(sessionId);
+      setChatMessages(Array.isArray(msgs) ? msgs : []);
+    } catch (err) {
+      console.error("Select chat error:", err);
+      setPanelError("Failed to load chat messages.");
+    }
   }
 
   async function sendChatMessageAdmin() {
@@ -471,9 +477,10 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
       await sendChatMessage(selectedChatId, session.username, newMessage.trim());
       setNewMessage('');
       const msgs = await getChatMessages(selectedChatId);
-      setChatMessages(msgs);
+      setChatMessages(Array.isArray(msgs) ? msgs : []);
     } catch (err) {
-      setPanelError(err.message);
+      console.error("Send message error:", err);
+      setPanelError("Failed to send message.");
     }
   }
 
@@ -488,7 +495,6 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
     try {
       // 1. Create the license key record
       if (type === 'bundle') {
-        // For bundle, we generate a script key and use the custom key as internal
         const sKey = generateScriptLicense();
         await createLicenseKeyRecord({
           type: 'internal',
@@ -513,6 +519,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
       setShowEndChatModal(false);
       setCustomKey('');
       setSelectedChatId(null);
+      setChatMessages([]);
       await loadData();
     } catch (err) {
       console.error("End chat error:", err);
@@ -531,8 +538,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
       const { file_url } = await db.integrations.Core.UploadFile({ file });
       await sendChatMessage(selectedChatId, session.username, file_url, 'image');
       const msgs = await getChatMessages(selectedChatId);
-      setChatMessages(msgs);
+      setChatMessages(Array.isArray(msgs) ? msgs : []);
     } catch (err) {
+      console.error("Image upload error:", err);
       setPanelError('Failed to upload image: ' + err.message);
     } finally {
       setUploadingImage(false);
@@ -1404,20 +1412,22 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
               <h3 className="text-white text-xs font-bold tracking-wider uppercase">registration chats</h3>
             </div>
             <div className="flex-1 overflow-y-auto divide-y divide-zinc-800/30">
-              {allChats.length === 0 ? (
+                  {allChats.length === 0 ? (
                 <div className="p-8 text-center text-zinc-600 text-xs italic">no active registration chats.</div>
               ) : (
                 allChats.map(chat => (
                   <button
-                    key={chat.id}
-                    onClick={() => selectChat(chat.id)}
-                    className={`w-full p-4 text-left transition hover:bg-zinc-800/20 ${selectedChatId === chat.id ? 'bg-indigo-500/10' : ''}`}
+                    key={chat?.id || Math.random()}
+                    onClick={() => selectChat(chat?.id)}
+                    className={`w-full p-4 text-left transition hover:bg-zinc-800/20 ${selectedChatId === chat?.id ? 'bg-indigo-500/10' : ''}`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-white text-xs font-bold truncate">Session {String(chat.id || '').substring(0, 8)}</span>
-                      <span className="text-zinc-600 text-[9px]">{new Date(chat.lastMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-white text-xs font-bold truncate">Session {String(chat?.id || '').substring(0, 8)}</span>
+                      <span className="text-zinc-600 text-[9px]">
+                        {chat?.lastMessage?.created_at ? new Date(chat.lastMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                      </span>
                     </div>
-                    <p className="text-zinc-500 text-[11px] truncate">{chat.lastMessage.content}</p>
+                    <p className="text-zinc-500 text-[11px] truncate">{chat?.lastMessage?.content || '—'}</p>
                   </button>
                 ))
               )}
@@ -1452,22 +1462,24 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-                  {chatMessages.map((msg, i) => (
-                    <div key={i} className={`flex flex-col ${msg.sender === session.username ? 'items-end' : msg.sender === 'system' ? 'items-center' : 'items-start'}`}>
-                      {msg.sender === 'system' ? (
+                  {(chatMessages || []).map((msg, i) => (
+                    <div key={i} className={`flex flex-col ${msg?.sender === session?.username ? 'items-end' : msg?.sender === 'system' ? 'items-center' : 'items-start'}`}>
+                      {msg?.sender === 'system' ? (
                         <div className="bg-zinc-800/50 text-zinc-400 text-[10px] px-3 py-1 rounded-full border border-zinc-700/50">
-                          {msg.content}
+                          {msg?.content || '—'}
                         </div>
                       ) : (
-                        <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender === session.username ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-zinc-800 text-zinc-200 rounded-tl-none'}`}>
-                          {msg.type === 'image' ? (
-                            <img src={msg.content} alt="Sent image" className="max-w-full h-auto rounded-lg cursor-pointer" onClick={() => window.open(msg.content, '_blank')} />
+                        <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg?.sender === session?.username ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-zinc-800 text-zinc-200 rounded-tl-none'}`}>
+                          {msg?.type === 'image' ? (
+                            <img src={msg?.content} alt="Sent image" className="max-w-full h-auto rounded-lg cursor-pointer" onClick={() => msg?.content && window.open(msg.content, '_blank')} />
                           ) : (
-                            msg.content
+                            msg?.content || '—'
                           )}
                         </div>
                       )}
-                      <span className="text-zinc-600 text-[9px] mt-1">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-zinc-600 text-[9px] mt-1">
+                        {msg?.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                      </span>
                     </div>
                   ))}
                   <div ref={chatEndRef} />

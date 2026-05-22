@@ -304,30 +304,30 @@ export default function Auth() {
         return (
           <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 h-[500px] flex flex-col">
             <div className="flex-1 overflow-y-auto space-y-4 p-4 border border-zinc-800/50 rounded-2xl bg-zinc-900/30 custom-scrollbar">
-              {chatMessages.map((msg, i) => (
-                <div key={i} className={`flex flex-col ${msg.sender === 'registerer' ? 'items-end' : msg.sender === 'system' ? 'items-center' : 'items-start'}`}>
-                  {msg.sender === 'system' ? (
+              {(chatMessages || []).map((msg, i) => (
+                <div key={i} className={`flex flex-col ${msg?.sender === 'registerer' ? 'items-end' : msg?.sender === 'system' ? 'items-center' : 'items-start'}`}>
+                  {msg?.sender === 'system' ? (
                     <div className="bg-zinc-800/50 text-zinc-500 text-[10px] px-3 py-1 rounded-full border border-zinc-700/30 my-2">
-                      {msg.content}
+                      {msg?.content || '—'}
                     </div>
                   ) : (
-                    <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender === 'registerer' ? 'bg-indigo-600 text-white rounded-tr-none shadow-lg shadow-indigo-600/20' : 'bg-zinc-800 text-zinc-200 rounded-tl-none border border-zinc-700/50'}`}>
-                      {msg.type === 'image' ? (
+                    <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${msg?.sender === 'registerer' ? 'bg-indigo-600 text-white rounded-tr-none shadow-lg shadow-indigo-600/20' : 'bg-zinc-800 text-zinc-200 rounded-tl-none border border-zinc-700/50'}`}>
+                      {msg?.type === 'image' ? (
                         <div className="rounded-lg overflow-hidden border border-white/10">
                           <img 
-                            src={msg.content} 
+                            src={msg?.content} 
                             alt="Sent image" 
                             className="max-w-full h-auto cursor-pointer hover:scale-[1.02] transition-transform" 
-                            onClick={() => window.open(msg.content, '_blank')}
+                            onClick={() => msg?.content && window.open(msg.content, '_blank')}
                           />
                         </div>
                       ) : (
-                        msg.content
+                        msg?.content || '—'
                       )}
                     </div>
                   )}
                   <span className="text-[9px] text-zinc-600 mt-1 px-1">
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {msg?.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
                   </span>
                 </div>
               ))}
