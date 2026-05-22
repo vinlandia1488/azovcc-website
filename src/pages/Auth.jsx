@@ -99,13 +99,14 @@ export default function Auth() {
       const poll = setInterval(async () => {
         try {
           const sorted = await getChatMessages(chatSessionId);
+          if (!Array.isArray(sorted)) return;
           setChatMessages(sorted);
 
           // Check for license key message
-          const licenseMsg = sorted.find(m => m.type === 'license');
-          if (licenseMsg && licenseMsg.content) {
+          const licenseMsg = sorted.find(m => m && m.type === 'license');
+          if (licenseMsg && typeof licenseMsg.content === 'string') {
             const keyMatch = licenseMsg.content.match(/license key has been generated: ([^.]+)/);
-            if (keyMatch) {
+            if (keyMatch && keyMatch[1]) {
               setScriptLicenseKey(keyMatch[1]);
               setRegStep('register');
               clearInterval(poll);
