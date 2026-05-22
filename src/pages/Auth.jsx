@@ -498,7 +498,13 @@ export default function Auth() {
             </button>
             <button
               type="button"
-              onClick={() => setRegStep(inviteSystemEnabled ? 'invite' : 'choice')}
+              onClick={() => {
+                if (!inviteSystemEnabled) {
+                  setMode('login');
+                } else {
+                  setRegStep('choice');
+                }
+              }}
               className="w-full text-zinc-500 hover:text-zinc-300 text-xs transition"
             >
               Back
@@ -670,7 +676,14 @@ export default function Auth() {
               <p className="text-zinc-500 text-xs">
                 {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
                 <button
-                  onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
+                  onClick={() => { 
+                    const newMode = mode === 'login' ? 'register' : 'login';
+                    setMode(newMode); 
+                    setError('');
+                    if (newMode === 'register') {
+                      setRegStep(inviteSystemEnabled ? 'invite' : 'register');
+                    }
+                  }}
                   className="text-[#ef4444] hover:text-red-300 font-medium transition"
                 >
                   {mode === 'login' ? 'Sign up' : 'Sign in'}
