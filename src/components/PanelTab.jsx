@@ -491,9 +491,14 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
     const key = customKey.trim();
     const type = keyType;
 
+    // 1. Immediately close modal and clear selected chat to prevent UI crash
+    setShowEndChatModal(false);
+    setSelectedChatId(null);
+    setChatMessages([]);
     setPanelWorking(true);
+
     try {
-      // 1. Create the license key record
+      // 2. Perform DB operations in background
       if (type === 'bundle') {
         const sKey = generateScriptLicense();
         await createLicenseKeyRecord({
@@ -515,15 +520,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
         await sendChatMessage(chatId, 'system', `Your ${type} license key has been generated: ${key}. You can now proceed to registration.`, 'license');
       }
       
-      // 2. Clear UI state ONLY after successful DB operations
-      setShowEndChatModal(false);
+      // 3. Final cleanup
       setCustomKey('');
-      setSelectedChatId(null);
-      setChatMessages([]);
       await loadData();
     } catch (err) {
       console.error("End chat error:", err);
-      setPanelError(err.message || "Failed to end chat and send key.");
+      // Optional: global error toast
+      if (typeof setPanelError === 'function') setPanelError(err.message || "Failed to end chat.");
     } finally {
       setPanelWorking(false);
     }

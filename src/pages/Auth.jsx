@@ -103,9 +103,7 @@ export default function Auth() {
 
           // Check for license key message
           const licenseMsg = sorted.find(m => m.type === 'license');
-          if (licenseMsg) {
-            // content might contain the key or it might be in the name parts
-            // in our new system, we send it as content
+          if (licenseMsg && licenseMsg.content) {
             const keyMatch = licenseMsg.content.match(/license key has been generated: ([^.]+)/);
             if (keyMatch) {
               setScriptLicenseKey(keyMatch[1]);
