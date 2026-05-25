@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { deleteUserAccount, generateInternalLicense, generateScriptLicense, normalizeAccountDiscordLink, upgradeToInternal } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 import { getAnnouncement, setAnnouncement, getMaintenance, setMaintenance, getSpotifyUrl, setSpotifyUrl } from '@/lib/app-settings';
@@ -1539,80 +1540,83 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
         />
       )}
 
-      {showEndChatModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[300] flex items-center justify-center p-4">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-[#0f0f12] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
-          >
-            <div className="p-6 border-b border-white/5 bg-white/[0.02]">
-              <h3 className="text-white font-bold text-xl">End Chat & Send Key</h3>
-              <p className="text-zinc-500 text-sm mt-1">Generate a custom key for the user to finish registration.</p>
-            </div>
-            
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="text-zinc-400 text-xs font-bold uppercase tracking-widest px-1">License Type</label>
-                <div className="grid grid-cols-3 gap-2">
+      <AnimatePresence>
+        {showEndChatModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[300] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#0f0f12] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
+            >
+              <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+                <h3 className="text-white font-bold text-xl">End Chat & Send Key</h3>
+                <p className="text-zinc-500 text-sm mt-1">Generate a custom key for the user to finish registration.</p>
+              </div>
+              
+              <div className="p-6 space-y-5">
+                <div className="space-y-2">
+                  <label className="text-zinc-400 text-xs font-bold uppercase tracking-widest px-1">License Type</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button 
+                      onClick={() => setKeyType('script')}
+                      className={`py-3 rounded-xl text-[10px] font-bold transition border ${keyType === 'script' ? 'bg-indigo-500/10 border-indigo-500 text-white' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10'}`}
+                    >
+                      Script
+                    </button>
+                    <button 
+                      onClick={() => setKeyType('internal')}
+                      className={`py-3 rounded-xl text-[10px] font-bold transition border ${keyType === 'internal' ? 'bg-indigo-500/10 border-indigo-500 text-white' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10'}`}
+                    >
+                      Internal
+                    </button>
+                    <button 
+                      onClick={() => setKeyType('bundle')}
+                      className={`py-3 rounded-xl text-[10px] font-bold transition border ${keyType === 'bundle' ? 'bg-indigo-500/10 border-indigo-500 text-white' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10'}`}
+                    >
+                      Bundle
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-zinc-400 text-xs font-bold uppercase tracking-widest px-1">License Key</label>
+                  <div className="relative">
+                    <input
+                      value={customKey}
+                      onChange={e => setCustomKey(e.target.value)}
+                      placeholder="Paste or generate key..."
+                      className="w-full bg-zinc-900 border border-white/5 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition font-mono"
+                    />
+                    <button 
+                      onClick={() => setCustomKey(keyType === 'script' ? generateScriptLicense() : generateInternalLicense())}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                    >
+                      <Shuffle size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex gap-3">
                   <button 
-                    onClick={() => setKeyType('script')}
-                    className={`py-3 rounded-xl text-[10px] font-bold transition border ${keyType === 'script' ? 'bg-indigo-500/10 border-indigo-500 text-white' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10'}`}
+                    onClick={() => setShowEndChatModal(false)}
+                    className="flex-1 py-3 rounded-xl bg-zinc-900 text-zinc-400 font-bold text-sm hover:bg-zinc-800 transition"
                   >
-                    Script
+                    Cancel
                   </button>
                   <button 
-                    onClick={() => setKeyType('internal')}
-                    className={`py-3 rounded-xl text-[10px] font-bold transition border ${keyType === 'internal' ? 'bg-indigo-500/10 border-indigo-500 text-white' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10'}`}
+                    onClick={endChatAndSendKey}
+                    className="flex-[2] py-3 rounded-xl font-bold text-sm transition shadow-lg shadow-green-500/20"
+                    style={{ background: '#22c55e', color: '#000' }}
                   >
-                    Internal
-                  </button>
-                  <button 
-                    onClick={() => setKeyType('bundle')}
-                    className={`py-3 rounded-xl text-[10px] font-bold transition border ${keyType === 'bundle' ? 'bg-indigo-500/10 border-indigo-500 text-white' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10'}`}
-                  >
-                    Bundle
+                    Send Key & Finish
                   </button>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <label className="text-zinc-400 text-xs font-bold uppercase tracking-widest px-1">License Key</label>
-                <div className="relative">
-                  <input
-                    value={customKey}
-                    onChange={e => setCustomKey(e.target.value)}
-                    placeholder="Paste or generate key..."
-                    className="w-full bg-zinc-900 border border-white/5 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition font-mono"
-                  />
-                  <button 
-                    onClick={() => setCustomKey(keyType === 'script' ? generateScriptLicense() : generateInternalLicense())}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
-                  >
-                    <Shuffle size={14} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="pt-2 flex gap-3">
-                <button 
-                  onClick={() => setShowEndChatModal(false)}
-                  className="flex-1 py-3 rounded-xl bg-zinc-900 text-zinc-400 font-bold text-sm hover:bg-zinc-800 transition"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={endChatAndSendKey}
-                  className="flex-[2] py-3 rounded-xl font-bold text-sm transition shadow-lg shadow-green-500/20"
-                  style={{ background: '#22c55e', color: '#000' }}
-                >
-                  Send Key & Finish
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {assignInternalTarget && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={() => setAssignInternalTarget(null)}>

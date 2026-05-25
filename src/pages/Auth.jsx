@@ -245,24 +245,22 @@ export default function Auth() {
         return (
           <form onSubmit={handleInviteSubmit} className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="text-center mb-6">
-              <Ticket size={24} className="mx-auto text-indigo-400 mb-2" />
               <p className="text-zinc-400 text-xs">Enter your invitation code to proceed.</p>
             </div>
             <div className="relative">
-              <Ticket size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
               <input
                 type="text"
                 value={inviteCode}
                 onChange={e => setInviteCode(e.target.value.toUpperCase())}
                 placeholder="INVITE-CODE"
                 required
-                className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-10 pr-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono tracking-widest"
+                className="w-full bg-[#13151f] border border-zinc-700/50 text-white rounded-xl pl-3 pr-3 py-2.5 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition font-mono tracking-widest"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2"
+              className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-medium py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2"
             >
               {loading ? 'Validating...' : 'Continue'}
               <ArrowRight size={16} />
