@@ -5,7 +5,20 @@ import { getBackendDb } from '@/lib/backend';
 const db = getBackendDb();
 const SUPPORT_MSG_TYPE = "__SUPPORT_MSG__";
 const GLOBAL_MSG_TYPE = "__GLOBAL_MSG__";
-const GLOBAL_OWNER = "admin"; 
+const GLOBAL_OWNER = "admin";
+
+const LS_KEY_GLOBAL = "azov_global_chat";
+const LS_KEY_SUPPORT = "azov_support_chat";
+
+function lsGet(key) {
+  try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+}
+function lsSet(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+function isBackendError(err) {
+  return (err?.message || '').includes('Backend is not configured');
+} 
 
 function isLightColor(hex) {
   const h = (hex || '').replace('#', '');
@@ -69,7 +82,13 @@ export default function SupportTab({ session, accent }) {
         catch { return null; }
       }).filter(Boolean);
       setGlobalMessages(parsed.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
-    } catch (err) { console.error('Global load failed:', err); }
+    } catch (err) {
+      if (isBackendError(err)) {
+        setGlobalMessages(lsGet(LS_KEY_GLOBAL));
+      } else {
+        console.error('Global load failed:', err);
+      }
+    }
   }
 
   async function loadSupportMessages(username) {
@@ -99,7 +118,20 @@ export default function SupportTab({ session, accent }) {
       } else {
         setMessages(sorted);
       }
-    } catch (err) { console.error('Chat load failed:', err); }
+    } catch (err) {
+      if (isBackendError(err)) {
+        const all = lsGet(LS_KEY_SUPPORT);
+        const filtered = all.filter(m => m.owner_username === username);
+        const sorted = filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        if (session.is_admin) {
+          if (selectedUser?.username === username) setMessages(sorted);
+        } else {
+          setMessages(sorted);
+        }
+      } else {
+        console.error('Chat load failed:', err);
+      }
+    }
   }
 
   async function loadUserList() {
@@ -129,7 +161,13 @@ export default function SupportTab({ session, accent }) {
       })).filter(u => u.username !== session.username);
 
       setUserList(processedList.sort((a, b) => new Date(b.last_msg) - new Date(a.last_msg)));
-    } catch (err) { console.error('User list load failed:', err); }
+    } catch (err) {
+      if (isBackendError(err)) {
+        setUserList([]);
+      } else {
+        console.error('User list load failed:', err);
+      }
+    }
   }
 
   async function sendMessage(e) {
@@ -140,8 +178,16 @@ export default function SupportTab({ session, accent }) {
     let imageUrl = '';
     try {
       if (pendingImage?.file) {
-        const { file_url } = await db.integrations.Core.UploadFile({ file: pendingImage.file });
-        imageUrl = file_url;
+        try {
+          const { file_url } = await db.integrations.Core.UploadFile({ file: pendingImage.file });
+          imageUrl = file_url;
+        } catch (uploadErr) {
+          if (isBackendError(uploadErr)) {
+            imageUrl = pendingImage.previewUrl;
+          } else {
+            throw uploadErr;
+          }
+        }
       }
 
       const isGlobal = activeTab === 'global';
@@ -158,11 +204,28 @@ export default function SupportTab({ session, accent }) {
       const targetUser = isGlobal ? GLOBAL_OWNER : (session.is_admin ? selectedUser.username : session.username);
       const msgType = isGlobal ? GLOBAL_MSG_TYPE : SUPPORT_MSG_TYPE;
 
-      await db.entities.CloudConfig.create({
-        owner_username: targetUser,
-        name: msgType,
-        content: JSON.stringify(payload)
-      });
+      try {
+        await db.entities.CloudConfig.create({
+          owner_username: targetUser,
+          name: msgType,
+          content: JSON.stringify(payload)
+        });
+      } catch (createErr) {
+        if (isBackendError(createErr)) {
+          const msgWithId = { ...payload, id: 'local-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8), owner_username: targetUser };
+          if (isGlobal) {
+            const existing = lsGet(LS_KEY_GLOBAL);
+            existing.push(msgWithId);
+            lsSet(LS_KEY_GLOBAL, existing);
+          } else {
+            const existing = lsGet(LS_KEY_SUPPORT);
+            existing.push(msgWithId);
+            lsSet(LS_KEY_SUPPORT, existing);
+          }
+        } else {
+          throw createErr;
+        }
+      }
 
       setNewMessage('');
       if (pendingImage) {

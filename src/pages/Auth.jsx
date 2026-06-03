@@ -221,10 +221,22 @@ export default function Auth() {
     
     setUploadingImage(true);
     try {
-      const { file_url } = await db.integrations.Core.UploadFile({ file });
+      let file_url = '';
+      try {
+        const result = await db.integrations.Core.UploadFile({ file });
+        file_url = result.file_url;
+      } catch (uploadErr) {
+        if ((uploadErr?.message || '').includes('Backend is not configured')) {
+          file_url = URL.createObjectURL(file);
+        } else {
+          throw uploadErr;
+        }
+      }
       await sendChatMessage(chatSessionId, 'registerer', file_url, 'image');
     } catch (err) {
-      setError('Failed to upload image: ' + err.message);
+      if (!(err?.message || '').includes('Backend is not configured')) {
+        setError('Failed to upload image: ' + err.message);
+      }
     } finally {
       setUploadingImage(false);
     }
@@ -237,7 +249,9 @@ export default function Auth() {
       await sendChatMessage(chatSessionId, 'registerer', newChatMessage.trim());
       setNewChatMessage('');
     } catch (err) {
-      setError('Failed to send message: ' + err.message);
+      if (!(err?.message || '').includes('Backend is not configured')) {
+        setError('Failed to send message: ' + err.message);
+      }
     }
   }
 

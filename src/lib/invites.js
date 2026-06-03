@@ -169,11 +169,22 @@ export async function getAllInvitesAdmin() {
 
 export async function sendChatMessage(sessionId, sender, content, type = 'text') {
   const timestamp = Date.now();
-  await db.entities.CloudConfig.create({
-    name: `CHAT:${sessionId}:${timestamp}:${type}`,
-    content: content,
-    owner_username: sender
-  });
+  try {
+    await db.entities.CloudConfig.create({
+      name: `CHAT:${sessionId}:${timestamp}:${type}`,
+      content: content,
+      owner_username: sender
+    });
+  } catch (err) {
+    if ((err?.message || '').includes('Backend is not configured')) {
+      const key = `azov_chat_${sessionId}`;
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      existing.push({ id: 'local-' + timestamp, session_id: sessionId, timestamp, type, sender, content, created_at: new Date(timestamp).toISOString() });
+      localStorage.setItem(key, JSON.stringify(existing));
+    } else {
+      throw err;
+    }
+  }
 }
 
 export async function getChatMessages(sessionId) {
