@@ -92,7 +92,7 @@ export default function DownloadsTab({ accent, session }) {
   return (
     <div className="space-y-4 pt-4">
       {sortedItems.length === 0 && (
-        <div className="bg-[#111114] border border-zinc-800/60 rounded-xl px-6 py-5">
+        <div className="bg-[#111] border border-[#222] rounded-lg px-6 py-5">
           <p className="text-zinc-500 text-sm">No download items configured yet.</p>
         </div>
       )}
@@ -109,7 +109,7 @@ export default function DownloadsTab({ accent, session }) {
         return (
           <div
             key={item.id}
-            className={`bg-[#111114] border border-zinc-800/60 rounded-xl px-6 py-4 flex items-center justify-between transition-opacity ${isRestricted ? 'opacity-75' : ''}`}
+            className={`bg-[#111] border border-[#222] rounded-lg px-6 py-4 flex items-center justify-between transition-opacity ${isRestricted ? 'opacity-75' : ''}`}
           >
             <div>
               <div className="flex items-center gap-3 mb-1">
@@ -173,7 +173,7 @@ export default function DownloadsTab({ accent, session }) {
                   {!!item.open_url && (
                     <button
                       onClick={() => handleOpen(item)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold tracking-wider transition-all duration-200 bg-[#1a1a1e] border border-zinc-700/50 text-zinc-300 hover:text-white hover:border-zinc-500"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold tracking-wider transition-all duration-200 bg-zinc-800 border border-[#333] text-zinc-300 hover:text-white hover:border-[#444]"
                     >
                       <ExternalLink size={12} />
                       OPEN

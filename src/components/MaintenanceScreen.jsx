@@ -31,7 +31,7 @@ export default function MaintenanceScreen({ from, to }) {
 
   return (
     <div className="fixed inset-0 bg-[#07070a] flex flex-col items-center justify-center text-white z-[9999]">
-      <p className="text-white text-lg font-medium mb-2">adderal is in maintenance</p>
+      <p className="text-white text-lg font-medium mb-2">Adderall is in maintenance</p>
       {to && (
         <p className="text-zinc-500 text-sm font-mono mt-2">
           {timeLeft}

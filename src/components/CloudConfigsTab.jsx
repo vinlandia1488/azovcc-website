@@ -334,10 +334,10 @@ export default function CloudConfigsTab({ session, accent }) {
 
       <div className="flex gap-4 min-h-[600px]">
         {/* Main Editor Window */}
-        <div className="flex-1 flex flex-col bg-[#0b0b0e] border border-zinc-800/60 rounded-2xl overflow-hidden shadow-2xl relative">
+        <div className="flex-1 flex flex-col bg-[#111] border border-[#222] rounded-lg overflow-hidden shadow-2xl relative">
           
           {/* Title Bar */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/40 bg-[#0d0d10]">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#333] bg-[#1a1a1a]">
             <div className="flex items-center gap-2">
               {/* Traffic lights removed */}
             </div>
@@ -369,7 +369,7 @@ export default function CloudConfigsTab({ session, accent }) {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-[#16161a] border border-zinc-700/50 rounded-lg p-1 shadow-xl"
+                  className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-[#1a1a1a] border border-[#333] rounded-lg p-1 shadow-xl"
                 >
                   <div className="flex items-center gap-2 px-2 text-zinc-500">
                     <Search size={14} />
@@ -404,7 +404,7 @@ export default function CloudConfigsTab({ session, accent }) {
             </AnimatePresence>
 
             {/* Line Numbers */}
-            <div className="w-12 bg-[#0d0d10] text-right py-4 pr-3 text-zinc-600 font-mono text-[11px] select-none border-r border-zinc-800/40">
+            <div className="w-12 bg-[#1a1a1a] text-right py-4 pr-3 text-zinc-600 font-mono text-[11px] select-none border-r border-[#333]">
               {lineNumbers.map(n => (
                 <div key={n} className="leading-6 h-6">{n}</div>
               ))}
@@ -431,7 +431,7 @@ export default function CloudConfigsTab({ session, accent }) {
           </div>
 
           {/* Bottom Bar */}
-          <div className="px-4 py-3 border-t border-zinc-800/40 bg-[#0d0d10] flex items-center justify-between">
+          <div className="px-4 py-3 border-t border-[#333] bg-[#1a1a1a] flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <input 
@@ -439,7 +439,7 @@ export default function CloudConfigsTab({ session, accent }) {
                   placeholder="Config Name..."
                   value={configName}
                   onChange={(e) => setConfigName(e.target.value)}
-                  className="bg-zinc-900/50 border border-zinc-800 text-xs px-3 py-1.5 rounded-lg text-zinc-300 outline-none focus:border-zinc-700 transition-colors w-40"
+                  className="bg-[#1a1a1a] border border-[#333] text-xs px-3 py-1.5 rounded-lg text-zinc-300 outline-none focus:border-[#444] transition-colors w-40"
                 />
               </div>
               
@@ -467,7 +467,7 @@ export default function CloudConfigsTab({ session, accent }) {
             <div className="flex items-center gap-3">
               <button 
                 onClick={handleRun}
-                className="flex items-center gap-2 bg-white text-black px-6 py-2 rounded-xl text-sm font-bold hover:bg-zinc-200 transition-all active:scale-95 shadow-lg shadow-white/5"
+                className="flex items-center gap-2 bg-zinc-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-zinc-700 transition-all active:scale-95 shadow-lg"
               >
                 <Play size={16} fill="black" />
                 Run
@@ -483,9 +483,9 @@ export default function CloudConfigsTab({ session, accent }) {
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 280, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              className="flex flex-col bg-[#0b0b0e] border border-zinc-800/60 rounded-2xl overflow-hidden shadow-2xl"
+              className="flex flex-col bg-[#111] border border-[#222] rounded-lg overflow-hidden shadow-2xl"
             >
-              <div className="p-4 border-b border-zinc-800/40 flex items-center justify-between">
+              <div className="p-4 border-b border-[#333] flex items-center justify-between">
                 <h3 className="text-white font-bold text-sm">Your Configs</h3>
                 <button 
                   onClick={() => {
@@ -518,8 +518,8 @@ export default function CloudConfigsTab({ session, accent }) {
                         className={cn(
                           "group p-3 rounded-xl border transition-all cursor-pointer relative",
                           selectedConfig?.id === cfg.id 
-                            ? "bg-zinc-800/40 border-zinc-700/50" 
-                            : "bg-zinc-900/20 border-zinc-800/40 hover:bg-zinc-900/40 hover:border-zinc-700/30"
+                            ? "bg-zinc-800/40 border-[#333]" 
+                            : "bg-[#1a1a1a] border-[#333] hover:bg-zinc-800/40 hover:border-[#444]"
                         )}
                       >
                         {activeConfigId === cfg.id && (
@@ -545,7 +545,7 @@ export default function CloudConfigsTab({ session, accent }) {
                     {configs.length > visibleConfigsCount && (
                       <button 
                         onClick={() => setVisibleConfigsCount(prev => prev + 10)}
-                        className="w-full py-2 text-[10px] text-zinc-500 hover:text-white transition-colors uppercase tracking-widest font-bold border border-zinc-800/40 rounded-xl hover:bg-zinc-800/20"
+                        className="w-full py-2 text-[10px] text-zinc-500 hover:text-white transition-colors uppercase tracking-widest font-bold border border-[#333] rounded-lg hover:bg-zinc-800/20"
                       >
                         Load More
                       </button>
@@ -574,16 +574,16 @@ export default function CloudConfigsTab({ session, accent }) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="bg-[#0b0b0e] border border-zinc-800/60 rounded-3xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl"
+              className="bg-[#111] border border-[#222] rounded-lg w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl"
             >
-              <div className="p-6 border-b border-zinc-800/40 flex items-center justify-between bg-[#0d0d10]">
+              <div className="p-6 border-b border-[#333] flex items-center justify-between bg-[#1a1a1a]">
                 <div>
                   <h3 className="text-white font-bold text-xl mb-1">Config Preview</h3>
                   <p className="text-zinc-500 text-xs uppercase tracking-widest font-medium">How your config will appear in-game</p>
                 </div>
                 <button 
                   onClick={() => setShowPreview(false)}
-                  className="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-400 hover:text-white"
+                  className="p-2 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-400 hover:text-white"
                 >
                   <X size={20} />
                 </button>
@@ -595,12 +595,12 @@ export default function CloudConfigsTab({ session, accent }) {
                     <h4 className="text-white font-bold uppercase tracking-wider text-sm">Applied Configuration</h4>
                   </div>
                   
-                  <div className="bg-zinc-900/20 border border-zinc-800/40 rounded-2xl p-4 font-mono text-[11px] text-zinc-400 whitespace-pre overflow-x-auto">
+                  <div className="bg-[#1a1a1a] border border-[#333] rounded-lg p-4 font-mono text-[11px] text-zinc-400 whitespace-pre overflow-x-auto">
                     {editorContent}
                   </div>
                 </div>
               </div>
-              <div className="p-4 bg-zinc-900/50 border-t border-zinc-800/40 flex justify-end gap-3">
+              <div className="p-4 bg-[#1a1a1a] border-t border-[#333] flex justify-end gap-3">
                 <button 
                   onClick={() => setShowPreview(false)}
                   className="px-6 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-colors"
@@ -612,7 +612,7 @@ export default function CloudConfigsTab({ session, accent }) {
                     setShowPreview(false);
                     handleSave();
                   }}
-                  className="px-6 py-2 rounded-xl text-xs font-bold bg-white text-black hover:bg-zinc-200 transition-all"
+                  className="px-6 py-2 rounded-lg text-xs font-bold bg-zinc-800 text-white hover:bg-zinc-700 transition-all"
                 >
                   Save & Apply
                 </button>

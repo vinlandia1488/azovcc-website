@@ -594,7 +594,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
 
       {tab === 'keys' && (
         <div className="space-y-6">
-          <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-6 space-y-5">
+          <div className="bg-[#111] border border-[#222] rounded-lg p-6 space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="text-white font-bold text-lg">generate keys</h3>
               <div className="flex gap-2">
@@ -631,13 +631,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                   value={bulkScriptKeys}
                   onChange={(e) => setBulkScriptKeys(e.target.value)}
                   placeholder="paste script keys here (one per line)...&#10;scriptkey1&#10;scriptkey2&#10;scriptkey3"
-                  className="w-full h-32 bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 font-mono resize-y"
+                  className="w-full h-32 bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444] font-mono resize-y"
                 />
                 <input
                   value={note}
                   onChange={e => setNote(e.target.value)}
                   placeholder="note (optional, applied to all keys)"
-                  className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                  className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444]"
                 />
               </div>
             ) : (
@@ -648,7 +648,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     onChange={(e) => setManualInternalKey(e.target.value)}
                     placeholder="internal key (auto)"
                     disabled={newKeyType === 'script'}
-                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm disabled:opacity-30 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                    className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm disabled:opacity-30 placeholder-zinc-600 focus:outline-none focus:border-[#444]"
                   />
                   {(newKeyType === 'internal' || newKeyType === 'internal_only') && (
                     <button
@@ -665,7 +665,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     onChange={(e) => setManualScriptKey(e.target.value)}
                     placeholder="script key (auto)"
                     disabled={newKeyType === 'internal_only'}
-                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 disabled:opacity-30"
+                    className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444] disabled:opacity-30"
                   />
                   {newKeyType !== 'internal_only' && (
                     <button
@@ -681,7 +681,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     value={note}
                     onChange={e => setNote(e.target.value)}
                     placeholder="note"
-                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                    className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444]"
                   />
                 </div>
               </div>
@@ -690,7 +690,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
             <button
               onClick={generateKey}
               disabled={generating}
-              className="w-full h-12 rounded-xl text-sm font-bold tracking-wider transition disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full h-12 rounded-lg text-sm font-bold tracking-wider transition disabled:opacity-50 flex items-center justify-center gap-2"
               style={{ background: accent, color: accentText }}
             >
               <Plus size={18} />
@@ -698,7 +698,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
             </button>
           </div>
 
-          <div className="bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden shadow-xl">
+          <div className="bg-[#111] border border-[#222] rounded-lg overflow-hidden shadow-xl">
             <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20 flex items-center justify-between">
               <h3 className="text-white text-sm font-bold tracking-wider">license keys</h3>
               <div className="flex items-center gap-3">
@@ -710,7 +710,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     value={keySearchQuery}
                     onChange={e => setKeySearchQuery(e.target.value)}
                     placeholder="Search keys..."
-                    className="bg-[#1a1a1e] border border-zinc-800/60 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-600 w-64"
+                    className="bg-[#1a1a1a] border border-[#333] rounded-lg pl-9 pr-4 py-1.5 text-xs text-white focus:outline-none focus:border-[#444] w-64"
                   />
                 </div>
               </div>
@@ -738,7 +738,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     filteredKeys.map(k => (
                       <tr key={k.id} className="hover:bg-zinc-800/10 transition group">
                         <td className="px-6 py-4">
-                          <span className={`px-2 py-1 rounded text-[9px] font-bold uppercase tracking-tighter ${k.type === 'internal' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-zinc-800 text-zinc-400 border border-zinc-700/50'}`}>
+                          <span className={`px-2 py-1 rounded text-[9px] font-bold uppercase tracking-tighter ${k.type === 'internal' ? 'bg-zinc-800 text-zinc-400 border border-[#333]' : 'bg-zinc-800 text-zinc-400 border border-[#333]'}`}>
                             {k.type}
                           </span>
                         </td>
@@ -765,7 +765,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                           {k.used_by_username ? (
                             <button
                               onClick={() => openUserDetails(accounts.find(a => a.username === k.used_by_username) || { username: k.used_by_username })}
-                              className="text-indigo-400 hover:text-indigo-300 text-xs font-medium hover:underline transition text-left"
+                              className="text-zinc-400 hover:text-zinc-300 text-xs font-medium hover:underline transition text-left"
                             >
                               @{k.used_by_username}
                             </button>
@@ -807,8 +807,8 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
       )}
 
       {tab === 'users' && (
-        <div className="bg-[#111114] border border-zinc-800/60 rounded-xl overflow-hidden shadow-xl">
-          <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20 flex items-center justify-between">
+        <div className="bg-[#111] border border-[#222] rounded-lg overflow-hidden shadow-xl">
+          <div className="p-4 border-b border-[#333] bg-[#1a1a1a] flex items-center justify-between">
             <h3 className="text-white text-sm font-bold tracking-wider">user directory</h3>
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
@@ -817,14 +817,14 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                 value={userSearchQuery}
                 onChange={e => setUserSearchQuery(e.target.value)}
                 placeholder="Search users..."
-                className="bg-[#1a1a1e] border border-zinc-800/60 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-600 w-64"
+                className="bg-[#1a1a1a] border border-[#333] rounded-lg pl-9 pr-4 py-1.5 text-xs text-white focus:outline-none focus:border-[#444] w-64"
               />
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-zinc-800/60 text-[10px] uppercase font-bold tracking-widest text-zinc-600">
+                <tr className="border-b border-[#333] text-[10px] uppercase font-bold tracking-widest text-zinc-600">
                   <th className="px-6 py-4">uid</th>
                   <th className="px-6 py-4">username</th>
                   <th className="px-6 py-4">discord</th>
@@ -833,7 +833,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                   <th className="px-6 py-4 text-right">actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/30">
+              <tbody className="divide-y divide-[#333]">
                 {filteredAccounts.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-zinc-600 text-sm italic">
@@ -848,7 +848,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 border border-zinc-700/50">
+                          <div className="w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 border border-[#333]">
                             <User size={14} />
                           </div>
                           <div>
@@ -948,23 +948,23 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
 
       {tab === 'downloads' && (
         <div className="space-y-4">
-          <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 grid grid-cols-6 gap-2">
+          <div className="bg-[#111] border border-[#222] rounded-lg p-4 grid grid-cols-6 gap-2">
             <input
               value={newDownload.name}
               onChange={(e) => setNewDownload((prev) => ({ ...prev, name: e.target.value }))}
               placeholder="Name"
-              className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+              className="bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs placeholder-zinc-600 focus:outline-none focus:border-[#444] transition"
             />
             <input
               value={newDownload.version}
               onChange={(e) => setNewDownload((prev) => ({ ...prev, version: e.target.value }))}
               placeholder="Version"
-              className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+              className="bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs placeholder-zinc-600 focus:outline-none focus:border-[#444] transition"
             />
             <select
               value={newDownload.status}
               onChange={(e) => setNewDownload((prev) => ({ ...prev, status: e.target.value }))}
-              className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-zinc-500 transition"
+              className="bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#444] transition"
             >
               {DOWNLOAD_STATUSES.map((status) => (
                 <option key={status} value={status}>
@@ -976,7 +976,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
               <select
                 value={newDownload.detection_status || 'UNSURE'}
                 onChange={(e) => setNewDownload((prev) => ({ ...prev, detection_status: e.target.value }))}
-                className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-zinc-500 transition"
+                className="bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#444] transition"
                 title="Detection Status (Internal)"
               >
                 {DETECTION_STATUSES.map((s) => (
@@ -992,13 +992,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
               value={newDownload.action_label}
               onChange={(e) => setNewDownload((prev) => ({ ...prev, action_label: e.target.value }))}
               placeholder="Button Label"
-              className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+              className="bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs placeholder-zinc-600 focus:outline-none focus:border-[#444] transition"
             />
             <input
               value={newDownload.file_url}
               onChange={(e) => setNewDownload((prev) => ({ ...prev, file_url: e.target.value }))}
               placeholder="download file url"
-              className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+              className="bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs placeholder-zinc-600 focus:outline-none focus:border-[#444] transition"
             />
             <button
               onClick={addDownload}
@@ -1012,34 +1012,34 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
               value={newDownload.open_url}
               onChange={(e) => setNewDownload((prev) => ({ ...prev, open_url: e.target.value }))}
               placeholder="open url (optional)"
-              className="col-span-6 bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+              className="col-span-6 bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs placeholder-zinc-600 focus:outline-none focus:border-[#444] transition"
             />
           </div>
 
           <div className="space-y-3">
             {downloads.length === 0 && (
-              <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 text-zinc-600 text-xs">
+              <div className="bg-[#111] border border-[#222] rounded-lg p-4 text-zinc-600 text-xs">
                 No downloads configured yet.
               </div>
             )}
             {[...downloads]
               .sort((a, b) => a.sort_order - b.sort_order)
               .map((item) => (
-                <div key={item.id} className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 grid grid-cols-6 gap-2">
+                <div key={item.id} className="bg-[#111] border border-[#222] rounded-lg p-4 grid grid-cols-6 gap-2">
                   <input
                     value={item.name || ''}
                     onChange={(e) => updateLocalDownload(item.id, { name: e.target.value })}
-                    className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
+                    className="bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs"
                   />
                   <input
                     value={item.version || ''}
                     onChange={(e) => updateLocalDownload(item.id, { version: e.target.value })}
-                    className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
+                    className="bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs"
                   />
                   <select
                     value={item.status || 'stable'}
                     onChange={(e) => updateLocalDownload(item.id, { status: e.target.value })}
-                    className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
+                    className="bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs"
                   >
                     {DOWNLOAD_STATUSES.map((status) => (
                       <option key={status} value={status}>
@@ -1051,7 +1051,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     <select
                       value={item.detection_status || 'UNSURE'}
                       onChange={(e) => updateLocalDownload(item.id, { detection_status: e.target.value })}
-                      className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
+                      className="bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs"
                       title="Detection Status (Internal)"
                     >
                       {DETECTION_STATUSES.map((s) => (
@@ -1066,18 +1066,18 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                   <input
                     value={item.action_label || ''}
                     onChange={(e) => updateLocalDownload(item.id, { action_label: e.target.value })}
-                    className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
+                    className="bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs"
                   />
                   <input
                     value={item.file_url || ''}
                     onChange={(e) => updateLocalDownload(item.id, { file_url: e.target.value })}
-                    className="bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
+                    className="bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs"
                     placeholder="download file url"
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={() => saveDownload(item)}
-                      className="flex-1 flex items-center justify-center gap-1 bg-[#1a1a1e] border border-zinc-700/50 text-zinc-200 hover:text-white hover:border-zinc-500 rounded-lg px-2 py-2 text-xs transition"
+                      className="flex-1 flex items-center justify-center gap-1 bg-zinc-800 border border-[#333] text-zinc-200 hover:text-white hover:border-[#444] rounded-lg px-2 py-2 text-xs transition"
                     >
                       <Save size={11} />
                       save
@@ -1092,7 +1092,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                   <input
                     value={item.open_url || ''}
                     onChange={(e) => updateLocalDownload(item.id, { open_url: e.target.value })}
-                    className="col-span-6 bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-xs"
+                    className="col-span-6 bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-xs"
                     placeholder="open url (optional)"
                   />
                 </div>
@@ -1102,7 +1102,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
       )}
 
       {tab === 'announcement' && (
-        <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 space-y-3">
+        <div className="bg-[#111] border border-[#222] rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-zinc-500 text-xs">this text replaces the dashboard "unique identifier" card.</p>
             <label className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer transition ${uploadingImage ? 'opacity-50 cursor-not-allowed' : 'bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700'}`}>
@@ -1115,7 +1115,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
             value={announcement}
             onChange={(e) => setAnnouncementState(e.target.value)}
             placeholder="write announcement here..."
-            className="w-full min-h-[120px] bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition resize-none"
+            className="w-full min-h-[120px] bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444] transition resize-none"
           />
           <button
             onClick={async () => {
@@ -1136,7 +1136,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
 
       {tab === 'configs' && (
         <div className="space-y-6">
-          <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-6 space-y-6">
+          <div className="bg-[#111] border border-[#222] rounded-lg p-6 space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-white font-bold text-lg">Config Templates</h3>
               <button
@@ -1146,7 +1146,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                   setPanelWorking(false);
                 }}
                 disabled={panelWorking}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition shadow-lg disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition shadow-lg disabled:opacity-50"
                 style={{ background: accent, color: accentText, border: accentBorder }}
               >
                 <Save size={16} />
@@ -1165,8 +1165,8 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     <p className="text-zinc-400 text-[10px] uppercase font-bold tracking-widest">{cfg.label}</p>
                     <span className="text-[10px] text-zinc-600 font-mono italic">Editable Template</span>
                   </div>
-                  <div className="bg-[#0b0b0e] border border-zinc-800/60 rounded-2xl overflow-hidden relative min-h-[300px] flex flex-col">
-                    <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800/40 bg-[#0d0d10]">
+                  <div className="bg-[#1a1a1a] border border-[#333] rounded-lg overflow-hidden relative min-h-[300px] flex flex-col">
+                    <div className="flex items-center justify-between px-4 py-2 border-b border-[#333] bg-[#1a1a1a]">
                       <div className="flex gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-zinc-800" />
                         <div className="w-2.5 h-2.5 rounded-full bg-zinc-800" />
@@ -1192,7 +1192,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
 
 
       {tab === 'music' && (
-        <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 space-y-4">
+        <div className="bg-[#111] border border-[#222] rounded-lg p-4 space-y-4">
           <div>
             <p className="text-zinc-400 text-xs mb-2 font-bold tracking-widest">global spotify player</p>
             <p className="text-zinc-500 text-[10px] mb-4">this url controls the floating draggable music widget for all users.</p>
@@ -1200,7 +1200,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
               value={spotifyUrl}
               onChange={(e) => setSpotifyUrlState(e.target.value)}
               placeholder="https://open.spotify.com/playlist/..."
-              className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition"
+              className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444] transition"
             />
             <p className="text-zinc-500 text-[10px] mt-2">paste a spotify playlist, album, or track link. it will automatically convert to an embed.</p>
           </div>
@@ -1233,9 +1233,9 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
 
         return (
           <div className="space-y-6">
-            <div className={`rounded-2xl p-5 border flex items-center justify-between ${isActive ? 'bg-red-500/10 border-red-500/30' : 'bg-zinc-900/40 border-zinc-800/60'}`}>
+            <div className={`rounded-lg p-5 border flex items-center justify-between ${isActive ? 'bg-red-500/10 border-red-500/30' : 'bg-zinc-900/40 border-[#333]'}`}>
               <div className="flex items-center gap-4">
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${isActive ? 'bg-red-500/20' : 'bg-zinc-800'}`}>
+                <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${isActive ? 'bg-red-500/20' : 'bg-zinc-800'}`}>
                   <Wrench size={20} className={isActive ? 'text-red-400' : 'text-zinc-500'} />
                 </div>
                 <div>
@@ -1251,7 +1251,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                 {isActive ? (
                   <button
                     onClick={() => saveMaintenance({ active: false })}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 text-xs font-bold transition"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 text-xs font-bold transition"
                   >
                     <StopCircle size={14} />
                     stop maintenance
@@ -1259,7 +1259,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                 ) : (
                   <button
                     onClick={() => saveMaintenance({ active: true })}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition"
                     style={{ background: accent, color: accentText }}
                   >
                     <Wrench size={14} />
@@ -1269,7 +1269,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
               </div>
             </div>
 
-            <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-6 space-y-5">
+            <div className="bg-[#111] border border-[#222] rounded-lg p-6 space-y-5">
               <div className="flex items-center gap-3 mb-1">
                 <CalendarClock size={16} className="text-zinc-500" />
                 <h3 className="text-white font-bold text-sm">maintenance window</h3>
@@ -1283,7 +1283,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     type="number"
                     placeholder="e.g. 30"
                     defaultValue="30"
-                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-500 transition"
+                    className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#444] transition"
                   />
                 </div>
                 <div className="flex-1">
@@ -1291,7 +1291,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                   <select
                     id="maint-unit"
                     defaultValue="minutes"
-                    className="w-full bg-[#1a1a1e] border border-zinc-700/50 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-500 transition"
+                    className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#444] transition"
                   >
                     <option value="minutes">minutes</option>
                     <option value="hours">hours</option>

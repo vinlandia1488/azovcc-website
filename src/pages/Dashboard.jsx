@@ -30,7 +30,7 @@ export default function Dashboard() {
   const [feedbackActive, setFeedbackActive] = useState(false);
   const [dock, setDock] = useState({ side: 'left', orientation: 'vertical' });
   const [showIntro, setShowIntro] = useState(true);
-  const [brandingAnimation, setBrandingAnimation] = useState(() => localStorage.getItem('adderal_brandingAnimation') || 'slide');
+  const [brandingAnimation, setBrandingAnimation] = useState('fade');
   const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('adderal_brandingShowCc') === 'true');
 
 
@@ -66,10 +66,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!session) return;
-    setBrandingAnimation(localStorage.getItem('adderal_brandingAnimation') || 'slide');
-    setBrandingShowCc(localStorage.getItem('adderal_brandingShowCc') === 'true');
     setShowIntro(true);
-    const timeout = setTimeout(() => setShowIntro(false), 1800);
+    const timeout = setTimeout(() => setShowIntro(false), 1500);
     return () => clearTimeout(timeout);
   }, [session]);
 
@@ -134,9 +132,9 @@ export default function Dashboard() {
   const accent = session.accent_color || '#ef4444';
 
   return (
-    <div ref={constraintsRef} className="min-h-screen bg-[#07070a] text-white relative overflow-hidden">
+    <div ref={constraintsRef} className="min-h-screen bg-[#0a0a0a] text-white relative overflow-hidden">
       {showIntro && (
-        <div className="fixed inset-0 z-[220] flex items-center justify-center bg-[#07070a]">
+        <div className="fixed inset-0 z-[220] flex items-center justify-center bg-[#0a0a0a]">
           <BrandingMark
             animation={brandingAnimation}
             showCc={brandingShowCc}
@@ -146,14 +144,10 @@ export default function Dashboard() {
         </div>
       )}
       <SeasonalEffects />
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-20 blur-3xl rounded-full"
-          style={{ background: `radial-gradient(ellipse, ${accent}44, transparent)` }} />
-      </div>
 
       <div className="fixed top-8 left-8 z-[60] flex items-center select-none pointer-events-none md:pointer-events-auto">
         <h1 className="text-2xl font-black tracking-[0.3em] text-white uppercase leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-          ADDERAL
+          ADDERALL
         </h1>
       </div>
 
@@ -226,19 +220,19 @@ export default function Dashboard() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
               {activeTab === 'dashboard' && (
                 <DashboardTab session={session} onSettings={() => setShowSettings(true)} accent={accent} announcement={announcement} />
               )}
               {activeTab === 'downloads' && (
-                <DownloadsTab accent={accent} session={session} onAction={triggerFeedback} />
+                <DownloadsTab accent={accent} session={session} />
               )}
               {activeTab === 'cloud-configs' && (
-                <CloudConfigsTab session={session} accent={accent} onAction={triggerFeedback} />
+                <CloudConfigsTab session={session} accent={accent} />
               )}
               {activeTab === 'chat' && (
                 <SupportTab session={session} accent={accent} />
@@ -264,10 +258,10 @@ export default function Dashboard() {
       <AnimatePresence>
         {feedbackActive && (
           <motion.div
-            initial={{ opacity: 0, y: 20, x: '-50%' }}
-            animate={{ opacity: 1, y: 0, x: '-50%' }}
-            exit={{ opacity: 0, y: 20, x: '-50%' }}
-            className="fixed bottom-12 left-1/2 z-[100] bg-zinc-900/90 border border-zinc-800/60 backdrop-blur-md px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed bottom-12 left-1/2 z-[100] bg-zinc-900/90 border border-[#333] backdrop-blur-md px-6 py-3 rounded-lg shadow-2xl flex items-center gap-3"
           >
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-white text-xs font-bold tracking-widest uppercase">Change applied!</span>

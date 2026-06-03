@@ -2,11 +2,11 @@ import { consumeLicenseForRegistration, getLicenseKeys, markLicenseKeyUsed } fro
 import { getBackendDb } from "@/lib/backend";
 
 const db = getBackendDb();
-const ACCOUNTS_CACHE_KEY = "adderal_accounts_cache";
-const SESSION_KEY = "adderal_session";
+const ACCOUNTS_CACHE_KEY = "adderall_accounts_cache";
+const SESSION_KEY = "adderall_session";
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
-const RATE_LIMIT_KEY = "adderal_rate_limits";
+const RATE_LIMIT_KEY = "adderall_rate_limits";
 
 function getRateLimits() {
   try {
@@ -108,14 +108,14 @@ export async function sha256(message) {
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export function generateLicenseKey(prefix = "ADDERAL") {
+export function generateLicenseKey(prefix = "ADDERALL") {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   const seg = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
   return `${prefix}-${seg()}-${seg()}-${seg()}-${seg()}`;
 }
 
 export function generateInternalLicense() {
-  return `Adderal-${Math.random().toString(36).substring(2, 15)}`;
+  return `Adderall-${Math.random().toString(36).substring(2, 15)}`;
 }
 
 export function generateScriptLicense() {
@@ -218,9 +218,9 @@ function normalizeSessionAccount(account, fallbackUsername = "") {
     const parts = rawLicense.split("|");
     if (!internalLicense) internalLicense = parts[0];
     if (!scriptLicense) scriptLicense = parts[1];
-  } else if (!internalLicense && (rawLicense.startsWith("Adderal-") || rawLicense.length > 20)) {
+  } else if (!internalLicense && (rawLicense.startsWith("Adderall-") || rawLicense.length > 20)) {
     internalLicense = rawLicense;
-  } else if (!scriptLicense && rawLicense && !rawLicense.startsWith("Adderal-")) {
+  } else if (!scriptLicense && rawLicense && !rawLicense.startsWith("Adderall-")) {
     scriptLicense = rawLicense;
   }
 
@@ -315,7 +315,7 @@ export async function fetchDiscordUser(code) {
   const snowflake = String(data.id);
   const existing = await db.entities.Account.filter({ discord_id: snowflake });
   if (existing && existing.length > 0) {
-    throw new Error("This Discord account is already linked to another Adderal account.");
+    throw new Error("This Discord account is already linked to another Adderall account.");
   }
 
   return {

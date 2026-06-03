@@ -6,12 +6,13 @@
   <link rel="icon" type="image/svg+xml" href="https://db.com/logo_v2.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="manifest" href="/manifest.json" />
-  <title>adderal.cc</title>
+  <title>adderall.cc</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet" />
   <script>
     document.addEventListener('contextmenu', event => event.preventDefault());
 
     document.onkeydown = function (e) {
-      if (event.keyCode == 123) { // F12
+      if (e.keyCode == 123) { // F12
         return false;
       }
       if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { // Ctrl+Shift+I
@@ -27,18 +28,6 @@
         return false;
       }
     };
-
-    (function () {
-      const detect = function () {
-        const start = new Date();
-        debugger;
-        const end = new Date();
-        if (end - start > 100) {
-          document.body.innerHTML = '<div style="display:flex;align-items:center;justify-center;height:100vh;background:#07070a;color:white;font-family:sans-serif;">nooo bro nooo</div>';
-        }
-      };
-      setInterval(detect, 1000);
-    })();
   </script>
 </head>
 

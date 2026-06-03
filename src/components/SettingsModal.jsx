@@ -101,9 +101,9 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-      <div className="bg-[#111114] border border-zinc-800/60 rounded-3xl w-full max-w-3xl flex shadow-2xl min-h-[500px] overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="bg-[#111] border border-[#222] rounded-lg w-full max-w-3xl flex shadow-2xl min-h-[500px] overflow-hidden animate-in fade-in duration-200">
         
-        <div className="w-64 border-r border-zinc-800/60 flex flex-col p-4 bg-[#111114]">
+        <div className="w-64 border-r border-[#333] flex flex-col p-4 bg-[#111]">
           <div className="mb-8 pl-2 mt-2">
             <h2 className="text-white font-bold text-lg">Settings</h2>
             <p className="text-zinc-500 text-xs mt-0.5">Manage your experience</p>
@@ -112,7 +112,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
           <div className="space-y-1">
             <button 
               onClick={() => setActiveTab('profile')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${activeTab === 'profile' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${activeTab === 'profile' ? 'bg-zinc-800/80 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'}`}
             >
               <User size={16} />
               Profile
@@ -127,23 +127,23 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
           </div>
           
           <div className="mt-auto">
-            <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border border-zinc-800/60 text-zinc-400 hover:text-white hover:bg-zinc-800/40 transition">
+            <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium border border-[#333] text-zinc-400 hover:text-white hover:bg-zinc-800/40 transition">
               <LogOut size={16} />
               Logout
             </button>
           </div>
         </div>
 
-        <div className="flex-1 bg-[#0c0c0e] relative flex flex-col p-8">
+        <div className="flex-1 bg-[#1a1a1a] relative flex flex-col p-8">
            <button onClick={onClose} className="absolute top-6 right-6 text-zinc-500 hover:text-white transition">
               <X size={18} />
            </button>
 
            {activeTab === 'profile' ? (
-             <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-300">
+             <div className="space-y-8 animate-in fade-in duration-300">
                <div className="flex flex-col items-center">
                  <div className="relative group">
-                   <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-zinc-800/60 bg-zinc-900 flex items-center justify-center">
+                   <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#333] bg-[#1a1a1a] flex items-center justify-center">
                      {profilePic ? (
                        <img src={profilePic} alt="PFP" className="w-full h-full object-cover" />
                      ) : (
@@ -159,7 +159,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                  <p className="text-zinc-500 text-xs">UID: #{session.unique_identifier || '0'}</p>
                </div>
 
-                <div className="bg-[#111114] border border-zinc-800/60 rounded-2xl p-4 w-full">
+                <div className="bg-[#111] border border-[#222] rounded-lg p-4 w-full">
                   <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block mb-1">Rank</span>
                   <div className="flex flex-col">
                     <span className="text-white text-sm font-medium">{session.is_admin ? 'Administrator' : 'User'}</span>
@@ -178,7 +178,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                        <button 
                          key={preset}
                          onClick={() => setPreset(preset)}
-                         className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition ${currentPreset === preset ? 'bg-zinc-800 border-zinc-600' : 'bg-[#111114] border-zinc-800/60 hover:border-zinc-700/50'}`}
+                         className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border transition ${currentPreset === preset ? 'bg-zinc-800 border-[#333]' : 'bg-[#111] border-[#333] hover:border-[#444]'}`}
                        >
                          {preset === 'NONE' && <Ban size={20} className="text-zinc-500" />}
                          {preset === 'CHRISTMAS' && <Snowflake size={20} className="text-white" />}
@@ -189,14 +189,14 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                   </div>
                   <p className="text-zinc-500 text-[10px] mt-4 text-center">Presets automatically apply a theme and background effect.</p>
                 </div>
-                <div className="h-px bg-zinc-800/60" />
+                <div className="h-px bg-[#333]" />
                  <div>
                    <h3 className="text-white text-sm font-semibold mb-4">Effect Settings</h3>
                    <div className="space-y-6">
                      <div>
                        <div className="flex justify-between items-center mb-3">
                          <label className="text-zinc-400 text-xs font-medium uppercase tracking-wider">Effect Amount</label>
-                         <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-white text-[10px] font-bold border border-zinc-700">{effectAmount}%</span>
+                         <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-white text-[10px] font-bold border border-[#333]">{effectAmount}%</span>
                        </div>
                        <div className="relative h-6 flex items-center">
                          <input 
@@ -211,7 +211,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                      <div>
                        <div className="flex justify-between items-center mb-3">
                          <label className="text-zinc-400 text-xs font-medium uppercase tracking-wider">Effect Speed</label>
-                         <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-white text-[10px] font-bold border border-zinc-700">{effectSpeed}x</span>
+                         <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-white text-[10px] font-bold border border-[#333]">{effectSpeed}x</span>
                        </div>
                        <div className="relative h-6 flex items-center">
                          <input 
@@ -225,7 +225,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                      </div>
                    </div>
                  </div>
-                <div className="h-px bg-zinc-800/60" />
+                <div className="h-px bg-[#333]" />
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-white text-sm font-semibold">Color Palette</h3>
@@ -245,7 +245,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                   </div>
                   <div className="flex items-center justify-between pt-4 border-t border-zinc-800/60">
                      <span className="text-zinc-400 text-xs">Primary</span>
-                     <div className="flex items-center gap-3 bg-[#111114] border border-zinc-800/60 rounded-xl px-2 py-1.5">
+                     <div className="flex items-center gap-3 bg-[#111] border border-[#333] rounded-lg px-2 py-1.5">
                        <div className="w-6 h-6 rounded-md relative overflow-hidden" style={{ background: customColor }}>
                          <input 
                            type="color" 
@@ -261,7 +261,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                 <button 
                    onClick={saveColor}
                    disabled={saving}
-                   className="w-full mt-4 bg-transparent border border-zinc-800/60 hover:bg-zinc-800 text-white font-semibold rounded-xl px-4 py-3 text-sm transition disabled:opacity-50"
+                   className="w-full mt-4 bg-zinc-800 border border-[#333] hover:bg-zinc-700 text-white font-semibold rounded-lg px-4 py-3 text-sm transition disabled:opacity-50"
                 >
                    {saving ? 'Applying Theme...' : 'Apply Theme'}
                 </button>

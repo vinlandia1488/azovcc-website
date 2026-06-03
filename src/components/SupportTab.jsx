@@ -186,20 +186,20 @@ export default function SupportTab({ session, accent }) {
   const sentText = isLightColor(accent) ? '#000' : '#fff';
 
   return (
-    <div className="flex bg-[#111114] border border-zinc-800/60 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300" style={{ height: 'calc(100vh - 160px)', minHeight: '600px' }}>
+    <div className="flex bg-[#111] border border-[#222] rounded-lg overflow-hidden shadow-2xl animate-in fade-in duration-300" style={{ height: 'calc(100vh - 160px)', minHeight: '600px' }}>
       
-      <div className="w-64 border-r border-zinc-800/60 flex flex-col bg-[#0c0c0e]">
+      <div className="w-64 border-r border-[#333] flex flex-col bg-[#1a1a1a]">
         <div className="p-4 space-y-1">
           <button 
             onClick={() => setActiveTab('global')}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold tracking-wider transition ${activeTab === 'global' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/40'}`}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider transition ${activeTab === 'global' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/40'}`}
           >
             <Globe size={14} />
             GLOBAL CHAT
           </button>
           <button 
             onClick={() => setActiveTab('support')}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold tracking-wider transition ${activeTab === 'support' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/40'}`}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold tracking-wider transition ${activeTab === 'support' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/40'}`}
           >
             <div className="flex items-center gap-3">
               <MessageSquare size={14} />
@@ -212,7 +212,7 @@ export default function SupportTab({ session, accent }) {
         </div>
 
         {session.is_admin && activeTab === 'support' && (
-          <div className="flex-1 flex flex-col min-h-0 border-t border-zinc-800/60">
+          <div className="flex-1 flex flex-col min-h-0 border-t border-[#333]">
             <div className="p-3">
               <div className="relative">
                 <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-600" />
@@ -221,7 +221,7 @@ export default function SupportTab({ session, accent }) {
                   placeholder="Search all users..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full bg-zinc-900/50 border border-zinc-800/60 rounded-lg pl-8 pr-3 py-1.5 text-[10px] text-white focus:outline-none focus:border-zinc-700"
+                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg pl-8 pr-3 py-1.5 text-[10px] text-white focus:outline-none focus:border-[#444]"
                 />
               </div>
             </div>
@@ -244,10 +244,10 @@ export default function SupportTab({ session, accent }) {
         )}
       </div>
 
-      <div className="flex-1 flex flex-col relative bg-[#07070a]">
-        <div className="px-6 py-4 border-b border-zinc-800/60 flex items-center justify-between shrink-0 bg-[#0c0c0e]">
+      <div className="flex-1 flex flex-col relative bg-[#0a0a0a]">
+        <div className="px-6 py-4 border-b border-[#333] flex items-center justify-between shrink-0 bg-[#1a1a1a]">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-zinc-800/50 flex items-center justify-center border border-zinc-700/30">
+            <div className="w-8 h-8 rounded-lg bg-zinc-800/50 flex items-center justify-center border border-[#333]">
               {activeTab === 'global' ? <Globe size={14} style={{ color: accent }} /> : <Shield size={14} style={{ color: accent }} />}
             </div>
             <div>
@@ -291,7 +291,7 @@ export default function SupportTab({ session, accent }) {
               return (
                 <div key={m.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                   <div className={`flex gap-3 max-w-[80%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div className="w-8 h-8 rounded-full overflow-hidden border border-zinc-800 bg-zinc-900 shrink-0 mt-1">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-[#333] bg-[#1a1a1a] shrink-0 mt-1">
                       {m.pfp ? (
                         <img src={m.pfp} alt="pfp" className="w-full h-full object-cover" />
                       ) : (
@@ -309,15 +309,15 @@ export default function SupportTab({ session, accent }) {
                         <span className="text-[8px] text-zinc-600">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                       <div
-                        className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isMe ? 'rounded-tr-sm' : 'rounded-tl-sm border border-zinc-800'}`}
-                        style={isMe ? { background: sentColor, color: sentText } : { background: '#1a1a1e', color: '#d4d4d8' }}
+                        className={`px-4 py-2.5 rounded-lg text-sm leading-relaxed ${isMe ? 'rounded-tr-sm' : 'rounded-tl-sm border border-[#333]'}`}
+                        style={isMe ? { background: sentColor, color: sentText } : { background: '#1a1a1a', color: '#d4d4d8' }}
                       >
                         {m.content && <p className="whitespace-pre-wrap">{m.content}</p>}
                         {m.image_url && (
                           <img
                             src={m.image_url}
                             alt="Shared"
-                            className="max-w-full h-auto max-h-64 object-contain rounded-xl mt-2"
+                            className="max-w-full h-auto max-h-64 object-contain rounded-lg mt-2"
                           />
                         )}
                       </div>
@@ -330,20 +330,20 @@ export default function SupportTab({ session, accent }) {
         </div>
 
         {(!session.is_admin || activeTab === 'global' || selectedUser) && (
-          <div className="px-5 pb-5 pt-4 border-t border-zinc-800/60 shrink-0 bg-[#0c0c0e]">
+          <div className="px-5 pb-5 pt-4 border-t border-[#333] shrink-0 bg-[#1a1a1a]">
             {pendingImage && (
               <div className="mb-3 relative inline-block">
-                <img src={pendingImage.previewUrl} alt="Preview" className="h-16 rounded-xl object-cover border border-zinc-700" />
+                <img src={pendingImage.previewUrl} alt="Preview" className="h-16 rounded-lg object-cover border border-[#333]" />
                 <button
                   onClick={() => { URL.revokeObjectURL(pendingImage.previewUrl); setPendingImage(null); }}
-                  className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-zinc-800 border border-zinc-600 rounded-full flex items-center justify-center text-zinc-400 hover:text-white"
+                  className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-zinc-800 border border-[#333] rounded-full flex items-center justify-center text-zinc-400 hover:text-white"
                 >
                   <X size={8} />
                 </button>
               </div>
             )}
             <form onSubmit={sendMessage} className="flex items-end gap-3">
-              <div className="flex-1 bg-[#1a1a1e] border border-zinc-800/60 rounded-2xl px-4 py-3 focus-within:border-zinc-500 transition">
+              <div className="flex-1 bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-3 focus-within:border-[#444] transition">
                 <textarea
                   value={newMessage}
                   onChange={e => setNewMessage(e.target.value)}
@@ -358,10 +358,10 @@ export default function SupportTab({ session, accent }) {
                 const file = e.target.files?.[0];
                 if (file) setPendingImage({ file, previewUrl: URL.createObjectURL(file) });
               }} />
-              <button type="button" onClick={() => fileInputRef.current?.click()} className="w-11 h-11 rounded-2xl flex items-center justify-center bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white transition">
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="w-11 h-11 rounded-lg flex items-center justify-center bg-zinc-800 border border-[#333] text-zinc-400 hover:text-white transition">
                 <ImagePlus size={18} />
               </button>
-              <button type="submit" disabled={sending || (!newMessage.trim() && !pendingImage)} className="w-11 h-11 rounded-2xl flex items-center justify-center transition disabled:opacity-40" style={{ background: accent }}>
+              <button type="submit" disabled={sending || (!newMessage.trim() && !pendingImage)} className="w-11 h-11 rounded-lg flex items-center justify-center transition disabled:opacity-40" style={{ background: accent }}>
                 {sending ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" style={{ color: sentText }} /> : <Send size={16} style={{ color: sentText }} />}
               </button>
             </form>

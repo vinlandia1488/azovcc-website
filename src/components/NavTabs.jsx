@@ -27,7 +27,7 @@ export default function NavTabs({ activeTab, setActiveTab, accent, isAdmin, orie
   return (
     <motion.div 
       layout
-      className={`flex ${isVertical ? 'flex-col p-3' : 'items-center px-2 py-1.5'} gap-1 bg-[#111114]/90 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] shadow-2xl`}
+      className={`flex ${isVertical ? 'flex-col p-3' : 'items-center px-2 py-1.5'} gap-1 bg-[#111]/90 backdrop-blur-md border border-[#222] rounded-lg shadow-2xl`}
     >
       <motion.div layout className={`text-zinc-700 hidden md:block ${isVertical ? 'mx-auto mb-2 rotate-90' : 'pl-1 pr-0.5'}`}>
         <GripVertical size={14} />

@@ -6,9 +6,9 @@ import { generateInviteCode, getUserInvites, isInviteSystemEnabled } from '@/lib
 
 
 const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 18 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.4, delay, ease: 'easeOut' },
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  transition: { duration: 0.3, delay, ease: 'easeOut' },
 });
 
 function MaskedField({ value, label, copyable, accent }) {
@@ -26,7 +26,7 @@ function MaskedField({ value, label, copyable, accent }) {
   }
 
   return (
-    <div className="bg-[#111114] border border-zinc-800/60 rounded-xl p-5 flex-1" style={{ boxShadow: accent ? `0 0 0 1px rgba(255,255,255,0.02), 0 2px 16px ${accent}0d` : undefined }}>
+    <div className="bg-[#111] border border-[#222] rounded-lg p-5 flex-1">
       <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-2">{label}</p>
       <div className="flex items-center justify-between">
         <p className="text-white text-base font-mono tracking-wide">
@@ -43,7 +43,7 @@ function MaskedField({ value, label, copyable, accent }) {
           )}
         </div>
       </div>
-      <div className="mt-3 h-px w-full bg-gradient-to-r from-blue-500/60 to-purple-500/20" />
+      <div className="mt-3 h-px w-full bg-[#333]" />
     </div>
   );
 }
@@ -100,12 +100,9 @@ export default function DashboardTab({ session, onSettings, accent, announcement
 
 
       {/* User card */}
-      <motion.div {...fadeUp(0.08)} className="bg-[#111114] border border-zinc-800/60 rounded-xl p-4 flex items-center justify-between"
-        style={{ boxShadow: `0 0 0 1px rgba(255,255,255,0.03), 0 4px 24px ${accent}10` }}
-      >
+      <motion.div {...fadeUp(0.08)} className="bg-[#111] border border-[#222] rounded-lg p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-[#1a1a1e] border border-zinc-700/50 rounded-lg flex items-center justify-center overflow-hidden"
-            style={{ boxShadow: `0 0 12px ${accent}30` }}>
+          <div className="w-12 h-12 bg-[#1a1a1a] border border-[#333] rounded-lg flex items-center justify-center overflow-hidden">
             {session.profile_pic ? (
               <img src={session.profile_pic} alt="Avatar" className="w-full h-full object-cover" />
             ) : session.discord_avatar ? (
@@ -128,7 +125,7 @@ export default function DashboardTab({ session, onSettings, accent, announcement
         </div>
         <button
           onClick={onSettings}
-          className="flex items-center gap-2 bg-[#1a1a1e] border border-zinc-700/50 text-zinc-300 hover:text-white hover:border-zinc-500 px-4 py-2 rounded-lg text-xs transition"
+          className="flex items-center gap-2 bg-zinc-800 border border-[#333] text-zinc-300 hover:text-white hover:border-[#444] px-4 py-2 rounded-lg text-xs transition"
         >
           <Settings size={13} />
           SETTINGS
@@ -136,9 +133,7 @@ export default function DashboardTab({ session, onSettings, accent, announcement
       </motion.div>
 
       {/* Announcement */}
-      <motion.div {...fadeUp(0.14)} className="bg-[#111114] border border-zinc-800/60 rounded-xl p-5"
-        style={{ boxShadow: `0 0 0 1px rgba(255,255,255,0.03)` }}
-      >
+      <motion.div {...fadeUp(0.14)} className="bg-[#111] border border-[#222] rounded-lg p-5">
         <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-2">Announcement</p>
         <div className="text-white text-base font-medium leading-relaxed">
           {(() => {
@@ -156,7 +151,7 @@ export default function DashboardTab({ session, onSettings, accent, announcement
                   );
                 }
                 return (
-                  <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline break-all">
+                  <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:underline break-all">
                     {part}
                   </a>
                 );
@@ -165,7 +160,7 @@ export default function DashboardTab({ session, onSettings, accent, announcement
             });
           })()}
         </div>
-        <div className="mt-4 h-px w-full" style={{ background: `linear-gradient(to right, ${accent}80, transparent)` }} />
+        <div className="mt-4 h-px w-full bg-[#333]" />
       </motion.div>
 
 
@@ -179,9 +174,7 @@ export default function DashboardTab({ session, onSettings, accent, announcement
 
       {/* Invites Section */}
       {inviteEnabled && (
-        <motion.div {...fadeUp(0.26)} className="bg-[#111114] border border-zinc-800/60 rounded-xl p-5"
-          style={{ boxShadow: `0 0 0 1px rgba(255,255,255,0.03)` }}
-        >
+        <motion.div {...fadeUp(0.26)} className="bg-[#111] border border-[#222] rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <CalendarClock size={16} className="text-zinc-500" />
@@ -190,7 +183,7 @@ export default function DashboardTab({ session, onSettings, accent, announcement
             <button
               onClick={handleGenerateInvite}
               disabled={inviteLoading}
-              className="flex items-center gap-2 bg-[#1a1a1e] border border-zinc-700/50 text-zinc-300 hover:text-white hover:border-zinc-500 px-3 py-1.5 rounded-lg text-[10px] font-bold transition disabled:opacity-50"
+              className="flex items-center gap-2 bg-zinc-800 border border-[#333] text-zinc-300 hover:text-white hover:border-[#444] px-3 py-1.5 rounded-lg text-[10px] font-bold transition disabled:opacity-50"
             >
               <Plus size={12} />
               {inviteLoading ? 'GENERATING...' : 'GENERATE CODE'}
@@ -208,9 +201,9 @@ export default function DashboardTab({ session, onSettings, accent, announcement
               <p className="text-zinc-600 text-[11px] italic">You haven't generated any invite codes yet.</p>
             ) : (
               invites.map(inv => (
-                <div key={inv.id} className="flex items-center justify-between bg-black/20 border border-zinc-800/40 rounded-lg px-4 py-2.5">
+                <div key={inv.id} className="flex items-center justify-between bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-2.5">
                   <div className="flex items-center gap-3">
-                    <code className="text-indigo-400 font-mono text-xs">{inv.code}</code>
+                    <code className="text-zinc-400 font-mono text-xs">{inv.code}</code>
                     <span className="text-zinc-600 text-[9px] uppercase font-bold">
                       {inv.used_by ? `USED BY @${inv.used_by}` : 'AVAILABLE'}
                     </span>
