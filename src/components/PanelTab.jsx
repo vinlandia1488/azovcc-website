@@ -197,8 +197,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
     setScriptPreviewConfigState(String(templates.scriptPreviewConfig || getScriptPreviewConfig()));
 
     const failures = [keysResult, accountsResult, downloadsResult, announcementResult].filter((r) => r.status === 'rejected');
-    if (failures.length > 0) {
-      setPanelError(failures[0].reason?.message || 'Some admin data failed to load.');
+    const realFailures = failures.filter((f) => {
+      const msg = f.reason?.message || '';
+      return !msg.includes('Backend is not configured');
+    });
+    
+    if (realFailures.length > 0) {
+      setPanelError(realFailures[0].reason?.message || 'Some admin data failed to load.');
     } else {
       setPanelError('');
     }
