@@ -161,10 +161,17 @@ export async function deleteUserAccount(account) {
 
 async function getAllAccounts() {
   let rows = [];
-  if (typeof db.entities.Account.list === "function") {
-    rows = await db.entities.Account.list();
-  } else if (typeof db.entities.Account.filter === "function") {
-    rows = await db.entities.Account.filter({});
+  try {
+    if (typeof db.entities.Account.list === "function") {
+      rows = await db.entities.Account.list();
+    } else if (typeof db.entities.Account.filter === "function") {
+      rows = await db.entities.Account.filter({});
+    }
+  } catch (err) {
+    if ((err?.message || '').includes('Backend is not configured')) {
+      return readAccountsCache();
+    }
+    throw err;
   }
   const dbRows = Array.isArray(rows) ? rows : [];
   if (dbRows.length > 0) writeAccountsCache(dbRows);
@@ -313,9 +320,21 @@ export async function fetchDiscordUser(code) {
   const data = await response.json();
 
   const snowflake = String(data.id);
-  const existing = await db.entities.Account.filter({ discord_id: snowflake });
-  if (existing && existing.length > 0) {
-    throw new Error("This Discord account is already linked to another Adderall account.");
+  try {
+    const existing = await db.entities.Account.filter({ discord_id: snowflake });
+    if (existing && existing.length > 0) {
+      throw new Error("This Discord account is already linked to another Adderall account.");
+    }
+  } catch (err) {
+    if (!(err?.message || '').includes('Backend is not configured')) {
+      throw err;
+    }
+    // If backend unavailable, check local cache instead
+    const cached = readAccountsCache();
+    const match = cached.find(a => String(a.discord_id) === snowflake);
+    if (match) {
+      throw new Error("This Discord account is already linked to another Adderall account.");
+    }
   }
 
   return {
@@ -344,7 +363,16 @@ export async function loginUser(username, password, discordInfo = null) {
   }
 
   const hash = await sha256(password);
-  let accounts = await db.entities.Account.filter({ username: normalizedUsername });
+  let accounts;
+  try {
+    accounts = await db.entities.Account.filter({ username: normalizedUsername });
+  } catch (err) {
+    if ((err?.message || '').includes('Backend is not configured')) {
+      accounts = [];
+    } else {
+      throw err;
+    }
+  }
   if (!accounts || accounts.length === 0) {
     const allAccounts = await getAllAccounts();
     accounts = allAccounts.filter(
@@ -352,18 +380,40 @@ export async function loginUser(username, password, discordInfo = null) {
     );
   }
   if ((!accounts || accounts.length === 0) && isAdminLogin) {
-    const adminHash = await sha256("adminkey1234");
-    const createdAdmin = await db.entities.Account.create({
-      username: "admin",
-      password_hash: adminHash,
-      internal_license: generateInternalLicense(),
-      script_license: generateScriptLicense(),
-      unique_identifier: 0,
-      accent_color: "#ef4444",
-      is_admin: true,
-      last_login: new Date().toISOString(),
-    });
-    assertPersistedAccount(createdAdmin, "Admin bootstrap failed");
+    // Try to create admin in backend, fall back to local-only
+    let createdAdmin;
+    try {
+      const adminHash = await sha256("adminkey1234");
+      createdAdmin = await db.entities.Account.create({
+        username: "admin",
+        password_hash: adminHash,
+        internal_license: generateInternalLicense(),
+        script_license: generateScriptLicense(),
+        unique_identifier: 0,
+        accent_color: "#ef4444",
+        is_admin: true,
+        last_login: new Date().toISOString(),
+      });
+      assertPersistedAccount(createdAdmin, "Admin bootstrap failed");
+    } catch (createErr) {
+      if ((createErr?.message || '').includes('Backend is not configured')) {
+        const adminHash2 = await sha256("adminkey1234");
+        createdAdmin = {
+          id: 'local-admin',
+          username: "admin",
+          password_hash: adminHash2,
+          internal_license: generateInternalLicense(),
+          script_license: generateScriptLicense(),
+          unique_identifier: 0,
+          accent_color: "#ef4444",
+          is_admin: true,
+          last_login: new Date().toISOString(),
+        };
+        upsertAccountCache(createdAdmin);
+      } else {
+        throw createErr;
+      }
+    }
     accounts = [createdAdmin];
   }
   if (!accounts || accounts.length === 0) {
@@ -517,46 +567,71 @@ export async function changePassword(username, oldPassword, newPassword) {
 }
 
 export async function ensureAdminExists() {
-  const adminHash = await sha256("adminkey1234");
-  const now = new Date().toISOString();
+  try {
+    const adminHash = await sha256("adminkey1234");
+    const now = new Date().toISOString();
 
-  const existingAdminUser = await db.entities.Account.filter({ username: "admin" });
-  if (existingAdminUser && existingAdminUser.length > 0) {
-    const adminAccount = existingAdminUser[0];
-    await db.entities.Account.update(adminAccount.id, {
-      password_hash: adminHash,
-      is_admin: true,
-    });
-    upsertAccountCache(normalizeSessionAccount({ ...adminAccount, username: "admin", is_admin: true }, "admin"));
-    return;
-  }
+    const existingAdminUser = await db.entities.Account.filter({ username: "admin" });
+    if (existingAdminUser && existingAdminUser.length > 0) {
+      const adminAccount = existingAdminUser[0];
+      await db.entities.Account.update(adminAccount.id, {
+        password_hash: adminHash,
+        is_admin: true,
+      });
+      upsertAccountCache(normalizeSessionAccount({ ...adminAccount, username: "admin", is_admin: true }, "admin"));
+      return;
+    }
 
-  const admins = await db.entities.Account.filter({ is_admin: true });
-  if (admins && admins.length > 0) {
-    const adminAccount = admins[0];
-    await db.entities.Account.update(adminAccount.id, {
+    const admins = await db.entities.Account.filter({ is_admin: true });
+    if (admins && admins.length > 0) {
+      const adminAccount = admins[0];
+      await db.entities.Account.update(adminAccount.id, {
+        username: "admin",
+        password_hash: adminHash,
+        is_admin: true,
+      });
+      upsertAccountCache(normalizeSessionAccount({ ...adminAccount, username: "admin", is_admin: true }, "admin"));
+      return;
+    }
+
+    const internalKey = generateInternalLicense();
+    const scriptKey = generateScriptLicense();
+
+    const createdAdmin = await db.entities.Account.create({
       username: "admin",
       password_hash: adminHash,
+      internal_license: internalKey,
+      script_license: scriptKey,
+      license_key: internalKey,
+      unique_identifier: 0,
+      accent_color: "#ef4444",
       is_admin: true,
+      last_login: now,
     });
-    upsertAccountCache(normalizeSessionAccount({ ...adminAccount, username: "admin", is_admin: true }, "admin"));
-    return;
+    assertPersistedAccount(createdAdmin, "Admin bootstrap failed");
+    upsertAccountCache(normalizeSessionAccount(createdAdmin, "admin"));
+  } catch (err) {
+    if ((err?.message || '').includes('Backend is not configured')) {
+      // Silently ensure admin exists in local cache
+      const cached = readAccountsCache();
+      const hasAdmin = cached.some(a => a.username === 'admin');
+      if (!hasAdmin) {
+        const adminHash = await sha256("adminkey1234");
+        const localAdmin = {
+          id: 'local-admin',
+          username: "admin",
+          password_hash: adminHash,
+          internal_license: generateInternalLicense(),
+          script_license: generateScriptLicense(),
+          unique_identifier: 0,
+          accent_color: "#ef4444",
+          is_admin: true,
+          last_login: new Date().toISOString(),
+        };
+        upsertAccountCache(localAdmin);
+      }
+      return;
+    }
+    throw err;
   }
-
-  const internalKey = generateInternalLicense();
-  const scriptKey = generateScriptLicense();
-
-  const createdAdmin = await db.entities.Account.create({
-    username: "admin",
-    password_hash: adminHash,
-    internal_license: internalKey,
-    script_license: scriptKey,
-    license_key: internalKey,
-    unique_identifier: 0,
-    accent_color: "#ef4444",
-    is_admin: true,
-    last_login: now,
-  });
-  assertPersistedAccount(createdAdmin, "Admin bootstrap failed");
-  upsertAccountCache(normalizeSessionAccount(createdAdmin, "admin"));
 }
