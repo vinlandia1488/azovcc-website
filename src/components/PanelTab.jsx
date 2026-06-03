@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { deleteUserAccount, generateInternalLicense, generateScriptLicense, normalizeAccountDiscordLink, upgradeToInternal } from '@/lib/auth';
+import { deleteUserAccount, generateInternalLicense, generateScriptLicense, normalizeAccountDiscordLink, upgradeToInternal, getCachedAccounts } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 import { getAnnouncement, setAnnouncement, getMaintenance, setMaintenance, getSpotifyUrl, setSpotifyUrl } from '@/lib/app-settings';
 import { isInviteSystemEnabled, setInviteSystemEnabled, generateInviteCode, getUserInvites, getAllChats, getChatMessages, sendChatMessage, deleteChat, getAllInvitesAdmin } from '@/lib/invites';
@@ -143,17 +143,24 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
   }, []);
 
   async function getEntityRows(entityName) {
-    const entity = db.entities[entityName];
-    if (!entity) return [];
-    if (typeof entity.list === 'function') {
-      const rows = await entity.list('-created_date', 100);
-      return Array.isArray(rows) ? rows : [];
+    try {
+      const entity = db.entities[entityName];
+      if (!entity) return [];
+      if (typeof entity.list === 'function') {
+        const rows = await entity.list('-created_date', 100);
+        return Array.isArray(rows) ? rows : [];
+      }
+      if (typeof entity.filter === 'function') {
+        const rows = await entity.filter({});
+        return Array.isArray(rows) ? rows : [];
+      }
+      return [];
+    } catch (e) {
+      if (entityName === 'Account') {
+        return getCachedAccounts();
+      }
+      return [];
     }
-    if (typeof entity.filter === 'function') {
-      const rows = await entity.filter({});
-      return Array.isArray(rows) ? rows : [];
-    }
-    return [];
   }
 
   async function loadData() {

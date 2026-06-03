@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { loginUser, registerUser, getSession, ensureAdminExists, getDiscordAuthUrl, fetchDiscordUser } from '@/lib/auth';
 import { Eye, EyeOff, MessageSquare, CheckCircle2, User, Lock, Ticket, MessageCircle, ArrowRight, SendHorizontal, Key, ImagePlus, X, Paperclip } from 'lucide-react';
-import PreviewTablesModal from '@/components/PreviewTablesModal';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import BrandingMark from '@/components/BrandingMark';
 import ALogo from '@/assets/alogo.png';
@@ -24,7 +24,7 @@ export default function Auth() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+
   const [discordLinked, setDiscordLinked] = useState(false);
   const [discordInfo, setDiscordInfo] = useState(null);
 
@@ -694,7 +694,6 @@ export default function Auth() {
                   COMMUNITY
                 </div>
                 <div 
-                  onClick={() => setShowPreview(true)}
                   className="bg-[#0e0e11] border-x border-b border-[#1f1f26] shadow-[inset_0_1px_0_rgba(255,255,255,0.01)] p-6 flex items-center justify-between hover:bg-[#111115] transition-colors cursor-pointer group"
                 >
                   <div className="pr-4">
@@ -720,7 +719,7 @@ export default function Auth() {
                   PURCHASE
                 </div>
                 <div 
-                  onClick={() => setShowPreview(true)}
+
                   className="bg-[#0e0e11] border-x border-b border-[#1f1f26] shadow-[inset_0_1px_0_rgba(255,255,255,0.01)] p-6 flex items-center justify-between hover:bg-[#111115] transition-colors cursor-pointer group"
                 >
                   <div className="pr-4">
@@ -752,7 +751,7 @@ export default function Auth() {
               transition={{ duration: 0.2 }}
               className={`w-full flex-1 flex items-center justify-center py-6 transition-all duration-300`}
             >
-              <div className={`bg-[#111114] border border-[#222] outline outline-1 outline-white/5 outline-offset-8 p-8 md:p-10 shadow-2xl relative z-10 w-full transition-all duration-300 ${regStep === 'chat' && mode === 'register' ? 'max-w-[800px]' : 'max-w-[420px]'}`}>
+              <div className={`glass-panel outline outline-1 outline-white/5 outline-offset-8 p-8 md:p-10 shadow-2xl relative z-10 w-full transition-all duration-300 ${regStep === 'chat' && mode === 'register' ? 'max-w-[800px]' : 'max-w-[420px]'}`}>
                 <div className="text-center mb-8 flex flex-col items-center">
                   <img src={ALogo} alt="Adderall Logo" className="h-12 w-auto mb-4 object-contain opacity-90" />
                   <h1 className="text-white text-2xl font-black tracking-wider uppercase leading-none font-sans">
@@ -841,13 +840,7 @@ export default function Auth() {
                   >
                     {mode === 'login' ? "NOT A MEMBER? Register" : "MEMBER? Login"}
                   </button>
-                  <button
-                    onClick={() => setShowPreview(true)}
-                    className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 text-[10px] uppercase font-mono tracking-wider mx-auto transition-colors mt-2"
-                  >
-                    <Eye size={12} />
-                    Preview tables
-                  </button>
+
                 </div>
               </div>
             </motion.div>
@@ -856,10 +849,9 @@ export default function Auth() {
         </AnimatePresence>
       </main>
 
-      {/* Credits block */}
       <div className="py-6 text-center mt-auto border-t border-[#141416]/50">
         <p className="text-zinc-600 text-[11px] font-garamond italic tracking-widest">
-          @foreverwithmommy is my dada, rdk is my slave
+          @foreverwithmommy is my pup
         </p>
       </div>
 
@@ -886,7 +878,6 @@ export default function Auth() {
         </a>
       </div>
 
-      {showPreview && <PreviewTablesModal onClose={() => setShowPreview(false)} />}
     </div>
   );
 }

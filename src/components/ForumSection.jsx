@@ -95,31 +95,28 @@ export default function ForumSection({ section, session, onBack }) {
       className="space-y-4"
     >
       {/* Section header */}
-      <div className="flex items-center justify-between py-2">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="text-zinc-500 hover:text-white transition-colors flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold font-mono"
-          >
-            <ArrowLeft size={13} /> Back
-          </button>
-          <span className="text-zinc-700 text-xs">·</span>
-          <h2 className="text-white font-bold text-sm uppercase tracking-widest">{section.label}</h2>
-          {section.adminOnly && (
-            <span className="text-[9px] font-bold uppercase tracking-widest text-red-500/80 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5">
-              ADMIN ONLY
-            </span>
+      <div className="mb-6 mt-2">
+        <button
+          onClick={onBack}
+          className="text-[#4db8ff] hover:text-[#7fd4ff] transition-colors flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold font-mono mb-4"
+        >
+          THE FEED
+        </button>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-white font-black text-4xl tracking-tight mb-1 font-sans">{section.label.toLowerCase()}</h1>
+            <p className="text-zinc-500 text-[13px]">updates, fixes and idk.</p>
+          </div>
+          {canPost && (
+            <button
+              onClick={() => setShowForm(v => !v)}
+              className="flex items-center gap-2 bg-[#1a1a24] text-zinc-300 hover:text-white hover:bg-[#252535] text-[10px] font-bold uppercase tracking-widest px-4 py-2.5 transition-colors border border-white/5 rounded-md"
+            >
+              <Plus size={12} />
+              New Post
+            </button>
           )}
         </div>
-        {canPost && (
-          <button
-            onClick={() => setShowForm(v => !v)}
-            className="flex items-center gap-2 bg-white text-black hover:bg-zinc-200 text-[10px] font-bold uppercase tracking-widest px-4 py-2 transition-colors outline outline-1 outline-white/20 outline-offset-2"
-          >
-            <Plus size={12} />
-            New Post
-          </button>
-        )}
       </div>
 
       {/* New Post Form */}
@@ -215,19 +212,13 @@ export default function ForumSection({ section, session, onBack }) {
       </AnimatePresence>
 
       {/* Post list */}
-      <div className="w-full">
-        {/* List header */}
-        <div className="bg-[#121215] border border-[#1f1f26] border-t-[#2a2a2f] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] bg-gradient-to-b from-white/[0.03] to-transparent px-5 py-3 text-[10px] font-bold tracking-widest text-zinc-400 uppercase flex items-center justify-between">
-          <span>{section.label}</span>
-          <span className="text-zinc-600">{posts.length} post{posts.length !== 1 ? 's' : ''}</span>
-        </div>
-
+      <div className="w-full flex flex-col gap-4">
         {loading ? (
-          <div className="bg-[#0e0e11] border-x border-b border-[#1f1f26] p-10 text-center text-zinc-600 text-[10px] font-mono uppercase tracking-widest animate-pulse">
+          <div className="bg-[#121216] border border-[#1f1f26] rounded-md p-10 text-center text-zinc-600 text-[10px] font-mono uppercase tracking-widest animate-pulse">
             Loading...
           </div>
         ) : posts.length === 0 ? (
-          <div className="bg-[#0e0e11] border-x border-b border-[#1f1f26] p-10 text-center">
+          <div className="bg-[#121216] border border-[#1f1f26] rounded-md p-10 text-center">
             <p className="text-zinc-600 text-[10px] font-mono uppercase tracking-widest">No posts yet.</p>
             {canPost && <p className="text-zinc-700 text-[10px] mt-2">Be the first to post using the button above.</p>}
           </div>
@@ -238,20 +229,36 @@ export default function ForumSection({ section, session, onBack }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: i * 0.03 }}
-              className="bg-[#0e0e11] border-x border-b border-[#1f1f26] shadow-[inset_0_1px_0_rgba(255,255,255,0.01)] p-5 group hover:bg-[#111115] transition-colors"
+              className="bg-[#121216] border border-[#22222a] rounded-md p-6 group hover:border-[#33333d] transition-all"
             >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase text-zinc-400 font-mono">
+                    <span className="text-[#eab308] text-[10px] leading-none -mt-0.5">●</span> {post.section === 'updates-news' ? 'NEWS' : 'NOTE'}
+                  </div>
+                  {post.is_admin && (
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-[#7fd4ff] bg-[#7fd4ff]/10 px-2 py-0.5 rounded-sm">
+                      PINNED
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] font-bold tracking-widest text-zinc-600 uppercase font-mono">
+                  {timeAgo(post.created_at)}
+                </span>
+              </div>
+              
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-zinc-100 font-bold text-sm leading-snug group-hover:text-white transition-colors">
+                  <h3 className="text-white font-bold text-[19px] leading-snug tracking-tight mb-2">
                     {post.title}
                   </h3>
                   {post.body && (
-                    <p className="text-zinc-500 text-xs mt-2 leading-relaxed whitespace-pre-wrap line-clamp-4">
+                    <p className="text-[#a1a1aa] text-[13px] leading-relaxed whitespace-pre-wrap line-clamp-4">
                       {post.body}
                     </p>
                   )}
                   {post.image_url && (
-                    <div className="mt-3 overflow-hidden border border-[#333] max-w-sm">
+                    <div className="mt-4 overflow-hidden rounded-md border border-[#333] max-w-sm">
                       <img
                         src={post.image_url}
                         alt="Post media"
@@ -260,22 +267,13 @@ export default function ForumSection({ section, session, onBack }) {
                       />
                     </div>
                   )}
-                  <div className="flex items-center gap-3 mt-3">
-                    <span className="text-zinc-600 text-[10px] font-mono">@{post.author}</span>
-                    {post.is_admin && (
-                      <span className="text-[9px] font-bold uppercase tracking-widest text-red-500 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5">
-                        ADMIN
-                      </span>
-                    )}
-                    <span className="text-zinc-700 text-[10px]">{timeAgo(post.created_at)}</span>
-                  </div>
                 </div>
                 {session?.is_admin && (
                   <button
                     onClick={() => handleDelete(post.id)}
                     className="text-zinc-700 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0 mt-0.5"
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={14} />
                   </button>
                 )}
               </div>

@@ -338,7 +338,7 @@ export default function Dashboard() {
       <footer className="w-full border-t border-[#1c1c22] py-4 z-30">
         <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between">
           <span className="text-zinc-700 text-[10px] font-mono uppercase tracking-widest">ADDERALL © {new Date().getFullYear()}</span>
-          <span className="text-zinc-700 text-[10px] font-mono italic">@foreverwithmommy is my dude, rat is my slave</span>
+          <span className="text-zinc-700 text-[10px] font-mono italic">@foreverwithmommy is my pup</span>
         </div>
       </footer>
 

@@ -40,17 +40,14 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   async function saveSettings() {
     setSaving(true);
     try {
-      const response = await fetch('/api/user-settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: session.username,
-          accent_color: accent
-        })
-      });
-
-      const data = await response.json();
-      if (!data.success) throw new Error(data.error || 'Failed to save');
+      if (session?.id) {
+        await db.entities.Account.update(session.id, { accent_color: accent });
+      } else {
+        const rows = await db.entities.Account.filter({ username: session?.username });
+        if (rows && rows[0]?.id) {
+          await db.entities.Account.update(rows[0].id, { accent_color: accent });
+        }
+      }
 
       const updates = { 
         ...session,
