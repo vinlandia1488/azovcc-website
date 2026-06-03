@@ -1,60 +1,70 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
-
-
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { getSession, clearSession, setSession, getCachedAccounts } from '@/lib/auth';
-import { getBackendDb } from '@/lib/backend';
-import NavTabs from '@/components/NavTabs';
-import DashboardTab from '@/components/DashboardTab';
-import DownloadsTab from '@/components/DownloadsTab';
-import CloudConfigsTab from '@/components/CloudConfigsTab';
-import PanelTab from '@/components/PanelTab';
-import SupportTab from '@/components/SupportTab';
-import MusicWidget from '@/components/MusicWidget';
+import { getAnnouncement } from '@/lib/app-settings';
+import { getAllPostCounts } from '@/lib/forum';
 import SettingsModal from '@/components/SettingsModal';
 import BrandingMark from '@/components/BrandingMark';
-
-
+import ForumSection from '@/components/ForumSection';
+import DashboardTab from '@/components/DashboardTab';
+import PanelTab from '@/components/PanelTab';
+import SupportTab from '@/components/SupportTab';
+import DownloadsTab from '@/components/DownloadsTab';
+import CloudConfigsTab from '@/components/CloudConfigsTab';
 import SeasonalEffects from '@/components/SeasonalEffects';
-import { getAnnouncement } from '@/lib/app-settings';
+import MusicWidget from '@/components/MusicWidget';
+import { LogOut, Settings } from 'lucide-react';
 
-const db = getBackendDb();
+const FORUM_SECTIONS = [
+  {
+    category: 'ADDERALL',
+    rows: [
+      { id: 'updates-news', label: 'Updates & News', adminOnly: true },
+    ],
+  },
+  {
+    category: 'COMMUNITY',
+    rows: [
+      { id: 'media', label: 'Media', adminOnly: false },
+    ],
+  },
+  {
+    category: 'PURCHASE',
+    rows: [
+      { id: 'store-licenses', label: 'Store & Licenses', adminOnly: true },
+    ],
+  },
+];
+
+const NAV_TABS = [
+  { id: 'home', label: 'Home' },
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'downloads', label: 'Downloads' },
+  { id: 'cloud-configs', label: 'Cloud Configs' },
+  { id: 'chat', label: 'Chat' },
+];
+
+const CATEGORY_HEADER = 'bg-[#121215] border border-[#1f1f26] border-t-[#2a2a2f] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] bg-gradient-to-b from-white/[0.03] to-transparent px-5 py-3 text-[10px] font-bold tracking-widest text-zinc-400 uppercase';
+const ROW_BASE = 'bg-[#0e0e11] border-x border-b border-[#1f1f26] shadow-[inset_0_1px_0_rgba(255,255,255,0.01)] p-5 flex items-center justify-between hover:bg-[#111115] transition-colors cursor-pointer group';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [session, setSessionState] = useState(null);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('home');
+  const [activeSection, setActiveSection] = useState(null); // { id, label, adminOnly }
   const [showSettings, setShowSettings] = useState(false);
   const [announcement, setAnnouncement] = useState('');
-  const [feedbackActive, setFeedbackActive] = useState(false);
-  const [dock, setDock] = useState({ side: 'left', orientation: 'vertical' });
   const [showIntro, setShowIntro] = useState(true);
-  const [brandingAnimation, setBrandingAnimation] = useState('fade');
-  const [brandingShowCc, setBrandingShowCc] = useState(() => localStorage.getItem('adderal_brandingShowCc') === 'true');
-
-
-  const constraintsRef = useRef(null);
-  const barRef = useRef(null);
-  const navControls = useAnimation();
-
-  useEffect(() => {
-    if (barRef.current) {
-      const h = window.innerHeight;
-      const barH = barRef.current.offsetHeight;
-      navControls.set({ x: 24, y: h / 2 - barH / 2 });
-    }
-  }, [session]);
-
-
-
+  const [postCounts, setPostCounts] = useState({});
+  const [brandingShowCc] = useState(() => localStorage.getItem('adderal_brandingShowCc') === 'true');
 
   useEffect(() => {
     async function init() {
       const s = getSession();
       if (!s) { navigate('/'); return; }
       const cached = getCachedAccounts();
-      const cacheMatch = cached.find((row) =>
+      const cacheMatch = cached.find(row =>
         (s.id && row.id && row.id === s.id) || (s.username && row.username === s.username)
       );
       setSessionState({ ...cacheMatch, ...s });
@@ -67,228 +77,285 @@ export default function Dashboard() {
   useEffect(() => {
     if (!session) return;
     setShowIntro(true);
-    const timeout = setTimeout(() => setShowIntro(false), 1500);
-    return () => clearTimeout(timeout);
-  }, [session]);
+    const t = setTimeout(() => setShowIntro(false), 1500);
+    return () => clearTimeout(t);
+  }, [session?.username]);
+
+  useEffect(() => {
+    loadPostCounts();
+  }, []);
+
+  async function loadPostCounts() {
+    try {
+      const counts = await getAllPostCounts();
+      setPostCounts(counts);
+    } catch {}
+  }
+
+  async function refreshSession() {
+    const s = getSession();
+    if (!s) return;
+    try {
+      const accounts = await db.entities.Account.filter({ username: s.username });
+      if (accounts?.length > 0) {
+        const updated = {
+          ...accounts[0],
+          username: accounts[0].username || s.username,
+          internal_license: accounts[0].internal_license || s.internal_license || '',
+          script_license: accounts[0].script_license || s.script_license || '',
+          unique_identifier: accounts[0].unique_identifier ?? s.unique_identifier ?? 0,
+          profile_pic: accounts[0].profile_pic || s.profile_pic || '',
+          is_admin: typeof accounts[0].is_admin === 'boolean' ? accounts[0].is_admin : Boolean(s.is_admin),
+          accent_color: accounts[0].accent_color || s.accent_color || '#ef4444',
+          executor_mode: accounts[0].executor_mode === true,
+          reveal_console: accounts[0].reveal_console === true,
+        };
+        setSession(updated);
+        setSessionState(updated);
+      }
+    } catch {}
+  }
 
   function handleLogout() {
     clearSession();
     navigate('/');
   }
 
-  async function refreshSession() {
-    const s = getSession();
-    if (!s) return;
-    setSessionState(s);
-    const accounts = await db.entities.Account.filter({ username: s.username });
-    if (accounts && accounts.length > 0) {
-      const updated = {
-        ...accounts[0],
-        username: accounts[0].username || s.username,
-        internal_license: accounts[0].internal_license || s.internal_license || '',
-        script_license: accounts[0].script_license || s.script_license || '',
-        unique_identifier: accounts[0].unique_identifier ?? s.unique_identifier ?? 0,
-        profile_pic: accounts[0].profile_pic || s.profile_pic || '',
-        is_admin: typeof accounts[0].is_admin === 'boolean' ? accounts[0].is_admin : Boolean(s.is_admin),
-        accent_color: accounts[0].accent_color || s.accent_color || '#ef4444',
-        executor_mode: accounts[0].executor_mode === true,
-        is_executor: accounts[0].executor_mode === true,
-        reveal_console: accounts[0].reveal_console === true,
-      };
-
-      try {
-        const resp = await fetch(`/api/user-settings?username=${encodeURIComponent(s.username)}&format=json`, {
-          headers: { 'Accept': 'application/json' }
-        });
-        if (resp.ok) {
-          const settings = await resp.json();
-          if (settings && settings.success) {
-            updated.executor_mode = settings.executor_mode === true;
-            updated.is_executor = settings.executor_mode === true;
-            updated.reveal_console = settings.reveal_console === true;
-            if (settings.accent_color) updated.accent_color = settings.accent_color;
-          }
-        }
-      } catch {}
-
-      setSession(updated);
-      setSessionState(updated);
-    }
-  }
-  
-  function triggerFeedback() {
-    setFeedbackActive(true);
-    setTimeout(() => setFeedbackActive(false), 2000);
-  }
-
   if (!session) return null;
 
-
-  if (activeTab === 'panel' && !session.is_admin) {
-    setActiveTab('dashboard');
-    return null;
-  }
-
+  const displayUsername = session.username || 'Unknown';
   const accent = session.accent_color || '#ef4444';
 
   return (
-    <div ref={constraintsRef} className="min-h-screen bg-[#0a0a0a] text-white relative overflow-hidden">
-      {showIntro && (
-        <div className="fixed inset-0 z-[220] flex items-center justify-center bg-[#0a0a0a]">
-          <BrandingMark
-            animation={brandingAnimation}
-            showCc={brandingShowCc}
-            loop={false}
-            className="text-white font-black tracking-[0.22em] uppercase text-5xl md:text-6xl"
-          />
-        </div>
-      )}
-      <SeasonalEffects />
-
-      <div className="fixed top-8 left-8 z-[60] flex items-center select-none pointer-events-none md:pointer-events-auto">
-        <h1 className="text-2xl font-black tracking-[0.3em] text-white uppercase leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-          ADDERALL
-        </h1>
-      </div>
-
-      <motion.div 
-        drag
-        dragConstraints={constraintsRef}
-        dragMomentum={false}
-        dragElastic={0.1}
-        animate={navControls}
-        onDrag={(e, info) => {
-          const { x, y } = info.point;
-          const w = window.innerWidth;
-          const h = window.innerHeight;
-          
-          if (x < 180) {
-            if (dock.side !== 'left') setDock({ side: 'left', orientation: 'vertical' });
-          } else if (x > w - 180) {
-            if (dock.side !== 'right') setDock({ side: 'right', orientation: 'vertical' });
-          } else if (y < 150) {
-            if (dock.side !== 'top') setDock({ side: 'top', orientation: 'horizontal' });
-          } else if (y > h - 150) {
-            if (dock.side !== 'bottom') setDock({ side: 'bottom', orientation: 'horizontal' });
-          } else {
-             if (dock.side !== 'top') setDock({ side: 'top', orientation: 'horizontal' });
-          }
-        }}
-        onDragEnd={(e, info) => {
-          const { x, y } = info.point;
-          const w = window.innerWidth;
-          const h = window.innerHeight;
-          const barW = barRef.current?.offsetWidth || 400;
-          const barH = barRef.current?.offsetHeight || 50;
-          
-          if (x < 180) {
-            navControls.start({ x: 24, y: h / 2 - barH / 2, transition: { type: 'spring', damping: 20 } });
-            setDock({ side: 'left', orientation: 'vertical' });
-          } else if (x > w - 180) {
-            navControls.start({ x: w - barW - 24, y: h / 2 - barH / 2, transition: { type: 'spring', damping: 20 } });
-            setDock({ side: 'right', orientation: 'vertical' });
-          } else if (y > h - 180) {
-            navControls.start({ x: w / 2 - barW / 2, y: h - barH - 32, transition: { type: 'spring', damping: 20 } });
-            setDock({ side: 'bottom', orientation: 'horizontal' });
-          } else {
-            navControls.start({ x: w / 2 - barW / 2, y: 32, transition: { type: 'spring', damping: 20 } });
-            setDock({ side: 'top', orientation: 'horizontal' });
-          }
-        }}
-        className="fixed z-50 top-0 left-0 cursor-grab active:cursor-grabbing group hidden md:block"
-        style={{ touchAction: 'none' }}
-      >
-        <div ref={barRef}>
-          <NavTabs activeTab={activeTab} setActiveTab={setActiveTab} accent={accent} isAdmin={session.is_admin} orientation={dock.orientation} />
-        </div>
-      </motion.div>
-
-
-
-      <div className="relative z-10 pt-6 pb-4 flex justify-center md:hidden">
-        <NavTabs activeTab={activeTab} setActiveTab={setActiveTab} accent={accent} isAdmin={session.is_admin} />
-      </div>
-
-      <div className={`relative z-10 transition-all duration-700 ease-in-out ${
-        dock.side === 'left' ? 'md:pl-20' : 
-        dock.side === 'right' ? 'md:pr-20' : 
-        ''
-      }`}>
-        <div className={`max-w-5xl mx-auto px-4 pb-16 transition-all duration-700 ${
-          dock.orientation === 'vertical' ? 'pt-12' : 'pt-12 md:pt-32'
-        }`}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              {activeTab === 'dashboard' && (
-                <DashboardTab session={session} onSettings={() => setShowSettings(true)} accent={accent} announcement={announcement} />
-              )}
-              {activeTab === 'downloads' && (
-                <DownloadsTab accent={accent} session={session} />
-              )}
-              {activeTab === 'cloud-configs' && (
-                <CloudConfigsTab session={session} accent={accent} />
-              )}
-              {activeTab === 'chat' && (
-                <SupportTab session={session} accent={accent} />
-              )}
-
-              {activeTab === 'panel' && session.is_admin && (
-
-                <PanelTab
-                  accent={accent}
-                  session={session}
-                  onAnnouncementSaved={async () => {
-                    setAnnouncement(await getAnnouncement());
-                    triggerFeedback();
-                  }}
-                  onAction={triggerFeedback}
-                />
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-[#07070a] text-white flex flex-col grid-bg font-sans">
+      {/* Intro overlay */}
       <AnimatePresence>
-        {feedbackActive && (
+        {showIntro && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            key="intro"
+            initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed bottom-12 left-1/2 z-[100] bg-zinc-900/90 border border-[#333] backdrop-blur-md px-6 py-3 rounded-lg shadow-2xl flex items-center gap-3"
+            transition={{ duration: 0.6 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-[#07070a]"
           >
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-white text-xs font-bold tracking-widest uppercase">Change applied!</span>
+            <BrandingMark
+              animation="off"
+              showCc={brandingShowCc}
+              loop={false}
+              className="text-white font-black tracking-[0.22em] uppercase text-5xl md:text-6xl inline-block"
+            />
           </motion.div>
         )}
       </AnimatePresence>
 
+      <SeasonalEffects />
+
+      {/* ── Top Header ── */}
+      <header className="w-full bg-[#0b0b0d] border-b border-[#1c1c22] z-50 select-none">
+        <div className="max-w-[1200px] mx-auto px-6 py-4 flex items-center justify-between">
+          {/* Brand */}
+          <button
+            onClick={() => { setActiveTab('home'); setActiveSection(null); }}
+            className="text-white font-black tracking-[0.25em] text-xl md:text-2xl uppercase hover:opacity-90 transition-opacity font-sans focus:outline-none"
+          >
+            ADDERALL
+          </button>
+
+          {/* Right actions */}
+          <div className="flex items-center gap-2">
+            {session.is_admin && (
+              <button
+                onClick={() => { setActiveTab('panel'); setActiveSection(null); }}
+                className={`text-[10px] font-bold font-mono tracking-widest px-4 py-2 uppercase border transition-all rounded-none ${
+                  activeTab === 'panel'
+                    ? 'bg-white text-black border-white'
+                    : 'bg-[#121215] text-zinc-300 border-[#222] hover:bg-[#1a1a1f] hover:text-white'
+                }`}
+              >
+                ADMIN PANEL
+              </button>
+            )}
+            <a
+              href="https://discord.gg/ycymTeFWBd"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] font-bold font-mono tracking-widest px-4 py-2 uppercase border bg-[#121215] text-zinc-300 border-[#222] hover:bg-[#1a1a1f] hover:text-white transition-all rounded-none discord-glow hover:shadow-[0_0_20px_rgba(88,101,242,0.4)] hover:border-[#5865F2]"
+            >
+              DISCORD
+            </a>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="text-[10px] font-bold font-mono tracking-widest px-3 py-2 uppercase border bg-[#121215] text-zinc-300 border-[#222] hover:bg-[#1a1a1f] hover:text-white transition-all rounded-none"
+            >
+              <Settings size={13} />
+            </button>
+            <button
+              onClick={handleLogout}
+              className="text-[10px] font-bold font-mono tracking-widest px-3 py-2 uppercase border bg-[#121215] text-zinc-400 border-[#222] hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-all rounded-none"
+            >
+              <LogOut size={13} />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Sub Nav ── */}
+      <nav className="w-full bg-[#141416] border-b border-[#1c1c22] z-40 select-none">
+        <div className="max-w-[1200px] mx-auto px-6 flex items-center gap-6">
+          {NAV_TABS.filter(t => t.id !== 'panel').map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id); setActiveSection(null); }}
+              className={`text-xs font-bold tracking-wider transition-colors hover:text-white uppercase py-3.5 border-b-2 -mb-px ${
+                activeTab === tab.id && !activeSection
+                  ? 'text-white border-white'
+                  : 'text-zinc-500 border-transparent'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* ── Body ── */}
+      <main className="flex-1 max-w-[1200px] w-full mx-auto px-6 py-8 z-30">
+        <AnimatePresence mode="wait">
+
+          {/* Home Tab — Forum */}
+          {activeTab === 'home' && !activeSection && (
+            <motion.div
+              key="home-forum"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
+              {/* Welcome row */}
+              <div className="bg-[#0e0e11] border border-[#1f1f26] px-6 py-4">
+                <p className="text-sm text-zinc-300">
+                  Welcome, <span className="font-black text-white" style={{ color: accent }}>{displayUsername}</span>
+                </p>
+                <p className="text-[10px] text-zinc-600 uppercase tracking-widest font-mono mt-1">
+                  Status: <span className="text-zinc-400 font-bold">{session.is_admin ? 'ADMIN' : 'MEMBER'}</span>
+                </p>
+              </div>
+
+              {/* Forum categories */}
+              <div className="space-y-6">
+                {FORUM_SECTIONS.map(cat => (
+                  <div key={cat.category} className="w-full">
+                    <div className={CATEGORY_HEADER}>{cat.category}</div>
+                    {cat.rows.map(row => {
+                      const locked = row.adminOnly && !session.is_admin;
+                      return (
+                        <div
+                          key={row.id}
+                          onClick={() => !locked && setActiveSection(row)}
+                          className={`${ROW_BASE} ${locked ? 'cursor-not-allowed opacity-50' : ''}`}
+                        >
+                          <div className="pr-4">
+                            <h3 className="text-zinc-200 font-bold text-sm group-hover:text-white transition-colors">
+                              {row.label}
+                            </h3>
+                            {row.adminOnly && (
+                              <span className="text-[9px] text-zinc-600 uppercase font-mono tracking-wider">Admin only</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-8 min-w-[150px] justify-end">
+                            <div className="flex flex-col items-center">
+                              <span className="text-base font-bold text-zinc-300 leading-none">{postCounts[row.id] ?? 0}</span>
+                              <span className="text-[7px] font-bold text-zinc-500 tracking-wider mt-1 uppercase font-mono">Posts</span>
+                            </div>
+                            <span className="text-[9px] font-mono font-bold text-zinc-600 tracking-wider uppercase">
+                              {postCounts[row.id] ? 'Active' : 'No Activity'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Forum section view */}
+          {activeTab === 'home' && activeSection && (
+            <ForumSection
+              key={`section-${activeSection.id}`}
+              section={activeSection}
+              session={session}
+              onBack={() => setActiveSection(null)}
+            />
+          )}
+
+          {/* Dashboard Tab */}
+          {activeTab === 'dashboard' && (
+            <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              <DashboardTab session={session} onSettings={() => setShowSettings(true)} accent={accent} announcement={announcement} />
+            </motion.div>
+          )}
+
+          {/* Downloads Tab */}
+          {activeTab === 'downloads' && (
+            <motion.div key="downloads" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              <DownloadsTab accent={accent} session={session} />
+            </motion.div>
+          )}
+
+          {/* Cloud Configs Tab */}
+          {activeTab === 'cloud-configs' && (
+            <motion.div key="cloud-configs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              <CloudConfigsTab session={session} accent={accent} />
+            </motion.div>
+          )}
+
+          {/* Chat Tab */}
+          {activeTab === 'chat' && (
+            <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              <SupportTab session={session} accent={accent} />
+            </motion.div>
+          )}
+
+          {/* Admin Panel Tab */}
+          {activeTab === 'panel' && session.is_admin && (
+            <motion.div key="panel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              <PanelTab
+                accent={accent}
+                session={session}
+                onAnnouncementSaved={async () => setAnnouncement(await getAnnouncement())}
+                onAction={() => {}}
+              />
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full border-t border-[#1c1c22] py-4 z-30">
+        <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between">
+          <span className="text-zinc-700 text-[10px] font-mono uppercase tracking-widest">ADDERALL © {new Date().getFullYear()}</span>
+          <span className="text-zinc-700 text-[10px] font-mono italic">@foreverwithmommy is my dude, rat is my slave</span>
+        </div>
+      </footer>
+
+      {/* Settings Modal */}
       {showSettings && (
         <SettingsModal
           session={session}
           onClose={() => setShowSettings(false)}
-          onSaved={async (updatedData) => { 
-            if (updatedData) {
-              setSession(updatedData);
-              setSessionState(updatedData);
-            } else {
-              await refreshSession(); 
-            }
-            triggerFeedback(); 
+          onSaved={async (updatedData) => {
+            if (updatedData) { setSession(updatedData); setSessionState(updatedData); }
+            else await refreshSession();
           }}
           onLogout={handleLogout}
         />
       )}
 
       <MusicWidget accent={accent} />
-
     </div>
-
   );
 }
