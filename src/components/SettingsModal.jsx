@@ -201,41 +201,45 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                       </div>
 
                       <div className="mt-14 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h2 className="text-white text-xl font-black tracking-tight flex items-center gap-2">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0 flex-1">
+                            <h2 className="text-white text-xl font-black tracking-tight flex items-center gap-2 truncate">
                               {session.username}
-                              {session.is_admin && <Shield size={16} className="text-blue-400" />}
+                              {session.is_admin && <Shield size={16} className="text-blue-400 shrink-0" />}
                             </h2>
-                            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-0.5">
+                            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">
                               {session.is_admin ? 'Staff Member' : 'Community Member'}
                             </p>
                           </div>
-                          <div className="bg-[#16161a] px-3 py-1.5 rounded-lg border border-white/5">
+                          <div className="bg-[#16161a] px-3 py-1.5 rounded-lg border border-white/5 shrink-0">
                             <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">UID: #{session.unique_identifier || '0'}</span>
                           </div>
                         </div>
 
                         {/* Badges Preview */}
-                        <div className="flex flex-wrap gap-1.5 pt-3 border-t border-white/5">
+                        <div className="flex flex-wrap gap-1.5 pt-4 border-t border-white/5">
                           {session.is_admin && (
-                            <div title="Staff Member" className="w-7 h-7 rounded bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                            <div title="Staff Member" className="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group/badge relative cursor-help">
                               <Shield size={14} className="text-blue-400" />
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10">Staff</span>
                             </div>
                           )}
                           {session.internal_license && (
-                            <div title="Internal User" className="w-7 h-7 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                            <div title="Internal User" className="w-8 h-8 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group/badge relative cursor-help">
                               <Globe size={14} className="text-purple-400" />
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10">Internal</span>
                             </div>
                           )}
                           {session.script_license && (
-                            <div title="Script User" className="w-7 h-7 rounded bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                            <div title="Script User" className="w-8 h-8 rounded bg-green-500/10 flex items-center justify-center border border-green-500/20 group/badge relative cursor-help">
                               <Clock size={14} className="text-green-400" />
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10">Script User</span>
                             </div>
                           )}
                           {session.badges?.map((badge, i) => (
-                            <div key={i} className="w-7 h-7 rounded bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden">
-                              <img src={badge} alt="badge" className="w-full h-full object-contain" />
+                            <div key={i} className="w-8 h-8 rounded bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden group/badge relative cursor-help">
+                              <img src={badge} alt="badge" className="w-full h-full object-contain p-1" />
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10">Special Badge</span>
                             </div>
                           ))}
                         </div>
@@ -244,11 +248,11 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                  </div>
 
                  {/* Profile Settings */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-[#111] border border-[#222] rounded-xl p-4 space-y-4">
-                      <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Accent Theme</h4>
-                      <div className="flex items-center gap-3 bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2">
-                         <div className="w-6 h-6 rounded-md relative overflow-hidden" style={{ background: profileAccent }}>
+                 <div className="bg-[#111] border border-[#222] rounded-xl p-5 space-y-4">
+                    <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Accent Theme</h4>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-2.5 flex-1">
+                         <div className="w-6 h-6 rounded-md relative overflow-hidden ring-1 ring-white/10" style={{ background: profileAccent }}>
                            <input 
                              type="color" 
                              value={profileAccent} 
@@ -256,17 +260,11 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                              className="absolute inset-[-10px] w-20 h-20 cursor-pointer opacity-0"
                            />
                          </div>
-                         <span className="text-zinc-300 text-[10px] font-mono uppercase tracking-wider">{profileAccent}</span>
+                         <span className="text-zinc-300 text-xs font-mono uppercase tracking-wider font-bold">{profileAccent}</span>
                       </div>
-                      <p className="text-[9px] text-zinc-500">This color applies to your profile banner (if no image) and accent elements.</p>
-                    </div>
-
-                    <div className="bg-[#111] border border-[#222] rounded-xl p-4 flex flex-col justify-center">
-                      <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Rank Status</h4>
-                      <span className="text-white text-sm font-bold">{session.is_admin ? 'Administrator' : 'User'}</span>
-                      <span className="text-zinc-500 text-[9px] uppercase tracking-tighter mt-1">
-                        {session.internal_license ? 'Internal License' : (session.script_license ? 'Script License' : 'No License')}
-                      </span>
+                      <div className="text-[9px] text-zinc-500 max-w-[200px] leading-relaxed">
+                        This color applies to your profile banner (if no image) and accent elements.
+                      </div>
                     </div>
                  </div>
                </div>
@@ -274,7 +272,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                <button 
                   onClick={saveSettings}
                   disabled={saving}
-                  className="w-full bg-white text-black font-black text-[10px] tracking-[0.2em] uppercase rounded-lg h-12 hover:bg-zinc-200 transition disabled:opacity-50"
+                  className="w-full bg-white text-black font-black text-[10px] tracking-[0.2em] uppercase rounded-lg h-12 hover:bg-zinc-200 transition disabled:opacity-50 mt-4 shadow-xl"
                >
                   {saving ? 'Saving Profile...' : 'Save Profile Settings'}
                </button>
