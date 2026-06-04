@@ -19,6 +19,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [profilePic, setProfilePic] = useState(session.profile_pic || '');
   const [profileBanner, setProfileBanner] = useState(session.profile_banner || '');
   const [profileAccent, setProfileAccent] = useState(session.profile_accent || '#1a1a1a');
+  const [profileDescription, setProfileDescription] = useState(session.description || '');
 
   useEffect(() => {
     localStorage.setItem('adderal_preset', currentPreset);
@@ -53,7 +54,8 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
       const payload = {
         profile_accent: profileAccent,
         profile_banner: profileBanner,
-        profile_pic: profilePic
+        profile_pic: profilePic,
+        description: profileDescription
       };
 
       if (session?.id) {
@@ -226,31 +228,46 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                  </div>
 
                  {/* Right: Controls */}
-                 <div className="w-80 flex flex-col gap-6">
+                 <div className="w-96 flex flex-col gap-6">
                     <div className="space-y-4">
-                      <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Profile Theme</h4>
+                      <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Profile Details</h4>
                       <div className="bg-[#111] border border-[#222] rounded-xl p-5 space-y-4">
                          <div className="flex flex-col gap-3">
-                            <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Banner Accent</label>
-                            <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3 group hover:border-[#333] transition-colors">
-                               <div className="w-7 h-7 rounded-md relative overflow-hidden ring-1 ring-white/10 shadow-lg" style={{ background: profileAccent }}>
-                                 <input 
-                                   type="color" 
-                                   value={profileAccent} 
-                                   onChange={e => setProfileAccent(e.target.value)}
-                                   className="absolute inset-[-10px] w-24 h-24 cursor-pointer opacity-0"
-                                 />
-                               </div>
-                               <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold flex-1">{profileAccent}</span>
-                            </div>
+                            <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Description</label>
+                            <textarea
+                              value={profileDescription}
+                              onChange={e => setProfileDescription(e.target.value)}
+                              placeholder="Write a short bio..."
+                              className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444] transition resize-none h-24"
+                              maxLength={200}
+                            />
                          </div>
-                         <p className="text-[9px] text-zinc-600 leading-relaxed italic">
-                           This color is used when no banner image is uploaded and for profile accents.
-                         </p>
+                      </div>
+                      <div className="space-y-4">
+                        <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Profile Theme</h4>
+                        <div className="bg-[#111] border border-[#222] rounded-xl p-5 space-y-4">
+                           <div className="flex flex-col gap-3">
+                              <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Banner Accent</label>
+                              <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3 group hover:border-[#333] transition-colors">
+                                 <div className="w-7 h-7 rounded-md relative overflow-hidden ring-1 ring-white/10 shadow-lg" style={{ background: profileAccent }}>
+                                   <input 
+                                     type="color" 
+                                     value={profileAccent} 
+                                     onChange={e => setProfileAccent(e.target.value)}
+                                     className="absolute inset-[-10px] w-24 h-24 cursor-pointer opacity-0"
+                                   />
+                                 </div>
+                                 <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold flex-1">{profileAccent}</span>
+                              </div>
+                           </div>
+                           <p className="text-[9px] text-zinc-600 leading-relaxed italic">
+                             This color is used when no banner image is uploaded and for profile accents.
+                           </p>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="mt-auto space-y-3">
+                    <div className="mt-auto">
                       <button 
                          onClick={() => saveSettings(false)}
                          disabled={saving}
@@ -258,7 +275,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                       >
                          {saving ? 'Updating Profile...' : 'Save Changes'}
                       </button>
-                      <p className="text-[9px] text-zinc-700 text-center font-bold uppercase tracking-widest">Changes are public immediately</p>
                     </div>
                  </div>
                </div>

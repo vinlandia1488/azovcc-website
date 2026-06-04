@@ -527,8 +527,7 @@ export default function SupportTab({ session, accent }) {
                       {viewedProfileUser.username}
                       {viewedProfileUser.is_admin && <Shield size={16} className="text-blue-400 shrink-0" />}
                     </h2>
-                    <p className="text-zinc-500 text-xs uppercase tracking-wider mt-1 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                    <p className="text-zinc-500 text-xs uppercase tracking-wider mt-1">
                       {viewedProfileUser.is_admin ? 'Staff Member' : 'Community Member'}
                     </p>
                   </div>
@@ -560,6 +559,13 @@ export default function SupportTab({ session, accent }) {
                     </div>
                   ))}
                 </div>
+
+                {/* Description */}
+                {viewedProfileUser.description && (
+                  <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#333]">
+                    <p className="text-zinc-400 text-sm leading-relaxed">{viewedProfileUser.description}</p>
+                  </div>
+                )}
 
                 {/* Stats/About */}
                 <div className="grid grid-cols-2 gap-4">
