@@ -139,18 +139,12 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
 
            {activeTab === 'profile' ? (
              <div className="animate-in fade-in slide-in-from-bottom-2 duration-400 flex flex-col h-full">
-               <div className="mb-8">
-                 <h3 className="text-white text-xl font-black tracking-tight">Profile Editor</h3>
-                 <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">Customize your public appearance</p>
-               </div>
-
-               <div className="flex gap-10 flex-1 min-h-0">
+               <div className="flex gap-10 flex-1 min-h-0 pt-4">
                  {/* Left: Preview */}
-                 <div className="flex-1 space-y-6">
-                    <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Live Preview</h4>
-                    <div className="bg-[#0b0b0d] rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative w-full group/preview">
+                 <div className="flex-1 flex flex-col items-center justify-start">
+                    <div className="bg-[#0b0b0d] rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative w-full max-w-[340px] group/preview">
                         {/* Banner */}
-                        <div className="h-36 w-full relative bg-zinc-800 overflow-hidden">
+                        <div className="h-28 w-full relative bg-zinc-800 overflow-hidden">
                           {profileBanner ? (
                             <img src={profileBanner} alt="banner" className="w-full h-full object-cover" />
                           ) : (
@@ -158,77 +152,77 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                           )}
                           <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity z-10">
                             <label className="flex flex-col items-center gap-2 cursor-pointer p-4">
-                              <ImagePlus size={24} className="text-white" />
-                              <span className="text-[10px] font-bold text-white uppercase tracking-widest">Change Banner</span>
+                              <ImagePlus size={20} className="text-white" />
+                              <span className="text-[9px] font-black text-white uppercase tracking-widest">Change Banner</span>
                               <input type="file" className="hidden" accept="image/*" onChange={handleBannerUpload} disabled={saving} />
                             </label>
                           </div>
                         </div>
 
                         {/* Avatar container */}
-                        <div className="px-6 pb-8 relative bg-[#0b0b0d]">
-                          <div className="absolute -top-14 left-6 z-20">
-                            <div className="w-28 h-28 rounded-full bg-[#0b0b0d] p-1.5 shadow-2xl relative group/avatar">
+                        <div className="px-5 pb-6 relative bg-[#0b0b0d]">
+                          <div className="absolute -top-10 left-5 z-20">
+                            <div className="w-20 h-20 rounded-full bg-[#0b0b0d] p-1 shadow-2xl relative group/avatar">
                               <div className="w-full h-full rounded-full bg-[#1a1a1a] border border-white/10 overflow-hidden shadow-inner">
                                 {profilePic ? (
                                   <img src={profilePic} alt="PFP" className="w-full h-full object-cover" />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-3xl font-black text-zinc-700">
+                                  <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-700">
                                     {session.username.substring(0, 2).toUpperCase()}
                                   </div>
                                 )}
                               </div>
-                              <div className="absolute inset-1.5 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 rounded-full transition-all duration-300 z-30">
+                              <div className="absolute inset-1 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 rounded-full transition-all duration-300 z-30">
                                 <label className="cursor-pointer w-full h-full flex items-center justify-center">
-                                  <ImagePlus size={20} className="text-white" />
+                                  <ImagePlus size={16} className="text-white" />
                                   <input type="file" className="hidden" accept="image/*" onChange={handlePfpUpload} disabled={saving} />
                                 </label>
                               </div>
                             </div>
                           </div>
 
-                          <div className="mt-20 space-y-6">
+                          <div className="mt-14 space-y-4">
                             <div className="flex items-start justify-between gap-4">
                               <div className="min-w-0 flex-1">
-                                <h2 className="text-white text-2xl font-black tracking-tighter flex items-center gap-2 truncate">
+                                <h2 className="text-white text-xl font-black tracking-tighter flex items-center gap-2 truncate">
                                   {session.username}
-                                  {session.is_admin && <Shield size={18} className="text-blue-400 shrink-0" />}
+                                  {session.is_admin && <Shield size={16} className="text-blue-400 shrink-0" />}
                                 </h2>
                                 <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1 opacity-60">
                                   {session.is_admin ? 'Staff Member' : 'Community Member'}
                                 </p>
                               </div>
-                              <div className="bg-[#16161a] px-4 py-2 rounded-lg border border-white/5 shrink-0 shadow-sm">
+                              <div className="bg-[#16161a] px-3 py-1.5 rounded-lg border border-white/5 shrink-0 shadow-sm">
                                 <span className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.15em]">UID: #{session.unique_identifier || '0'}</span>
                               </div>
                             </div>
 
                             {/* Badges Preview */}
-                            <div className="flex flex-wrap gap-2 pt-6 border-t border-white/5">
+                            <div className="flex flex-wrap gap-1.5 pt-4 border-t border-white/5">
                               {session.is_admin && (
-                                <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group/badge relative cursor-help transition-colors hover:bg-blue-500/20">
-                                  <Shield size={16} className="text-blue-400" />
-                                  <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Staff Member</span>
+                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group/badge relative cursor-help transition-colors hover:bg-blue-500/20">
+                                  <Shield size={14} className="text-blue-400" />
+                                  <span className="absolute -top-9 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Staff Member</span>
                                 </div>
                               )}
                               {session.internal_license && (
-                                <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group/badge relative cursor-help transition-colors hover:bg-purple-500/20">
-                                  <Globe size={16} className="text-purple-400" />
-                                  <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Internal User</span>
+                                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group/badge relative cursor-help transition-colors hover:bg-purple-500/20">
+                                  <Globe size={14} className="text-purple-400" />
+                                  <span className="absolute -top-9 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Internal User</span>
                                 </div>
                               )}
                               {session.script_license && (
-                                <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center border border-green-500/20 group/badge relative cursor-help transition-colors hover:bg-green-500/20">
-                                  <Clock size={16} className="text-green-400" />
-                                  <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Script Subscriber</span>
+                                <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center border border-green-500/20 group/badge relative cursor-help transition-colors hover:bg-green-500/20">
+                                  <Clock size={14} className="text-green-400" />
+                                  <span className="absolute -top-9 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Script Subscriber</span>
                                 </div>
                               )}
                               {session.badges?.map((badge, i) => (
                                 <div key={i} className="group/badge relative cursor-help">
-                                  <div className="w-9 h-9 rounded-lg bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden transition-colors hover:bg-zinc-800/80">
-                                    <img src={badge} alt="badge" className="w-full h-full object-contain p-1.5" />
+                                  <div className="w-8 h-8 rounded-lg bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden transition-colors hover:bg-zinc-800/80">
+                                    <img src={badge} alt="badge" className="w-full h-full object-contain p-1" />
                                   </div>
-                                  <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Legacy Member</span>
+                                  <span className="absolute -top-9 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Legacy Member</span>
                                 </div>
                               ))}
                             </div>
