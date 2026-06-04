@@ -13,6 +13,7 @@ import PanelTab from '@/components/PanelTab';
 import SupportTab from '@/components/SupportTab';
 import DownloadsTab from '@/components/DownloadsTab';
 import CloudConfigsTab from '@/components/CloudConfigsTab';
+import SeasonalEffects from '@/components/SeasonalEffects';
 import MusicWidget from '@/components/MusicWidget';
 import { LogOut, Settings, Plus } from 'lucide-react';
 
@@ -83,10 +84,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!session) return;
+    document.documentElement.style.setProperty('--accent', session.accent_color || '#ef4444');
     setShowIntro(true);
     const t = setTimeout(() => setShowIntro(false), 1500);
     return () => clearTimeout(t);
-  }, [session?.username]);
+  }, [session?.username, session?.accent_color]);
 
   async function loadFeed() {
     setLoadingFeed(true);
@@ -167,6 +169,8 @@ export default function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SeasonalEffects />
 
       {/* ── Top Header ── */}
       <header className="w-full bg-[#0b0b0d] border-b border-[#1c1c22] z-50 select-none">

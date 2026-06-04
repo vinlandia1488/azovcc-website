@@ -39,13 +39,29 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
     localStorage.setItem('adderal_effectSpeed', effectSpeed);
   }, [effectSpeed]);
 
-  async function saveSettings() {
+  async function handlePfpUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
     setSaving(true);
     try {
-      const payload = { 
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
+      setProfilePic(file_url);
+    } catch (err) {
+      alert('Failed to upload profile picture: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveSettings(shouldClose = true) {
+    setSaving(true);
+    try {
+      const payload = {
         accent_color: accent,
         profile_accent: profileAccent,
-        profile_banner: profileBanner
+        profile_banner: profileBanner,
+        profile_pic: profilePic
       };
 
       if (session?.id) {
@@ -65,7 +81,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
       setSession(updates);
       
       if (onSaved) await onSaved(updates);
-      onClose();
+      if (shouldClose) onClose();
     } catch (err) {
       console.error('Failed to save settings:', err);
       alert('Failed to save settings: ' + err.message);
@@ -91,32 +107,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
 
   async function saveColor() {
     await saveSettings();
-  }
-
-  async function handlePfpUpload(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    setSaving(true);
-    try {
-      const { file_url } = await db.integrations.Core.UploadFile({ file });
-      setProfilePic(file_url);
-      
-      if (session?.id) {
-        await db.entities.Account.update(session.id, { profile_pic: file_url });
-      } else {
-        const rows = await db.entities.Account.filter({ username: session?.username });
-        if (rows && rows[0]?.id) {
-          await db.entities.Account.update(rows[0].id, { profile_pic: file_url });
-        }
-      }
-      setSession({ ...session, profile_pic: file_url });
-      await onSaved();
-    } catch (err) {
-      alert('Failed to upload profile picture: ' + err.message);
-    } finally {
-      setSaving(false);
-    }
   }
 
   return (
@@ -165,25 +155,25 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                  {/* Discord-style Profile Preview */}
                  <div className="bg-[#0b0b0d] rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative w-full max-w-[400px] mx-auto group/preview">
                     {/* Banner */}
-                    <div className="h-28 w-full relative bg-zinc-800">
+                    <div className="h-32 w-full relative bg-zinc-800 overflow-hidden">
                       {profileBanner ? (
                         <img src={profileBanner} alt="banner" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full" style={{ background: profileAccent }} />
                       )}
-                      <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/preview:opacity-100 cursor-pointer transition-all duration-300">
-                        <div className="flex flex-col items-center gap-2">
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity z-10">
+                        <label className="flex flex-col items-center gap-2 cursor-pointer p-4">
                           <ImagePlus size={24} className="text-white" />
                           <span className="text-[10px] font-bold text-white uppercase tracking-widest">Change Banner</span>
-                        </div>
-                        <input type="file" className="hidden" accept="image/*" onChange={handleBannerUpload} disabled={saving} />
-                      </label>
+                          <input type="file" className="hidden" accept="image/*" onChange={handleBannerUpload} disabled={saving} />
+                        </label>
+                      </div>
                     </div>
 
                     {/* Avatar container */}
-                    <div className="px-5 pb-6 relative">
-                      <div className="absolute -top-12 left-5 z-10">
-                        <div className="w-24 h-24 rounded-full bg-[#0b0b0d] p-1.5 shadow-xl group/avatar relative">
+                    <div className="px-5 pb-6 relative bg-[#0b0b0d]">
+                      <div className="absolute -top-12 left-5 z-20">
+                        <div className="w-24 h-24 rounded-full bg-[#0b0b0d] p-1 shadow-xl relative group/avatar">
                           <div className="w-full h-full rounded-full bg-[#1a1a1a] border border-white/10 overflow-hidden">
                             {profilePic ? (
                               <img src={profilePic} alt="PFP" className="w-full h-full object-cover" />
@@ -193,14 +183,16 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                               </div>
                             )}
                           </div>
-                          <label className="absolute inset-1.5 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 rounded-full cursor-pointer transition-all duration-300">
-                            <ImagePlus size={18} className="text-white" />
-                            <input type="file" className="hidden" accept="image/*" onChange={handlePfpUpload} disabled={saving} />
-                          </label>
+                          <div className="absolute inset-1 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 rounded-full transition-all duration-300 z-30">
+                            <label className="cursor-pointer w-full h-full flex items-center justify-center">
+                              <ImagePlus size={18} className="text-white" />
+                              <input type="file" className="hidden" accept="image/*" onChange={handlePfpUpload} disabled={saving} />
+                            </label>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="mt-14 space-y-4">
+                      <div className="mt-20 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0 flex-1">
                             <h2 className="text-white text-xl font-black tracking-tight flex items-center gap-2 truncate">
@@ -219,27 +211,29 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                         {/* Badges Preview */}
                         <div className="flex flex-wrap gap-1.5 pt-4 border-t border-white/5">
                           {session.is_admin && (
-                            <div title="Staff Member" className="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group/badge relative cursor-help">
+                            <div className="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group/badge relative cursor-help">
                               <Shield size={14} className="text-blue-400" />
-                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10">Staff</span>
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-xl">Staff</span>
                             </div>
                           )}
                           {session.internal_license && (
-                            <div title="Internal User" className="w-8 h-8 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group/badge relative cursor-help">
+                            <div className="w-8 h-8 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group/badge relative cursor-help">
                               <Globe size={14} className="text-purple-400" />
-                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10">Internal</span>
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-xl">Internal</span>
                             </div>
                           )}
                           {session.script_license && (
-                            <div title="Script User" className="w-8 h-8 rounded bg-green-500/10 flex items-center justify-center border border-green-500/20 group/badge relative cursor-help">
+                            <div className="w-8 h-8 rounded bg-green-500/10 flex items-center justify-center border border-green-500/20 group/badge relative cursor-help">
                               <Clock size={14} className="text-green-400" />
-                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10">Script User</span>
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-xl">Script User</span>
                             </div>
                           )}
                           {session.badges?.map((badge, i) => (
-                            <div key={i} className="w-8 h-8 rounded bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden group/badge relative cursor-help">
-                              <img src={badge} alt="badge" className="w-full h-full object-contain p-1" />
-                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10">Special Badge</span>
+                            <div key={i} className="group/badge relative cursor-help">
+                              <div className="w-8 h-8 rounded bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden">
+                                <img src={badge} alt="badge" className="w-full h-full object-contain p-1" />
+                              </div>
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-xl">Special Badge</span>
                             </div>
                           ))}
                         </div>
@@ -270,7 +264,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                </div>
 
                <button 
-                  onClick={saveSettings}
+                  onClick={() => saveSettings(false)}
                   disabled={saving}
                   className="w-full bg-white text-black font-black text-[10px] tracking-[0.2em] uppercase rounded-lg h-12 hover:bg-zinc-200 transition disabled:opacity-50 mt-4 shadow-xl"
                >

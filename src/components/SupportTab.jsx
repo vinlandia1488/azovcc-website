@@ -495,9 +495,9 @@ export default function SupportTab({ session, accent }) {
             </div>
 
             {/* Avatar container */}
-            <div className="px-5 pb-6 relative">
-              <div className="absolute -top-12 left-5 z-10">
-                <div className="w-24 h-24 rounded-full bg-[#0b0b0d] p-1.5 shadow-xl">
+            <div className="px-5 pb-6 relative bg-[#0b0b0d]">
+              <div className="absolute -top-12 left-5 z-20">
+                <div className="w-24 h-24 rounded-full bg-[#0b0b0d] p-1 shadow-xl relative">
                   <div className="w-full h-full rounded-full bg-[#1a1a1a] border border-white/10 overflow-hidden">
                     {viewedProfileUser.profile_pic ? (
                       <img src={viewedProfileUser.profile_pic} alt="pfp" className="w-full h-full object-cover" />
@@ -513,12 +513,12 @@ export default function SupportTab({ session, accent }) {
               {/* Close button */}
               <button 
                 onClick={() => setViewedProfileUser(null)}
-                className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors z-20"
+                className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors z-30"
               >
                 <X size={20} />
               </button>
 
-              <div className="mt-14 space-y-4">
+              <div className="mt-20 space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <h2 className="text-white text-xl font-black tracking-tight flex items-center gap-2 truncate">
@@ -555,8 +555,10 @@ export default function SupportTab({ session, accent }) {
                     </div>
                   )}
                   {viewedProfileUser.badges?.map((badge, i) => (
-                    <div key={i} className="w-8 h-8 rounded bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden group/badge relative cursor-help">
-                      <img src={badge} alt="badge" className="w-full h-full object-contain p-1" />
+                    <div key={i} className="group/badge relative cursor-help">
+                      <div className="w-8 h-8 rounded bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden">
+                        <img src={badge} alt="badge" className="w-full h-full object-contain p-1" />
+                      </div>
                       <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-xl">Special Badge</span>
                     </div>
                   ))}

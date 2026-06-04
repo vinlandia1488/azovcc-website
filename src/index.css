@@ -171,6 +171,7 @@
 :root {
   --background: 240 10% 3.9% !important;
   --foreground: 0 0% 98% !important;
+  --accent: #ef4444;
 }
 
 .dark {
@@ -181,4 +182,16 @@
 body {
   background-color: #000000 !important;
   color: white !important;
+}
+
+.text-accent {
+  color: var(--accent) !important;
+}
+
+.bg-accent {
+  background-color: var(--accent) !important;
+}
+
+.border-accent {
+  border-color: var(--accent) !important;
 }
