@@ -22,8 +22,9 @@ export function getBackendDb() {
   if (client && client.entities) return client;
 
   if (!sdkClient) {
-    const appId = import.meta.env.VITE_BASE44_APP_ID;
-    const apiKey = import.meta.env.VITE_BASE44_API_KEY;
+    const appId = import.meta.env.VITE_BASE44_APP_ID || (typeof process !== 'undefined' ? process.env.VITE_BASE44_APP_ID : null);
+    const apiKey = import.meta.env.VITE_BASE44_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_BASE44_API_KEY : null);
+    
     if (appId && apiKey) {
       sdkClient = createClient({
         appId,
@@ -34,6 +35,10 @@ export function getBackendDb() {
     }
   }
   if (sdkClient && sdkClient.entities) return sdkClient;
+
+  // Final fallback: try to find it on globalThis again in case it was set late
+  if (globalThis.__B44_DB__ && globalThis.__B44_DB__.entities) return globalThis.__B44_DB__;
+  if (globalThis.db && globalThis.db.entities) return globalThis.db;
 
   return {
     entities: new Proxy({}, { get: () => unavailableEntity() }),
