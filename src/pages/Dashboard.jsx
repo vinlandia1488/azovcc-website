@@ -12,7 +12,6 @@ import PanelTab from '@/components/PanelTab';
 import SupportTab from '@/components/SupportTab';
 import DownloadsTab from '@/components/DownloadsTab';
 import CloudConfigsTab from '@/components/CloudConfigsTab';
-import SeasonalEffects from '@/components/SeasonalEffects';
 import MusicWidget from '@/components/MusicWidget';
 import { LogOut, Settings } from 'lucide-react';
 
@@ -147,8 +146,6 @@ export default function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <SeasonalEffects />
 
       {/* ── Top Header ── */}
       <header className="w-full bg-[#0b0b0d] border-b border-[#1c1c22] z-50 select-none">

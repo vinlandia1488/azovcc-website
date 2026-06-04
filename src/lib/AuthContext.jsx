@@ -1,12 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-
-const db = globalThis.__B44_DB__ || globalThis.db || {
-  auth: {
-    me: async () => null,
-    logout: () => {},
-    redirectToLogin: () => {},
-  },
-};
+import { getBackendDb } from './backend';
 
 const AuthContext = createContext();
 
@@ -18,6 +11,8 @@ export const AuthProvider = ({ children }) => {
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [appPublicSettings, setAppPublicSettings] = useState(null);
+
+  const db = getBackendDb();
 
   useEffect(() => {
     checkAppState();

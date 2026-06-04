@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 function ccNode(showCc) {
   if (!showCc) return null;
   return (
-    <span style={{ color: '#ef4444', textShadow: '0 0 12px rgba(239,68,68,0.55)' }}>
+    <span style={{ color: '#ef4444' }}>
       .CC
     </span>
   );
