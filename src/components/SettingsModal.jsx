@@ -141,12 +141,12 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
 
            {activeTab === 'profile' ? (
              <div className="animate-in fade-in slide-in-from-bottom-2 duration-400 flex flex-col h-full">
-               <div className="flex gap-8 flex-1 min-h-0 pt-4">
-                 {/* Left: Preview */}
-                 <div className="flex-1 flex flex-col items-center justify-start">
-                    <div className="bg-[#0b0b0d] rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative w-full max-w-[380px] group/preview">
+               <div className="flex gap-6 flex-1 min-h-0">
+                 {/* Left: Profile Preview */}
+                 <div className="w-80 flex-shrink-0">
+                    <div className="bg-[#0b0b0d] rounded-xl overflow-hidden shadow-2xl border border-[#222] relative">
                         {/* Banner */}
-                        <div className="h-28 w-full relative bg-zinc-800 overflow-hidden">
+                        <div className="h-24 w-full relative bg-zinc-800 overflow-hidden">
                           {profileBanner ? (
                             <img src={profileBanner} alt="banner" className="w-full h-full object-cover" />
                           ) : (
@@ -154,101 +154,112 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                           )}
                           <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity z-10">
                             <label className="flex flex-col items-center gap-2 cursor-pointer p-4">
-                              <ImagePlus size={20} className="text-white" />
-                              <span className="text-[9px] font-black text-white uppercase tracking-widest">Change Banner</span>
+                              <ImagePlus size={18} className="text-white" />
+                              <span className="text-[8px] font-black text-white uppercase tracking-widest">Change Banner</span>
                               <input type="file" className="hidden" accept="image/*" onChange={handleBannerUpload} disabled={saving} />
                             </label>
                           </div>
                         </div>
 
                         {/* Avatar container */}
-                        <div className="px-5 pb-6 relative bg-[#0b0b0d]">
-                          <div className="absolute -top-10 left-5 z-20">
-                            <div className="w-20 h-20 rounded-full bg-[#0b0b0d] p-1 shadow-2xl relative group/avatar">
+                        <div className="px-4 pb-4 relative bg-[#0b0b0d]">
+                          <div className="absolute -top-8 left-4 z-20">
+                            <div className="w-16 h-16 rounded-full bg-[#0b0b0d] p-1 shadow-2xl relative group/avatar">
                               <div className="w-full h-full rounded-full bg-[#1a1a1a] border border-white/10 overflow-hidden shadow-inner">
                                 {profilePic ? (
                                   <img src={profilePic} alt="PFP" className="w-full h-full object-cover" />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-700">
+                                  <div className="w-full h-full flex items-center justify-center text-lg font-black text-zinc-700">
                                     {session.username.substring(0, 5).toUpperCase()}
                                   </div>
                                 )}
                               </div>
                               <div className="absolute inset-1 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 rounded-full transition-all duration-300 z-30">
                                 <label className="cursor-pointer w-full h-full flex items-center justify-center">
-                                  <ImagePlus size={16} className="text-white" />
+                                  <ImagePlus size={14} className="text-white" />
                                   <input type="file" className="hidden" accept="image/*" onChange={handlePfpUpload} disabled={saving} />
                                 </label>
                               </div>
                             </div>
                           </div>
 
-                          <div className="mt-14 space-y-4">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0 flex-1">
-                                <h2 className="text-white text-lg font-bold flex items-center gap-2 truncate">
-                                  {session.username}
-                                  {session.is_admin && <Shield size={14} className="text-blue-400 shrink-0" />}
-                                </h2>
-                                <p className="text-zinc-500 text-xs uppercase tracking-wider mt-1">
-                                  {session.is_admin ? 'Staff Member' : 'Community Member'}
-                                </p>
-                              </div>
-                              <div className="bg-[#1a1a1a] px-2.5 py-1 rounded-lg border border-[#333] shrink-0">
-                                <span className="text-[10px] font-mono text-zinc-400">#{session.unique_identifier || '0'}</span>
-                              </div>
+                          <div className="mt-10 space-y-3">
+                            <div>
+                              <h2 className="text-white text-lg font-bold flex items-center gap-2 truncate">
+                                {session.username}
+                                {session.is_admin && <Shield size={14} className="text-blue-400 shrink-0" />}
+                              </h2>
+                              <p className="text-zinc-500 text-xs font-mono mt-0.5">#{session.unique_identifier || '0'}</p>
                             </div>
 
                             {/* Badges */}
                             <div className="flex flex-wrap gap-2">
                               {session.is_admin && (
-                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20" title="Staff Member">
-                                  <Shield size={14} className="text-blue-400" />
+                                <div className="w-7 h-7 rounded bg-blue-500/10 flex items-center justify-center border border-blue-500/20" title="Staff Member">
+                                  <Shield size={12} className="text-blue-400" />
                                 </div>
                               )}
                               {session.internal_license && (
-                                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20" title="Internal User">
-                                  <Key size={14} className="text-purple-400" />
+                                <div className="w-7 h-7 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20" title="Internal User">
+                                  <Key size={12} className="text-purple-400" />
                                 </div>
                               )}
                               {session.script_license && (
-                                <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center border border-green-500/20" title="Script User">
-                                  <Code size={14} className="text-green-400" />
+                                <div className="w-7 h-7 rounded bg-green-500/10 flex items-center justify-center border border-green-500/20" title="Script User">
+                                  <Code size={12} className="text-green-400" />
                                 </div>
                               )}
                               {session.badges?.map((badge, i) => (
-                                <div key={i} className="w-8 h-8 rounded-lg bg-zinc-800/50 flex items-center justify-center border border-[#333] overflow-hidden" title="Verified Member">
+                                <div key={i} className="w-7 h-7 rounded bg-zinc-800/50 flex items-center justify-center border border-[#333] overflow-hidden" title="Verified Member">
                                   <img src={badge} alt="badge" className="w-full h-full object-contain p-1" />
                                 </div>
                               ))}
                             </div>
+
+                            {/* Description Preview */}
+                            {profileDescription && (
+                              <div className="bg-[#1a1a1a] rounded-lg p-3 border border-[#333]">
+                                <p className="text-zinc-400 text-xs leading-relaxed">{profileDescription}</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                     </div>
                  </div>
 
-                 {/* Right: Controls */}
-                 <div className="w-96 flex flex-col gap-6">
-                    <div className="space-y-4">
-                      <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Profile Details</h4>
-                      <div className="bg-[#111] border border-[#222] rounded-xl p-5 space-y-4">
-                         <div className="flex flex-col gap-3">
-                            <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Description</label>
+                 {/* Right: Editable Sections */}
+                 <div className="flex-1 flex flex-col min-h-0">
+                    <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+                      {/* User Profile Section */}
+                      <div className="bg-[#111] border border-[#222] rounded-xl p-5">
+                        <h3 className="text-white text-sm font-bold mb-4 flex items-center gap-2">
+                          <User size={16} className="text-zinc-500" />
+                          User Profile
+                        </h3>
+                        <div className="space-y-4">
+                          <div className="flex flex-col gap-2">
+                            <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">About Me</label>
                             <textarea
                               value={profileDescription}
                               onChange={e => setProfileDescription(e.target.value)}
-                              placeholder="Write a short bio..."
-                              className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444] transition resize-none h-24"
+                              placeholder="Tell us about yourself..."
+                              className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444] transition resize-none h-32"
                             />
-                         </div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-4">
-                        <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Profile Theme</h4>
-                        <div className="bg-[#111] border border-[#222] rounded-xl p-5 space-y-4">
-                           <div className="flex flex-col gap-3">
+
+                      {/* Profile Customization Section */}
+                      <div className="bg-[#111] border border-[#222] rounded-xl p-5">
+                        <h3 className="text-white text-sm font-bold mb-4 flex items-center gap-2">
+                          <Palette size={16} className="text-zinc-500" />
+                          Profile Customization
+                        </h3>
+                        <div className="space-y-4">
+                           <div className="flex flex-col gap-2">
                               <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Banner Accent</label>
-                              <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3 group hover:border-[#333] transition-colors">
-                                 <div className="w-7 h-7 rounded-md relative overflow-hidden ring-1 ring-white/10 shadow-lg" style={{ background: profileAccent }}>
+                              <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-2.5 group hover:border-[#333] transition-colors">
+                                 <div className="w-6 h-6 rounded-md relative overflow-hidden ring-1 ring-white/10 shadow-lg" style={{ background: profileAccent }}>
                                    <input 
                                      type="color" 
                                      value={profileAccent} 
@@ -266,11 +277,11 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                       </div>
                     </div>
 
-                    <div className="mt-auto">
+                    <div className="mt-4 pt-4 border-t border-[#222]">
                       <button 
                          onClick={() => saveSettings(false)}
                          disabled={saving}
-                         className="w-full bg-white text-black font-black text-[10px] tracking-[0.2em] uppercase rounded-xl h-14 hover:bg-zinc-200 transition-all disabled:opacity-50 shadow-[0_0_30px_rgba(255,255,255,0.05)] active:scale-[0.98]"
+                         className="w-full bg-white text-black font-black text-[10px] tracking-[0.2em] uppercase rounded-xl h-12 hover:bg-zinc-200 transition-all disabled:opacity-50 shadow-[0_0_30px_rgba(255,255,255,0.05)] active:scale-[0.98]"
                       >
                          {saving ? 'Updating Profile...' : 'Save Changes'}
                       </button>
