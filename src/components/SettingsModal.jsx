@@ -182,47 +182,41 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                           </div>
 
                           <div className="mt-14 space-y-4">
-                            <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0 flex-1">
-                                <h2 className="text-white text-xl font-black tracking-tighter flex items-center gap-2 truncate">
+                                <h2 className="text-white text-lg font-bold flex items-center gap-2 truncate">
                                   {session.username}
-                                  {session.is_admin && <Shield size={16} className="text-blue-400 shrink-0" />}
+                                  {session.is_admin && <Shield size={14} className="text-blue-400 shrink-0" />}
                                 </h2>
-                                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1 opacity-60">
+                                <p className="text-zinc-500 text-xs uppercase tracking-wider mt-1">
                                   {session.is_admin ? 'Staff Member' : 'Community Member'}
                                 </p>
                               </div>
-                              <div className="bg-[#16161a] px-3 py-1.5 rounded-lg border border-white/5 shrink-0 shadow-sm">
-                                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.15em]">UID: #{session.unique_identifier || '0'}</span>
+                              <div className="bg-[#1a1a1a] px-2.5 py-1 rounded-lg border border-[#333] shrink-0">
+                                <span className="text-[10px] font-mono text-zinc-400">#{session.unique_identifier || '0'}</span>
                               </div>
                             </div>
 
-                            {/* Badges Preview */}
-                            <div className="flex flex-wrap gap-1.5 pt-4 border-t border-white/5">
+                            {/* Badges */}
+                            <div className="flex flex-wrap gap-2">
                               {session.is_admin && (
-                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group/badge relative cursor-help transition-colors hover:bg-blue-500/20">
+                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20" title="Staff Member">
                                   <Shield size={14} className="text-blue-400" />
-                                  <span className="absolute -top-9 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Staff Member</span>
                                 </div>
                               )}
                               {session.internal_license && (
-                                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group/badge relative cursor-help transition-colors hover:bg-purple-500/20">
+                                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20" title="Internal User">
                                   <Key size={14} className="text-purple-400" />
-                                  <span className="absolute -top-9 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Internal User</span>
                                 </div>
                               )}
                               {session.script_license && (
-                                <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center border border-green-500/20 group/badge relative cursor-help transition-colors hover:bg-green-500/20">
+                                <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center border border-green-500/20" title="Script User">
                                   <Code size={14} className="text-green-400" />
-                                  <span className="absolute -top-9 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Script Subscriber</span>
                                 </div>
                               )}
                               {session.badges?.map((badge, i) => (
-                                <div key={i} className="group/badge relative cursor-help">
-                                  <div className="w-8 h-8 rounded-lg bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden transition-colors hover:bg-zinc-800/80">
-                                    <img src={badge} alt="badge" className="w-full h-full object-contain p-1" />
-                                  </div>
-                                  <span className="absolute -top-9 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Legacy Member</span>
+                                <div key={i} className="w-8 h-8 rounded-lg bg-zinc-800/50 flex items-center justify-center border border-[#333] overflow-hidden" title="Verified Member">
+                                  <img src={badge} alt="badge" className="w-full h-full object-contain p-1" />
                                 </div>
                               ))}
                             </div>

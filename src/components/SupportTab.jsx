@@ -482,35 +482,36 @@ export default function SupportTab({ session, accent }) {
       {viewedProfileUser && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
           <div 
-            className="w-full max-w-[440px] bg-[#0b0b0d] rounded-[2rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/5 relative group/modal"
+            className="w-full max-w-[420px] bg-[#0a0a0a] rounded-2xl overflow-hidden shadow-2xl border border-[#222] relative"
           >
             {/* Banner */}
-            <div className="h-40 w-full relative bg-zinc-800 overflow-hidden">
+            <div className="h-32 w-full relative bg-zinc-900 overflow-hidden">
               {viewedProfileUser.profile_banner ? (
                 <img src={viewedProfileUser.profile_banner} alt="banner" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full" style={{ background: viewedProfileUser.profile_accent || '#1a1a1a' }} />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0b0b0d] to-transparent opacity-60" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent opacity-80" />
             </div>
 
             {/* Close button */}
             <button 
               onClick={() => setViewedProfileUser(null)}
-              className="absolute top-6 right-6 text-zinc-500 hover:text-white transition-all z-50 bg-black/20 hover:bg-black/40 p-2 rounded-full backdrop-blur-md"
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white transition-all z-50 bg-black/30 hover:bg-black/50 p-2 rounded-lg backdrop-blur-sm"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
-            {/* Avatar container */}
-            <div className="px-8 pb-10 relative bg-[#0b0b0d]">
-              <div className="absolute -top-12 left-8 z-20">
-                <div className="w-24 h-24 rounded-full bg-[#0b0b0d] p-1.5 shadow-2xl">
-                  <div className="w-full h-full rounded-full bg-[#1a1a1a] border border-white/10 overflow-hidden shadow-inner">
+            {/* Content */}
+            <div className="px-6 pb-6 relative bg-[#0a0a0a]">
+              {/* Avatar */}
+              <div className="relative -mt-12 mb-4">
+                <div className="w-20 h-20 rounded-xl bg-[#0a0a0a] p-1.5 shadow-xl border border-[#333]">
+                  <div className="w-full h-full rounded-lg bg-[#1a1a1a] overflow-hidden">
                     {viewedProfileUser.profile_pic ? (
                       <img src={viewedProfileUser.profile_pic} alt="pfp" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-3xl font-black text-zinc-700">
+                      <div className="w-full h-full flex items-center justify-center text-xl font-bold text-zinc-600">
                         {viewedProfileUser.username.substring(0, 2).toUpperCase()}
                       </div>
                     )}
@@ -518,49 +519,44 @@ export default function SupportTab({ session, accent }) {
                 </div>
               </div>
 
-              <div className="mt-20 space-y-6">
-                <div className="flex items-start justify-between gap-4 min-w-0">
+              {/* User Info */}
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-white text-2xl font-black tracking-tighter flex items-center gap-3 truncate">
+                    <h2 className="text-white text-xl font-bold flex items-center gap-2 truncate">
                       {viewedProfileUser.username}
-                      {viewedProfileUser.is_admin && <Shield size={18} className="text-blue-400 shrink-0" />}
+                      {viewedProfileUser.is_admin && <Shield size={16} className="text-blue-400 shrink-0" />}
                     </h2>
-                    <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.25em] mt-1 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                    <p className="text-zinc-500 text-xs uppercase tracking-wider mt-1 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                       {viewedProfileUser.is_admin ? 'Staff Member' : 'Community Member'}
                     </p>
                   </div>
-                  <div className="bg-[#16161a] px-3 py-1.5 rounded-xl border border-white/5 shrink-0 shadow-xl">
-                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest font-mono">ID:{viewedProfileUser.unique_identifier || '0'}</span>
+                  <div className="bg-[#1a1a1a] px-2.5 py-1 rounded-lg border border-[#333] shrink-0">
+                    <span className="text-[10px] font-mono text-zinc-400">#{viewedProfileUser.unique_identifier || '0'}</span>
                   </div>
                 </div>
 
-                {/* Badges Section */}
-                <div className="flex flex-wrap gap-2 pt-4 border-t border-white/5">
+                {/* Badges */}
+                <div className="flex flex-wrap gap-2">
                   {viewedProfileUser.is_admin && (
-                    <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group/badge relative cursor-help transition-all hover:bg-blue-500/20 hover:scale-110">
-                      <Shield size={16} className="text-blue-400" />
-                      <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-black px-3 py-1.5 rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all scale-90 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Staff Member</span>
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20" title="Staff Member">
+                      <Shield size={14} className="text-blue-400" />
                     </div>
                   )}
                   {viewedProfileUser.internal_license && (
-                    <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group/badge relative cursor-help transition-all hover:bg-purple-500/20 hover:scale-110">
-                      <Key size={16} className="text-purple-400" />
-                      <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-black px-3 py-2 rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all scale-90 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Internal User</span>
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20" title="Internal User">
+                      <Key size={14} className="text-purple-400" />
                     </div>
                   )}
                   {viewedProfileUser.script_license && (
-                    <div className="w-9 h-9 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/20 group/badge relative cursor-help transition-all hover:bg-green-500/20 hover:scale-110">
-                      <Code size={16} className="text-green-400" />
-                      <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-black px-3 py-2 rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all scale-90 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Script User</span>
+                    <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center border border-green-500/20" title="Script User">
+                      <Code size={14} className="text-green-400" />
                     </div>
                   )}
                   {viewedProfileUser.badges?.map((badge, i) => (
-                    <div key={i} className="group/badge relative cursor-help transition-all hover:scale-110">
-                      <div className="w-9 h-9 rounded-xl bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden shadow-inner">
-                        <img src={badge} alt="badge" className="w-full h-full object-contain p-2" />
-                      </div>
-                      <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-black px-3 py-2 rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all scale-90 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Verified Member</span>
+                    <div key={i} className="w-8 h-8 rounded-lg bg-zinc-800/50 flex items-center justify-center border border-[#333] overflow-hidden" title="Verified Member">
+                      <img src={badge} alt="badge" className="w-full h-full object-contain p-1" />
                     </div>
                   ))}
                 </div>
