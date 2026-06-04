@@ -84,11 +84,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!session) return;
-    document.documentElement.style.setProperty('--accent', session.accent_color || '#ef4444');
     setShowIntro(true);
     const t = setTimeout(() => setShowIntro(false), 1500);
     return () => clearTimeout(t);
-  }, [session?.username, session?.accent_color]);
+  }, [session?.username]);
 
   async function loadFeed() {
     setLoadingFeed(true);
@@ -128,7 +127,6 @@ export default function Dashboard() {
           unique_identifier: accounts[0].unique_identifier ?? s.unique_identifier ?? 0,
           profile_pic: accounts[0].profile_pic || s.profile_pic || '',
           is_admin: typeof accounts[0].is_admin === 'boolean' ? accounts[0].is_admin : Boolean(s.is_admin),
-          accent_color: accounts[0].accent_color || s.accent_color || '#ef4444',
           executor_mode: accounts[0].executor_mode === true,
           reveal_console: accounts[0].reveal_console === true,
         };
@@ -146,7 +144,6 @@ export default function Dashboard() {
   if (!session) return null;
 
   const displayUsername = session.username || 'Unknown';
-  const accent = session.accent_color || '#ef4444';
 
   return (
     <div className="min-h-screen bg-[#07070a] text-white flex flex-col grid-bg font-sans">
@@ -372,28 +369,28 @@ export default function Dashboard() {
           {/* Dashboard Tab */}
           {activeTab === 'dashboard' && (
             <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <DashboardTab session={session} onSettings={() => setShowSettings(true)} accent={accent} announcement={announcement} />
+              <DashboardTab session={session} onSettings={() => setShowSettings(true)} accent="#ffffff" announcement={announcement} />
             </motion.div>
           )}
 
           {/* Downloads Tab */}
           {activeTab === 'downloads' && (
             <motion.div key="downloads" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <DownloadsTab accent={accent} session={session} />
+              <DownloadsTab accent="#ffffff" session={session} />
             </motion.div>
           )}
 
           {/* Cloud Configs Tab */}
           {activeTab === 'cloud-configs' && (
             <motion.div key="cloud-configs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <CloudConfigsTab session={session} accent={accent} />
+              <CloudConfigsTab session={session} accent="#ffffff" />
             </motion.div>
           )}
 
           {/* Chat Tab */}
           {activeTab === 'chat' && (
             <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <SupportTab session={session} accent={accent} />
+              <SupportTab session={session} accent="#ffffff" />
             </motion.div>
           )}
 
@@ -401,7 +398,7 @@ export default function Dashboard() {
           {activeTab === 'panel' && session.is_admin && (
             <motion.div key="panel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               <PanelTab
-                accent={accent}
+                accent="#ffffff"
                 session={session}
                 onAnnouncementSaved={async () => setAnnouncement(await getAnnouncement())}
                 onAction={() => {}}
@@ -433,7 +430,7 @@ export default function Dashboard() {
         />
       )}
 
-      <MusicWidget accent={accent} />
+      <MusicWidget accent="#ffffff" />
     </div>
   );
 }

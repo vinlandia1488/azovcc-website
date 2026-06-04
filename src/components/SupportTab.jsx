@@ -480,29 +480,37 @@ export default function SupportTab({ session, accent }) {
 
       {/* Profile Modal */}
       {viewedProfileUser && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
           <div 
-            className="w-full max-w-[340px] bg-[#0b0b0d] rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative"
-            style={{ '--profile-accent': viewedProfileUser.profile_accent || '#ef4444' }}
+            className="w-full max-w-[440px] bg-[#0b0b0d] rounded-[2rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/5 relative group/modal"
           >
             {/* Banner */}
-            <div className="h-28 w-full relative bg-zinc-800">
+            <div className="h-40 w-full relative bg-zinc-800 overflow-hidden">
               {viewedProfileUser.profile_banner ? (
                 <img src={viewedProfileUser.profile_banner} alt="banner" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full" style={{ background: viewedProfileUser.profile_accent || accent }} />
+                <div className="w-full h-full" style={{ background: viewedProfileUser.profile_accent || '#1a1a1a' }} />
               )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0b0b0d] to-transparent opacity-60" />
             </div>
 
+            {/* Close button */}
+            <button 
+              onClick={() => setViewedProfileUser(null)}
+              className="absolute top-6 right-6 text-zinc-500 hover:text-white transition-all z-50 bg-black/20 hover:bg-black/40 p-2 rounded-full backdrop-blur-md"
+            >
+              <X size={20} />
+            </button>
+
             {/* Avatar container */}
-            <div className="px-5 pb-6 relative bg-[#0b0b0d]">
-              <div className="absolute -top-12 left-5 z-20">
-                <div className="w-24 h-24 rounded-full bg-[#0b0b0d] p-1 shadow-xl relative">
-                  <div className="w-full h-full rounded-full bg-[#1a1a1a] border border-white/10 overflow-hidden">
+            <div className="px-8 pb-10 relative bg-[#0b0b0d]">
+              <div className="absolute -top-16 left-8 z-20">
+                <div className="w-32 h-32 rounded-full bg-[#0b0b0d] p-1.5 shadow-2xl">
+                  <div className="w-full h-full rounded-full bg-[#1a1a1a] border border-white/10 overflow-hidden shadow-inner">
                     {viewedProfileUser.profile_pic ? (
                       <img src={viewedProfileUser.profile_pic} alt="pfp" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-700">
+                      <div className="w-full h-full flex items-center justify-center text-4xl font-black text-zinc-700">
                         {viewedProfileUser.username.substring(0, 2).toUpperCase()}
                       </div>
                     )}
@@ -510,65 +518,75 @@ export default function SupportTab({ session, accent }) {
                 </div>
               </div>
 
-              {/* Close button */}
-              <button 
-                onClick={() => setViewedProfileUser(null)}
-                className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors z-30"
-              >
-                <X size={20} />
-              </button>
-
-              <div className="mt-20 space-y-4">
-                <div className="flex items-start justify-between gap-4">
+              <div className="mt-20 space-y-8">
+                <div className="flex items-start justify-between gap-6">
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-white text-xl font-black tracking-tight flex items-center gap-2 truncate">
+                    <h2 className="text-white text-3xl font-black tracking-tighter flex items-center gap-3 truncate">
                       {viewedProfileUser.username}
-                      {viewedProfileUser.is_admin && <Shield size={16} className="text-blue-400 shrink-0" />}
+                      {viewedProfileUser.is_admin && <Shield size={22} className="text-blue-400 shrink-0 drop-shadow-[0_0_10px_rgba(96,165,250,0.4)]" />}
                     </h2>
-                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">
+                    <p className="text-zinc-500 text-[11px] font-black uppercase tracking-[0.25em] mt-2 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
                       {viewedProfileUser.is_admin ? 'Staff Member' : 'Community Member'}
                     </p>
                   </div>
-                  <div className="bg-[#16161a] px-3 py-1.5 rounded-lg border border-white/5 shrink-0">
-                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">UID: #{viewedProfileUser.unique_identifier || '0'}</span>
+                  <div className="bg-[#16161a] px-4 py-2 rounded-xl border border-white/5 shrink-0 shadow-xl">
+                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest font-mono">ID:{viewedProfileUser.unique_identifier || '0'}</span>
                   </div>
                 </div>
 
-                {/* Badges */}
-                <div className="flex flex-wrap gap-1.5 pt-4 border-t border-white/5">
-                  {viewedProfileUser.is_admin && (
-                    <div title="Staff Member" className="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group/badge relative cursor-help">
-                      <Shield size={14} className="text-blue-400" />
-                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-xl">Staff</span>
-                    </div>
-                  )}
-                  {viewedProfileUser.internal_license && (
-                    <div title="Internal User" className="w-8 h-8 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group/badge relative cursor-help">
-                      <Globe size={14} className="text-purple-400" />
-                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-xl">Internal</span>
-                    </div>
-                  )}
-                  {viewedProfileUser.script_license && (
-                    <div title="Script User" className="w-8 h-8 rounded bg-green-500/10 flex items-center justify-center border border-green-500/20 group/badge relative cursor-help">
-                      <Clock size={14} className="text-green-400" />
-                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-xl">Script User</span>
-                    </div>
-                  )}
-                  {viewedProfileUser.badges?.map((badge, i) => (
-                    <div key={i} className="group/badge relative cursor-help">
-                      <div className="w-8 h-8 rounded bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden">
-                        <img src={badge} alt="badge" className="w-full h-full object-contain p-1" />
+                {/* Badges Section */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em]">Credentials</h4>
+                  <div className="flex flex-wrap gap-3 pt-4 border-t border-white/5">
+                    {viewedProfileUser.is_admin && (
+                      <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group/badge relative cursor-help transition-all hover:bg-blue-500/20 hover:scale-110">
+                        <Shield size={20} className="text-blue-400" />
+                        <span className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] font-black px-3 py-2 rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all scale-90 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Staff Member</span>
                       </div>
-                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-xl">Special Badge</span>
-                    </div>
-                  ))}
+                    )}
+                    {viewedProfileUser.internal_license && (
+                      <div className="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group/badge relative cursor-help transition-all hover:bg-purple-500/20 hover:scale-110">
+                        <Globe size={20} className="text-purple-400" />
+                        <span className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] font-black px-3 py-2 rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all scale-90 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Internal User</span>
+                      </div>
+                    )}
+                    {viewedProfileUser.script_license && (
+                      <div className="w-11 h-11 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/20 group/badge relative cursor-help transition-all hover:bg-green-500/20 hover:scale-110">
+                        <Clock size={20} className="text-green-400" />
+                        <span className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] font-black px-3 py-2 rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all scale-90 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Script User</span>
+                      </div>
+                    )}
+                    {viewedProfileUser.badges?.map((badge, i) => (
+                      <div key={i} className="group/badge relative cursor-help transition-all hover:scale-110">
+                        <div className="w-11 h-11 rounded-xl bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden shadow-inner">
+                          <img src={badge} alt="badge" className="w-full h-full object-contain p-2" />
+                        </div>
+                        <span className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] font-black px-3 py-2 rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all scale-90 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Verified Member</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="bg-[#16161a] rounded-xl p-3 border border-white/5">
-                  <h4 className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">About Me</h4>
-                  <p className="text-zinc-400 text-xs leading-relaxed">
-                    Joined on {new Date(viewedProfileUser.created_date || Date.now()).toLocaleDateString()}
-                  </p>
+                {/* Stats/About */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-[#16161a] rounded-[1.25rem] p-5 border border-white/5 shadow-inner">
+                    <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Member Since</h4>
+                    <p className="text-white text-sm font-bold tracking-tight">
+                      {new Date(viewedProfileUser.created_date || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <div className="bg-[#16161a] rounded-[1.25rem] p-5 border border-white/5 shadow-inner">
+                    <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Status</h4>
+                    <p className="text-white text-sm font-bold tracking-tight flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                      Online
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-4 text-center">
+                  <p className="text-[10px] font-black text-zinc-700 uppercase tracking-[0.4em]">Adderall Security Network</p>
                 </div>
               </div>
             </div>
