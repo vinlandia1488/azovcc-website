@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, LogOut, Ban, Snowflake, Leaf, Palette, User, ImagePlus } from 'lucide-react';
+import { X, LogOut, Ban, Snowflake, Leaf, Palette, User, ImagePlus, Shield, Globe, Clock } from 'lucide-react';
 import { setSession } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 

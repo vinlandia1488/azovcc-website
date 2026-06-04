@@ -259,40 +259,50 @@ export default function Dashboard() {
 
               {!showForumsMenu ? (
                 /* Initial View: One "Forums" entry */
-                <div className="space-y-6">
-                  <div className="bg-[#121215] border border-[#1f1f26] border-t-[#2a2a2f] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] bg-gradient-to-b from-white/[0.03] to-transparent px-5 py-3 text-[10px] font-bold tracking-widest text-zinc-400 uppercase rounded-t-sm">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  className="space-y-6 max-w-2xl mx-auto md:mx-0"
+                >
+                  <div className="bg-[#121215] border border-[#1f1f26] border-t-[#2a2a2f] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] bg-gradient-to-b from-white/[0.03] to-transparent px-5 py-2.5 text-[9px] font-bold tracking-[0.2em] text-zinc-500 uppercase rounded-t-sm">
                     COMMUNITY
                   </div>
                   <div
                     onClick={() => setShowForumsMenu(true)}
-                    className="bg-[#0e0e11] border-x border-b border-[#1f1f26] shadow-[inset_0_1px_0_rgba(255,255,255,0.01)] p-8 flex items-center justify-between hover:bg-[#111115] transition-colors cursor-pointer group"
+                    className="bg-[#0e0e11] border-x border-b border-[#1f1f26] shadow-[inset_0_1px_0_rgba(255,255,255,0.01)] p-6 flex items-center justify-between hover:bg-[#111115] transition-all cursor-pointer group rounded-b-sm"
                   >
                     <div className="pr-4">
-                      <h3 className="text-zinc-200 font-black text-2xl group-hover:text-white transition-all tracking-tight uppercase">
+                      <h3 className="text-zinc-200 font-black text-xl group-hover:text-white transition-all tracking-tight uppercase">
                         Forums
                       </h3>
-                      <p className="text-[10px] text-zinc-600 mt-2 font-bold uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">
+                      <p className="text-[9px] text-zinc-600 mt-1.5 font-bold uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">
                         Join the discussion, see updates and media
                       </p>
                     </div>
-                    <div className="flex items-center gap-8 min-w-[150px] justify-end">
+                    <div className="flex items-center gap-6 min-w-[100px] justify-end">
                       <div className="flex flex-col items-center">
-                        <span className="text-2xl font-black text-zinc-300 leading-none">
+                        <span className="text-xl font-black text-zinc-300 leading-none">
                           {Object.values(postCounts).reduce((a, b) => a + b, 0)}
                         </span>
-                        <span className="text-[8px] font-bold text-zinc-500 tracking-widest mt-1 uppercase font-mono">Total Posts</span>
+                        <span className="text-[7px] font-bold text-zinc-500 tracking-widest mt-1 uppercase font-mono">Total Posts</span>
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ) : (
                 /* Categories View */
-                <div className="space-y-6">
+                <motion.div 
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="space-y-6"
+                >
                   <button
                     onClick={() => setShowForumsMenu(false)}
-                    className="text-zinc-500 hover:text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 mb-4 transition-colors"
+                    className="text-zinc-600 hover:text-white text-[9px] font-bold uppercase tracking-[0.2em] flex items-center gap-2 mb-4 transition-colors group"
                   >
-                    ← Back
+                    <span className="group-hover:-translate-x-0.5 transition-transform">←</span> Back
                   </button>
                   {FORUM_SECTIONS.map(cat => (
                     <div key={cat.category} className="w-full">
@@ -334,7 +344,7 @@ export default function Dashboard() {
                       })}
                     </div>
                   ))}
-                </div>
+                </motion.div>
               )}
             </motion.div>
           )}
