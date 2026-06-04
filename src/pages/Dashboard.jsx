@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { getSession, clearSession, setSession, getCachedAccounts } from '@/lib/auth';
 import { getAnnouncement } from '@/lib/app-settings';
+import { getBackendDb } from '@/lib/backend';
 import { getAllPosts } from '@/lib/forum';
 import SettingsModal from '@/components/SettingsModal';
 import BrandingMark from '@/components/BrandingMark';
@@ -13,7 +14,9 @@ import SupportTab from '@/components/SupportTab';
 import DownloadsTab from '@/components/DownloadsTab';
 import CloudConfigsTab from '@/components/CloudConfigsTab';
 import MusicWidget from '@/components/MusicWidget';
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut, Settings, Plus } from 'lucide-react';
+
+const db = getBackendDb();
 
 const FORUM_SECTIONS = [
   {
