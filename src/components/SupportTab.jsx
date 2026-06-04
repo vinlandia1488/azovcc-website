@@ -495,9 +495,9 @@ export default function SupportTab({ session, accent }) {
             </div>
 
             {/* Avatar container */}
-            <div className="px-4 pb-4 relative">
-              <div className="absolute -top-12 left-4">
-                <div className="w-24 h-24 rounded-full bg-[#0b0b0d] p-1.5">
+            <div className="px-5 pb-6 relative">
+              <div className="absolute -top-12 left-5 z-10">
+                <div className="w-24 h-24 rounded-full bg-[#0b0b0d] p-1.5 shadow-xl">
                   <div className="w-full h-full rounded-full bg-[#1a1a1a] border border-white/10 overflow-hidden">
                     {viewedProfileUser.profile_pic ? (
                       <img src={viewedProfileUser.profile_pic} alt="pfp" className="w-full h-full object-cover" />
@@ -513,50 +513,55 @@ export default function SupportTab({ session, accent }) {
               {/* Close button */}
               <button 
                 onClick={() => setViewedProfileUser(null)}
-                className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+                className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors z-20"
               >
                 <X size={20} />
               </button>
 
               <div className="mt-14 space-y-4">
-                <div>
-                  <h2 className="text-white text-xl font-black tracking-tight flex items-center gap-2">
-                    {viewedProfileUser.username}
-                    {viewedProfileUser.is_admin && <Shield size={16} className="text-blue-400" />}
-                  </h2>
-                  <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-0.5">
-                    {viewedProfileUser.is_admin ? 'Staff Member' : 'Community Member'}
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-white text-xl font-black tracking-tight flex items-center gap-2">
+                      {viewedProfileUser.username}
+                      {viewedProfileUser.is_admin && <Shield size={16} className="text-blue-400" />}
+                    </h2>
+                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-0.5">
+                      {viewedProfileUser.is_admin ? 'Staff Member' : 'Community Member'}
+                    </p>
+                  </div>
+                  <div className="bg-[#16161a] px-3 py-1.5 rounded-lg border border-white/5">
+                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">UID: #{viewedProfileUser.unique_identifier || '0'}</span>
+                  </div>
                 </div>
 
                 {/* Badges */}
-                <div className="flex flex-wrap gap-1.5 pt-2 border-t border-white/5">
+                <div className="flex flex-wrap gap-1.5 pt-3 border-t border-white/5">
                   {viewedProfileUser.is_admin && (
-                    <div title="Staff Member" className="w-6 h-6 rounded bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                      <Shield size={12} className="text-blue-400" />
+                    <div title="Staff Member" className="w-7 h-7 rounded bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                      <Shield size={14} className="text-blue-400" />
                     </div>
                   )}
                   {viewedProfileUser.internal_license && (
-                    <div title="Internal User" className="w-6 h-6 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
-                      <Globe size={12} className="text-purple-400" />
+                    <div title="Internal User" className="w-7 h-7 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                      <Globe size={14} className="text-purple-400" />
                     </div>
                   )}
                   {viewedProfileUser.script_license && (
-                    <div title="Script User" className="w-6 h-6 rounded bg-green-500/10 flex items-center justify-center border border-green-500/20">
-                      <Clock size={12} className="text-green-400" />
+                    <div title="Script User" className="w-7 h-7 rounded bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                      <Clock size={14} className="text-green-400" />
                     </div>
                   )}
                   {viewedProfileUser.badges?.map((badge, i) => (
-                    <div key={i} className="w-6 h-6 rounded bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden">
+                    <div key={i} className="w-7 h-7 rounded bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden">
                       <img src={badge} alt="badge" className="w-full h-full object-contain" />
                     </div>
                   ))}
                 </div>
 
                 <div className="bg-[#16161a] rounded-xl p-3 border border-white/5">
-                  <h4 className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2">About Me</h4>
-                  <p className="text-zinc-300 text-xs leading-relaxed">
-                    Joined on {new Date(viewedProfileUser.created_date).toLocaleDateString()}
+                  <h4 className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">About Me</h4>
+                  <p className="text-zinc-400 text-xs leading-relaxed">
+                    Joined on {new Date(viewedProfileUser.created_date || Date.now()).toLocaleDateString()}
                   </p>
                 </div>
               </div>

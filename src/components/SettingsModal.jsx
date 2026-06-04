@@ -163,48 +163,81 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
              <div className="space-y-6 animate-in fade-in duration-300 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
                <div className="flex flex-col gap-6">
                  {/* Discord-style Profile Preview */}
-                 <div className="bg-[#0b0b0d] rounded-2xl overflow-hidden shadow-xl border border-white/5 relative w-full max-w-[400px] mx-auto">
+                 <div className="bg-[#0b0b0d] rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative w-full max-w-[400px] mx-auto group/preview">
                     {/* Banner */}
-                    <div className="h-24 w-full relative bg-zinc-800 group">
+                    <div className="h-28 w-full relative bg-zinc-800">
                       {profileBanner ? (
                         <img src={profileBanner} alt="banner" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full" style={{ background: profileAccent }} />
                       )}
-                      <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 cursor-pointer transition">
-                        <ImagePlus size={20} className="text-white" />
+                      <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/preview:opacity-100 cursor-pointer transition-all duration-300">
+                        <div className="flex flex-col items-center gap-2">
+                          <ImagePlus size={24} className="text-white" />
+                          <span className="text-[10px] font-bold text-white uppercase tracking-widest">Change Banner</span>
+                        </div>
                         <input type="file" className="hidden" accept="image/*" onChange={handleBannerUpload} disabled={saving} />
                       </label>
                     </div>
 
                     {/* Avatar container */}
-                    <div className="px-4 pb-4 relative">
-                      <div className="absolute -top-10 left-4">
-                        <div className="w-20 h-20 rounded-full bg-[#0b0b0d] p-1 group relative">
+                    <div className="px-5 pb-6 relative">
+                      <div className="absolute -top-12 left-5 z-10">
+                        <div className="w-24 h-24 rounded-full bg-[#0b0b0d] p-1.5 shadow-xl group/avatar relative">
                           <div className="w-full h-full rounded-full bg-[#1a1a1a] border border-white/10 overflow-hidden">
                             {profilePic ? (
                               <img src={profilePic} alt="PFP" className="w-full h-full object-cover" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-xl font-black text-zinc-700">
+                              <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-700">
                                 {session.username.substring(0, 2).toUpperCase()}
                               </div>
                             )}
                           </div>
-                          <label className="absolute inset-1 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 rounded-full cursor-pointer transition">
-                            <ImagePlus size={16} className="text-white" />
+                          <label className="absolute inset-1.5 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 rounded-full cursor-pointer transition-all duration-300">
+                            <ImagePlus size={18} className="text-white" />
                             <input type="file" className="hidden" accept="image/*" onChange={handlePfpUpload} disabled={saving} />
                           </label>
                         </div>
                       </div>
 
-                      <div className="mt-12 space-y-3">
-                        <div>
-                          <h2 className="text-white text-lg font-black tracking-tight">{session.username}</h2>
-                          <p className="text-zinc-500 text-[9px] font-bold uppercase tracking-widest mt-0.5">Community Member</p>
+                      <div className="mt-14 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h2 className="text-white text-xl font-black tracking-tight flex items-center gap-2">
+                              {session.username}
+                              {session.is_admin && <Shield size={16} className="text-blue-400" />}
+                            </h2>
+                            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-0.5">
+                              {session.is_admin ? 'Staff Member' : 'Community Member'}
+                            </p>
+                          </div>
+                          <div className="bg-[#16161a] px-3 py-1.5 rounded-lg border border-white/5">
+                            <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">UID: #{session.unique_identifier || '0'}</span>
+                          </div>
                         </div>
 
-                        <div className="bg-[#16161a] rounded-xl p-3 border border-white/5">
-                          <h4 className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2">UID: #{session.unique_identifier || '0'}</h4>
+                        {/* Badges Preview */}
+                        <div className="flex flex-wrap gap-1.5 pt-3 border-t border-white/5">
+                          {session.is_admin && (
+                            <div title="Staff Member" className="w-7 h-7 rounded bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                              <Shield size={14} className="text-blue-400" />
+                            </div>
+                          )}
+                          {session.internal_license && (
+                            <div title="Internal User" className="w-7 h-7 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                              <Globe size={14} className="text-purple-400" />
+                            </div>
+                          )}
+                          {session.script_license && (
+                            <div title="Script User" className="w-7 h-7 rounded bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                              <Clock size={14} className="text-green-400" />
+                            </div>
+                          )}
+                          {session.badges?.map((badge, i) => (
+                            <div key={i} className="w-7 h-7 rounded bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden">
+                              <img src={badge} alt="badge" className="w-full h-full object-contain" />
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
