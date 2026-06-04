@@ -37,6 +37,19 @@ export async function getPostsBySection(sectionId) {
   );
 }
 
+export async function getAllPosts() {
+  return tryBackend(
+    async () => {
+      const db = getBackendDb();
+      const posts = await db.entities.ForumPost.list('-created_date', 50);
+      return Array.isArray(posts) ? posts : [];
+    },
+    () => {
+      return getLocalPosts().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+  );
+}
+
 export async function getAllPostCounts() {
   return tryBackend(
     async () => {

@@ -4,6 +4,7 @@ import { deleteUserAccount, generateInternalLicense, generateScriptLicense, norm
 import { getBackendDb } from '@/lib/backend';
 import { getAnnouncement, setAnnouncement, getMaintenance, setMaintenance, getSpotifyUrl, setSpotifyUrl } from '@/lib/app-settings';
 import { isInviteSystemEnabled, setInviteSystemEnabled, generateInviteCode, getUserInvites, getAllChats, getChatMessages, sendChatMessage, deleteChat, getAllInvitesAdmin } from '@/lib/invites';
+import { getAllPosts, deletePost, createPost } from '@/lib/forum';
 
 import {
   getDefaultCloudConfig,
@@ -109,6 +110,8 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
   const [showEndChatModal, setShowEndChatModal] = useState(false);
   const [customKey, setCustomKey] = useState('');
   const [keyType, setKeyType] = useState('script');
+  const [feedPosts, setFeedPosts] = useState([]);
+  const [newPost, setNewPost] = useState({ title: '', body: '', tag: 'NEWS', is_pinned: false, image_url: '' });
   const chatEndRef = useRef(null);
 
 
@@ -164,7 +167,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
   }
 
   async function loadData() {
-    const [keysResult, accountsResult, downloadsResult, announcementResult, spotifyResult, inviteSystemResult, chatsResult, invitesResult] = await Promise.allSettled([
+    const [keysResult, accountsResult, downloadsResult, announcementResult, spotifyResult, inviteSystemResult, chatsResult, invitesResult, feedResult] = await Promise.allSettled([
       getLicenseKeys(),
       getEntityRows('Account'),
       getDownloadItems(),
@@ -173,10 +176,12 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
       isInviteSystemEnabled(),
       getAllChats(),
       getAllInvitesAdmin(),
+      getAllPosts(),
     ]);
 
     setKeys(keysResult.status === 'fulfilled' ? (keysResult.value || []) : []);
     setAllInvites(invitesResult.status === 'fulfilled' ? (invitesResult.value || []) : []);
+    setFeedPosts(feedResult.status === 'fulfilled' ? (feedResult.value || []) : []);
     
     setAccounts(
       accountsResult.status === 'fulfilled' && Array.isArray(accountsResult.value)
@@ -545,6 +550,51 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
     }
   }
 
+  async function handleAdminPostImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
+      setNewPost(prev => ({ ...prev, image_url: file_url }));
+    } catch (err) {
+      setPanelError('Image upload failed: ' + err.message);
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  async function handleCreateFeedPost() {
+    if (!newPost.title.trim()) return;
+    setPanelWorking(true);
+    try {
+      await createPost({
+        ...newPost,
+        section: 'updates-news',
+        author: session.username,
+        is_admin: true,
+      });
+      setNewPost({ title: '', body: '', tag: 'NEWS', is_pinned: false, image_url: '' });
+      await loadData();
+    } catch (err) {
+      setPanelError('Failed to create post: ' + err.message);
+    } finally {
+      setPanelWorking(false);
+    }
+  }
+
+  async function handleDeleteFeedPost(id) {
+    setPanelWorking(true);
+    try {
+      await deletePost(id);
+      await loadData();
+    } catch (err) {
+      setPanelError('Failed to delete post: ' + err.message);
+    } finally {
+      setPanelWorking(false);
+    }
+  }
+
   async function handleAdminImageUpload(e) {
     const file = e.target.files?.[0];
     if (!file || !selectedChatId) return;
@@ -582,6 +632,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
         {[
           { id: 'keys', label: 'license keys', icon: Key },
           { id: 'users', label: 'users', icon: Users },
+          { id: 'feed', label: 'feed', icon: FileText },
           { id: 'downloads', label: 'downloads', icon: Download },
           { id: 'invites', label: 'invites', icon: CalendarClock },
           { id: 'chats', label: 'chats', icon: MessageSquare },
@@ -603,6 +654,131 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
           </button>
         ))}
       </div>
+
+      {tab === 'feed' && (
+        <div className="space-y-6">
+          <div className="bg-[#111] border border-[#222] rounded-lg p-6 space-y-5">
+            <h3 className="text-white font-bold text-lg">Create Feed Post</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider block mb-1.5">Post Title</label>
+                  <input
+                    value={newPost.title}
+                    onChange={e => setNewPost(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="The big update..."
+                    className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444]"
+                  />
+                </div>
+                <div>
+                  <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider block mb-1.5">Tag</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['NEWS', 'UPDATE', 'NOTE', 'COMMUNITY'].map(tag => (
+                      <button
+                        key={tag}
+                        onClick={() => setNewPost(prev => ({ ...prev, tag }))}
+                        className={`py-2 rounded-lg text-[10px] font-bold uppercase transition ${newPost.tag === tag ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:bg-zinc-800/40'}`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={newPost.is_pinned}
+                      onChange={e => setNewPost(prev => ({ ...prev, is_pinned: e.target.checked }))}
+                      className="hidden"
+                    />
+                    <div className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${newPost.is_pinned ? 'bg-blue-500 border-blue-500' : 'bg-zinc-900 border-zinc-700'}`}>
+                      {newPost.is_pinned && <Check size={10} className="text-black" />}
+                    </div>
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest group-hover:text-zinc-200">Pin Post</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider block mb-1.5">Content</label>
+                  <textarea
+                    value={newPost.body}
+                    onChange={e => setNewPost(prev => ({ ...prev, body: e.target.value }))}
+                    placeholder="Write the content here..."
+                    rows={5}
+                    className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444] resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider block mb-1.5">Attachment</label>
+                  {newPost.image_url ? (
+                    <div className="relative group rounded-lg overflow-hidden border border-[#333]">
+                      <img src={newPost.image_url} alt="Post Attachment" className="w-full h-24 object-cover" />
+                      <button 
+                        onClick={() => setNewPost(prev => ({ ...prev, image_url: '' }))}
+                        className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:bg-red-500 transition-colors"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-24 bg-[#1a1a1a] border border-dashed border-[#333] rounded-lg cursor-pointer hover:bg-zinc-800/40 transition">
+                      <ImagePlus size={20} className="text-zinc-600 mb-1" />
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase">Upload Image</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={handleAdminPostImageUpload} />
+                    </label>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleCreateFeedPost}
+              disabled={panelWorking || !newPost.title.trim()}
+              className="w-full h-12 rounded-lg text-sm font-bold tracking-wider transition disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ background: accent, color: accentText }}
+            >
+              <Send size={16} />
+              {panelWorking ? 'POSTING...' : 'PUBLISH TO FEED'}
+            </button>
+          </div>
+
+          <div className="bg-[#111] border border-[#222] rounded-lg overflow-hidden">
+            <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20">
+              <h3 className="text-white text-sm font-bold tracking-wider">Manage Feed</h3>
+            </div>
+            <div className="divide-y divide-zinc-800/40">
+              {feedPosts.length === 0 ? (
+                <div className="p-10 text-center text-zinc-600 text-xs italic">No feed entries yet.</div>
+              ) : (
+                feedPosts.map(post => (
+                  <div key={post.id} className="p-4 flex items-center justify-between hover:bg-zinc-800/10 transition group">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-1.5 h-1.5 rounded-full ${post.is_pinned ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.4)]' : 'bg-zinc-600'}`} />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white text-sm font-bold">{post.title}</span>
+                          <span className="text-[8px] font-black tracking-[0.2em] bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded uppercase">{post.tag}</span>
+                        </div>
+                        <p className="text-zinc-600 text-[10px] mt-0.5">Posted {new Date(post.created_at).toLocaleDateString()} by @{post.author}</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteFeedPost(post.id)}
+                      className="p-2 text-zinc-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {tab === 'keys' && (
         <div className="space-y-6">

@@ -1,0 +1,37 @@
+{
+  "name": "ForumPost",
+  "type": "object",
+  "properties": {
+    "section": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "body": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "author": {
+      "type": "string"
+    },
+    "is_admin": {
+      "type": "boolean"
+    },
+    "is_pinned": {
+      "type": "boolean",
+      "default": false
+    },
+    "tag": {
+      "type": "string",
+      "default": "NEWS"
+    }
+  },
+  "required": [
+    "section",
+    "title",
+    "author"
+  ]
+}
