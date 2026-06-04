@@ -100,9 +100,9 @@ export default function DashboardTab({ session, onSettings, accent, announcement
 
 
       {/* User card */}
-      <motion.div {...fadeUp(0.08)} className="bg-[#111] border border-[#222] rounded-lg p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-[#1a1a1a] border border-[#333] rounded-lg flex items-center justify-center overflow-hidden">
+      <motion.div {...fadeUp(0.08)} className="bg-[#111] border border-[#222] rounded-lg p-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="w-12 h-12 bg-[#1a1a1a] border border-[#333] rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
             {session.profile_pic ? (
               <img src={session.profile_pic} alt="Avatar" className="w-full h-full object-cover" />
             ) : session.discord_avatar ? (
@@ -113,19 +113,19 @@ export default function DashboardTab({ session, onSettings, accent, announcement
               </span>
             )}
           </div>
-          <div>
-            <p className="text-zinc-500 text-[10px] uppercase tracking-widest flex items-center">
-              Connected as <span className="ml-2 px-1.5 py-0.5 rounded bg-zinc-800/50 text-zinc-400 font-mono text-[9px] border border-zinc-700/30">UID {String(session.unique_identifier || 0).padStart(3, '0')}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-zinc-500 text-[10px] uppercase tracking-widest flex items-center gap-2">
+              Connected as <span className="px-1.5 py-0.5 rounded bg-zinc-800/50 text-zinc-400 font-mono text-[9px] border border-zinc-700/30 whitespace-nowrap">UID {String(session.unique_identifier || 0).padStart(3, '0')}</span>
             </p>
-            <p className="text-white font-semibold text-lg">
+            <p className="text-white font-semibold text-lg truncate">
               {displayUsername}
             </p>
           </div>
-          <div className="w-2 h-2 rounded-full bg-green-400 ml-1 self-start mt-2 shadow-[0_0_6px_#4ade80]" />
+          <div className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0 shadow-[0_0_6px_#4ade80]" />
         </div>
         <button
           onClick={onSettings}
-          className="flex items-center gap-2 bg-zinc-800 border border-[#333] text-zinc-300 hover:text-white hover:border-[#444] px-4 py-2 rounded-lg text-xs transition"
+          className="flex items-center gap-2 bg-zinc-800 border border-[#333] text-zinc-300 hover:text-white hover:border-[#444] px-4 py-2 rounded-lg text-xs transition flex-shrink-0"
         >
           <Settings size={13} />
           SETTINGS

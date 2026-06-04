@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
-import { Send, ImagePlus, User, Shield, Clock, X, Globe, MessageSquare, Search, Trash2 } from 'lucide-react';
+import { Send, ImagePlus, User, Shield, Clock, X, Globe, MessageSquare, Search, Trash2, Key, Code } from 'lucide-react';
 import { getBackendDb } from '@/lib/backend';
 
 const db = getBackendDb();
@@ -545,13 +545,13 @@ export default function SupportTab({ session, accent }) {
                   )}
                   {viewedProfileUser.internal_license && (
                     <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group/badge relative cursor-help transition-all hover:bg-purple-500/20 hover:scale-110">
-                      <Globe size={16} className="text-purple-400" />
+                      <Key size={16} className="text-purple-400" />
                       <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-black px-3 py-2 rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all scale-90 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Internal User</span>
                     </div>
                   )}
                   {viewedProfileUser.script_license && (
                     <div className="w-9 h-9 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/20 group/badge relative cursor-help transition-all hover:bg-green-500/20 hover:scale-110">
-                      <Clock size={16} className="text-green-400" />
+                      <Code size={16} className="text-green-400" />
                       <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-black px-3 py-2 rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all scale-90 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Script User</span>
                     </div>
                   )}
