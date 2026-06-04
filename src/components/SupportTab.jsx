@@ -518,8 +518,8 @@ export default function SupportTab({ session, accent }) {
                 </div>
               </div>
 
-              <div className="mt-16 space-y-6">
-                <div className="flex items-start justify-between gap-6">
+              <div className="mt-20 space-y-6">
+                <div className="flex items-start justify-between gap-4 min-w-0">
                   <div className="min-w-0 flex-1">
                     <h2 className="text-white text-2xl font-black tracking-tighter flex items-center gap-3 truncate">
                       {viewedProfileUser.username}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, LogOut, Ban, Snowflake, Leaf, Palette, User, ImagePlus, Shield, Globe, Clock } from 'lucide-react';
+import { X, LogOut, Ban, Snowflake, Leaf, Palette, User, ImagePlus, Shield, Globe, Clock, Key, Code } from 'lucide-react';
 import { setSession } from '@/lib/auth';
 import { getBackendDb } from '@/lib/backend';
 
@@ -207,13 +207,13 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                               )}
                               {session.internal_license && (
                                 <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group/badge relative cursor-help transition-colors hover:bg-purple-500/20">
-                                  <Globe size={14} className="text-purple-400" />
+                                  <Key size={14} className="text-purple-400" />
                                   <span className="absolute -top-9 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Internal User</span>
                                 </div>
                               )}
                               {session.script_license && (
                                 <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center border border-green-500/20 group/badge relative cursor-help transition-colors hover:bg-green-500/20">
-                                  <Clock size={14} className="text-green-400" />
+                                  <Code size={14} className="text-green-400" />
                                   <span className="absolute -top-9 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover/badge:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">Script Subscriber</span>
                                 </div>
                               )}
