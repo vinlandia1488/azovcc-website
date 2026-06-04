@@ -141,10 +141,10 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
 
            {activeTab === 'profile' ? (
              <div className="animate-in fade-in slide-in-from-bottom-2 duration-400 flex flex-col h-full">
-               <div className="flex gap-10 flex-1 min-h-0 pt-4">
+               <div className="flex gap-8 flex-1 min-h-0 pt-4">
                  {/* Left: Preview */}
                  <div className="flex-1 flex flex-col items-center justify-start">
-                    <div className="bg-[#0b0b0d] rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative w-full max-w-[340px] group/preview">
+                    <div className="bg-[#0b0b0d] rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative w-full max-w-[380px] group/preview">
                         {/* Banner */}
                         <div className="h-28 w-full relative bg-zinc-800 overflow-hidden">
                           {profileBanner ? (
@@ -170,7 +170,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                                   <img src={profilePic} alt="PFP" className="w-full h-full object-cover" />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-700">
-                                    {session.username.substring(0, 2).toUpperCase()}
+                                    {session.username.substring(0, 5).toUpperCase()}
                                   </div>
                                 )}
                               </div>
@@ -239,7 +239,6 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                               onChange={e => setProfileDescription(e.target.value)}
                               placeholder="Write a short bio..."
                               className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444] transition resize-none h-24"
-                              maxLength={200}
                             />
                          </div>
                       </div>

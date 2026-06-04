@@ -27,7 +27,7 @@ const FORUM_SECTIONS = [
     ],
   },
   {
-    category: 'COMMUNITY',
+    category: 'COMMUNITY & FORUMS',
     rows: [
       { id: 'media', label: 'Media', adminOnly: false },
     ],

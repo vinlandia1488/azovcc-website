@@ -512,7 +512,7 @@ export default function SupportTab({ session, accent }) {
                       <img src={viewedProfileUser.profile_pic} alt="pfp" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-xl font-bold text-zinc-600">
-                        {viewedProfileUser.username.substring(0, 2).toUpperCase()}
+                        {viewedProfileUser.username.substring(0, 5).toUpperCase()}
                       </div>
                     )}
                   </div>
