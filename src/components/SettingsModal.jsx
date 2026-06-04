@@ -143,10 +143,10 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
              <div className="animate-in fade-in slide-in-from-bottom-2 duration-400 flex flex-col h-full">
                <div className="flex gap-6 flex-1 min-h-0">
                  {/* Left: Profile Preview */}
-                 <div className="w-80 flex-shrink-0">
+                 <div className="w-96 flex-shrink-0">
                     <div className="bg-[#0b0b0d] rounded-xl overflow-hidden shadow-2xl border border-[#222] relative">
                         {/* Banner */}
-                        <div className="h-24 w-full relative bg-zinc-800 overflow-hidden">
+                        <div className="h-32 w-full relative bg-zinc-800 overflow-hidden">
                           {profileBanner ? (
                             <img src={profileBanner} alt="banner" className="w-full h-full object-cover" />
                           ) : (
@@ -163,8 +163,8 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
 
                         {/* Avatar container */}
                         <div className="px-4 pb-4 relative bg-[#0b0b0d]">
-                          <div className="absolute -top-8 left-4 z-20">
-                            <div className="w-16 h-16 rounded-full bg-[#0b0b0d] p-1 shadow-2xl relative group/avatar">
+                          <div className="absolute -top-10 left-4 z-20">
+                            <div className="w-20 h-20 rounded-full bg-[#0b0b0d] p-1 shadow-2xl relative group/avatar">
                               <div className="w-full h-full rounded-full bg-[#1a1a1a] border border-white/10 overflow-hidden shadow-inner">
                                 {profilePic ? (
                                   <img src={profilePic} alt="PFP" className="w-full h-full object-cover" />
@@ -183,7 +183,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                             </div>
                           </div>
 
-                          <div className="mt-10 space-y-3">
+                          <div className="mt-12 space-y-3">
                             <div>
                               <h2 className="text-white text-lg font-bold flex items-center gap-2 truncate">
                                 {session.username}
