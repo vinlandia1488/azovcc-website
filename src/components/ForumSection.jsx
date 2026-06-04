@@ -231,55 +231,55 @@ export default function ForumSection({ section, session, onBack }) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-[#0e0e11] border border-[#1f1f26] p-6 group hover:border-[#2a2a35] transition-all relative overflow-hidden"
+              className="bg-[#0e0e11] border border-[#1f1f26] p-5 group hover:border-[#2a2a35] transition-all relative overflow-hidden"
             >
               {post.is_pinned && (
                 <div className="absolute top-0 left-0 w-1 h-full bg-white/20" />
               )}
               
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1.5 text-[9px] font-black tracking-[0.15em] text-zinc-400 uppercase">
-                      <span className={`w-1.5 h-1.5 rounded-full ${post.is_admin ? 'bg-white' : 'bg-zinc-600'}`} />
+                    <span className="flex items-center gap-1.5 text-[8px] font-black tracking-[0.15em] text-zinc-500 uppercase">
+                      <span className={`w-1 h-1 rounded-full ${post.is_admin ? 'bg-white' : 'bg-zinc-700'}`} />
                       {post.tag || (post.is_admin ? 'NEWS' : 'COMMUNITY')}
                     </span>
                     {post.is_pinned && (
-                      <span className="text-[8px] font-black tracking-[0.2em] bg-white/10 text-white/80 px-2 py-0.5 rounded-none uppercase">
+                      <span className="text-[7px] font-black tracking-[0.2em] bg-white/10 text-white/80 px-1.5 py-0.5 rounded-none uppercase">
                         PINNED
                       </span>
                     )}
                   </div>
-                  <span className="text-[9px] font-black tracking-[0.2em] text-zinc-600 uppercase font-mono">
+                  <span className="text-[8px] font-black tracking-[0.2em] text-zinc-600 uppercase font-mono">
                     {timeAgo(post.created_at)}
                   </span>
                 </div>
 
-                <div className="flex items-start justify-between gap-6">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-bold text-lg md:text-xl tracking-tight leading-tight group-hover:text-zinc-200 transition-colors">
+                    <h3 className="text-white font-bold text-base md:text-lg tracking-tight leading-tight group-hover:text-zinc-200 transition-colors">
                       {post.title}
                     </h3>
                     {post.body && (
-                      <p className="text-zinc-500 text-sm mt-3 leading-relaxed whitespace-pre-wrap font-medium max-w-2xl">
+                      <p className="text-zinc-500 text-xs mt-2 leading-relaxed whitespace-pre-wrap font-medium max-w-2xl line-clamp-3">
                         {post.body}
                       </p>
                     )}
                     
                     {post.image_url && (
-                      <div className="mt-5 overflow-hidden border border-white/5 bg-black/40">
+                      <div className="mt-4 overflow-hidden border border-white/5 bg-black/40 max-w-sm">
                         <img
                           src={post.image_url}
                           alt="Post media"
-                          className="w-full h-auto max-h-[500px] object-contain cursor-pointer hover:opacity-95 transition-opacity"
+                          className="w-full h-auto max-h-[300px] object-contain cursor-pointer hover:opacity-95 transition-opacity"
                           onClick={() => window.open(post.image_url, '_blank')}
                         />
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2 mt-5">
-                      <span className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
-                        BY <span className="text-zinc-400">@{post.author}</span>
+                    <div className="flex items-center gap-2 mt-4">
+                      <span className="text-zinc-700 text-[9px] font-bold uppercase tracking-widest">
+                        BY <span className="text-zinc-500">@{post.author}</span>
                       </span>
                     </div>
                   </div>
@@ -287,9 +287,9 @@ export default function ForumSection({ section, session, onBack }) {
                   {session?.is_admin && (
                     <button
                       onClick={() => handleDelete(post.id)}
-                      className="text-zinc-700 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 shrink-0 p-2"
+                      className="text-zinc-800 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 shrink-0 p-1"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={12} />
                     </button>
                   )}
                 </div>

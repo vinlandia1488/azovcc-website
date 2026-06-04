@@ -19,6 +19,24 @@ function InfoRow({ label, value, icon: Icon, isSensitive = false, onCopy }) {
     if (onCopy) onCopy();
   };
 
+  async function toggleBadge(badgeImageUrl) {
+    setUpdating(true);
+    try {
+      const currentBadges = Array.isArray(u.badges) ? u.badges : [];
+      const isAssigned = currentBadges.includes(badgeImageUrl);
+      const nextBadges = isAssigned 
+        ? currentBadges.filter(b => b !== badgeImageUrl)
+        : [...currentBadges, badgeImageUrl];
+      
+      await db.entities.Account.update(u.id, { badges: nextBadges });
+      if (onUpdate) await onUpdate();
+    } catch (err) {
+      alert("Failed to update badges: " + err.message);
+    } finally {
+      setUpdating(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-[#1a1a1e]/50 border border-zinc-800/50">
       <div className="flex items-center justify-between">
@@ -55,13 +73,24 @@ export default function UserDetailModal({ user, onClose, accent, onUpdate }) {
   const [availableKeys, setAvailableKeys] = useState([]);
   const [showAdminConfirm, setShowAdminConfirm] = useState(false);
   const [manualLicenseInput, setManualLicenseInput] = useState('');
+  const [allBadges, setAllBadges] = useState([]);
 
   useEffect(() => {
     loadKeys();
+    loadBadges();
   }, []);
 
   if (!user) return null;
   const u = normalizeAccountDiscordLink(user);
+
+  async function loadBadges() {
+    try {
+      const rows = await db.entities.Badge.list();
+      setAllBadges(Array.isArray(rows) ? rows : []);
+    } catch (e) {
+      console.error('Failed to load badges', e);
+    }
+  }
 
   async function loadKeys() {
     const all = await getLicenseKeys();
@@ -267,6 +296,33 @@ export default function UserDetailModal({ user, onClose, accent, onUpdate }) {
                 <div className="text-zinc-200 text-sm font-mono">
                   {u.accent_color || accent}
                 </div>
+              </div>
+            </div>
+
+            {/* Manage Badges */}
+            <div className="p-4 rounded-xl bg-[#1a1a1e]/50 border border-zinc-800/50 space-y-3">
+              <div className="flex items-center gap-2 text-zinc-500">
+                <ShieldCheck size={14} />
+                <span className="text-[10px] uppercase tracking-wider font-semibold">User Badges</span>
+              </div>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                {allBadges.map(badge => {
+                  const isAssigned = (u.badges || []).includes(badge.image_url);
+                  return (
+                    <button
+                      key={badge.id}
+                      onClick={() => toggleBadge(badge.image_url)}
+                      disabled={updating}
+                      title={badge.name}
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center p-1.5 transition border ${isAssigned ? 'bg-indigo-500/20 border-indigo-500' : 'bg-black/20 border-zinc-800 hover:border-zinc-700'}`}
+                    >
+                      <img src={badge.image_url} alt={badge.name} className="w-full h-full object-contain" />
+                    </button>
+                  );
+                })}
+                {allBadges.length === 0 && (
+                  <p className="col-span-full text-[10px] text-zinc-600 italic">No custom badges created in Admin Panel.</p>
+                )}
               </div>
             </div>
           </div>

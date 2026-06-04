@@ -1,0 +1,20 @@
+{
+  "name": "Badge",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Image or GIF URL for the badge"
+    },
+    "description": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "image_url"
+  ]
+}

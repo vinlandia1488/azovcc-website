@@ -60,6 +60,8 @@ export default function Dashboard() {
   const [showIntro, setShowIntro] = useState(true);
   const [feedPosts, setFeedPosts] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
+  const [postCounts, setPostCounts] = useState({});
+  const [latestPreviews, setLatestPreviews] = useState({});
   const [brandingShowCc] = useState(() => localStorage.getItem('adderal_brandingShowCc') === 'true');
 
   useEffect(() => {
@@ -90,6 +92,18 @@ export default function Dashboard() {
     try {
       const posts = await getAllPosts();
       setFeedPosts(posts);
+      
+      // Update post counts and latest previews
+      const counts = {};
+      const latest = {};
+      posts.forEach(p => {
+        counts[p.section] = (counts[p.section] || 0) + 1;
+        if (!latest[p.section] || new Date(p.created_at) > new Date(latest[p.section].created_at)) {
+          latest[p.section] = p;
+        }
+      });
+      setPostCounts(counts);
+      setLatestPreviews(latest);
     } catch {
       setFeedPosts([]);
     } finally {
@@ -225,115 +239,68 @@ export default function Dashboard() {
       <main className="flex-1 max-w-[1200px] w-full mx-auto px-6 py-8 z-30">
         <AnimatePresence mode="wait">
 
-          {/* Home Tab — Forum */}
+          {/* Home Tab — Forum Categories */}
           {activeTab === 'home' && !activeSection && (
             <motion.div
-              key="home-forum"
+              key="home-categories"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="space-y-12"
+              className="space-y-8"
             >
-              {/* Atomic Header */}
-              <div className="pt-4 pb-2">
-                <span className="text-[10px] font-black tracking-[0.3em] text-blue-400/80 uppercase block mb-2">THE FEED</span>
-                <h1 className="text-white font-black text-6xl md:text-7xl tracking-tighter leading-none mb-4">
+              {/* Smaller Header */}
+              <div className="pt-2">
+                <h1 className="text-white font-black text-4xl tracking-tighter leading-none mb-1">
                   adderall
                 </h1>
-                <p className="text-zinc-600 text-sm md:text-base font-medium tracking-tight">
+                <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
                   updates, fixes and idk.
                 </p>
               </div>
 
-              {/* Feed Content */}
+              {/* Forum Categories */}
               <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-[#1f1f26] pb-4">
-                  <h2 className="text-white font-bold text-xs uppercase tracking-widest">Latest Updates</h2>
-                  {session.is_admin && (
-                    <button 
-                      onClick={() => setActiveSection({ id: 'updates-news', label: 'Updates & News', adminOnly: true })}
-                      className="text-zinc-500 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest flex items-center gap-2"
-                    >
-                      <Plus size={12} /> Manage Feed
-                    </button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 gap-6">
-                  {loadingFeed ? (
-                    <div className="py-20 text-center text-zinc-600 text-[10px] font-mono uppercase tracking-widest animate-pulse">
-                      Syncing with the feed...
+                {FORUM_SECTIONS.map(cat => (
+                  <div key={cat.category} className="w-full">
+                    <div className="bg-[#121215] border border-[#1f1f26] border-t-[#2a2a2f] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] bg-gradient-to-b from-white/[0.03] to-transparent px-5 py-3 text-[10px] font-bold tracking-widest text-zinc-400 uppercase rounded-t-sm">
+                      {cat.category}
                     </div>
-                  ) : feedPosts.length === 0 ? (
-                    <div className="py-20 text-center border border-[#1f1f26] bg-[#0e0e11]/40 rounded-sm">
-                      <p className="text-zinc-600 text-[10px] font-mono uppercase tracking-widest">No entries found.</p>
-                    </div>
-                  ) : (
-                    feedPosts.map((post, i) => (
-                      <motion.div
-                        key={post.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="bg-[#0e0e11] border border-[#1f1f26] p-8 group hover:border-[#2a2a35] transition-all relative overflow-hidden"
-                      >
-                        {post.is_pinned && (
-                          <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500/30" />
-                        )}
-                        
-                        <div className="flex flex-col gap-6">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <span className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-zinc-400 uppercase">
-                                <span className={`w-2 h-2 rounded-full ${post.is_admin ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]' : 'bg-zinc-600'}`} />
-                                {post.tag || (post.is_admin ? 'NEWS' : 'COMMUNITY')}
-                              </span>
-                              {post.is_pinned && (
-                                <span className="text-[9px] font-black tracking-[0.25em] bg-blue-500/10 text-blue-400 px-3 py-1 rounded-none uppercase">
-                                  PINNED
-                                </span>
-                              )}
+                    {cat.rows.map(row => {
+                      const locked = row.adminOnly && !session.is_admin;
+                      const latest = latestPreviews[row.id];
+                      return (
+                        <div
+                          key={row.id}
+                          onClick={() => !locked && setActiveSection(row)}
+                          className={`bg-[#0e0e11] border-x border-b border-[#1f1f26] shadow-[inset_0_1px_0_rgba(255,255,255,0.01)] p-5 flex items-center justify-between hover:bg-[#111115] transition-colors cursor-pointer group ${locked ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                        >
+                          <div className="pr-4">
+                            <h3 className="text-zinc-200 font-bold text-sm group-hover:text-white transition-colors">
+                              {row.label}
+                            </h3>
+                            {latest ? (
+                              <p className="text-[10px] text-zinc-600 truncate max-w-[300px] mt-1 italic opacity-60 group-hover:opacity-100 transition-opacity">
+                                Latest: {latest.title}
+                              </p>
+                            ) : (
+                              <span className="text-[9px] text-zinc-700 uppercase font-mono tracking-wider mt-1 block">No updates yet</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-8 min-w-[150px] justify-end">
+                            <div className="flex flex-col items-center">
+                              <span className="text-base font-bold text-zinc-300 leading-none">{postCounts[row.id] ?? 0}</span>
+                              <span className="text-[7px] font-bold text-zinc-500 tracking-wider mt-1 uppercase font-mono">Posts</span>
                             </div>
-                            <span className="text-[10px] font-black tracking-[0.25em] text-zinc-600 uppercase font-mono">
-                              {post.created_at ? new Date(post.created_at).toLocaleDateString() : 'RECENT'}
+                            <span className="text-[9px] font-mono font-bold text-zinc-600 tracking-wider uppercase">
+                              {postCounts[row.id] ? 'Active' : 'Empty'}
                             </span>
                           </div>
-
-                          <div className="space-y-4">
-                            <h3 className="text-white font-black text-2xl md:text-3xl tracking-tight leading-none group-hover:text-zinc-200 transition-colors">
-                              {post.title}
-                            </h3>
-                            {post.body && (
-                              <p className="text-zinc-500 text-sm md:text-base mt-4 leading-relaxed font-medium max-w-3xl">
-                                {post.body}
-                              </p>
-                            )}
-                            
-                            {post.image_url && (
-                              <div className="mt-8 overflow-hidden border border-white/5 bg-black/40">
-                                <img
-                                  src={post.image_url}
-                                  alt="Media"
-                                  className="w-full h-auto max-h-[600px] object-contain"
-                                />
-                              </div>
-                            )}
-
-                            <div className="flex items-center gap-3 mt-8 pt-6 border-t border-white/5">
-                              <div className="w-8 h-8 rounded-full bg-[#16161a] border border-white/10 flex items-center justify-center text-[10px] font-black text-zinc-400 uppercase">
-                                {post.author?.charAt(0) || 'U'}
-                              </div>
-                              <span className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em]">
-                                POSTED BY <span className="text-zinc-200">@{post.author}</span>
-                              </span>
-                            </div>
-                          </div>
                         </div>
-                      </motion.div>
-                    ))
-                  )}
-                </div>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             </motion.div>
           )}

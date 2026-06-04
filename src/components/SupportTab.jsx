@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
-import { Send, ImagePlus, User, Shield, Clock, X, Globe, MessageSquare, Search } from 'lucide-react';
+import { Send, ImagePlus, User, Shield, Clock, X, Globe, MessageSquare, Search, Trash2 } from 'lucide-react';
 import { getBackendDb } from '@/lib/backend';
 
 const db = getBackendDb();
@@ -40,6 +40,8 @@ export default function SupportTab({ session, accent }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState(null); 
   const [userList, setUserList] = useState([]); 
+  const [viewedProfileUser, setViewedProfileUser] = useState(null); 
+  const [loadingProfile, setLoadingProfile] = useState(false);
   
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -240,6 +242,38 @@ export default function SupportTab({ session, accent }) {
     }
   }
 
+  async function deleteMessage(msgId, ownerUsername, msgType) {
+    if (!window.confirm('Are you sure you want to delete this message?')) return;
+    try {
+      await db.entities.CloudConfig.delete(msgId);
+      await loadAll();
+    } catch (err) {
+      if (isBackendError(err)) {
+        const key = msgType === GLOBAL_MSG_TYPE ? LS_KEY_GLOBAL : LS_KEY_SUPPORT;
+        const existing = lsGet(key);
+        const filtered = existing.filter(m => m.id !== msgId);
+        lsSet(key, filtered);
+        await loadAll();
+      } else {
+        alert('Failed to delete message: ' + (err?.message || 'Unknown error'));
+      }
+    }
+  }
+
+  async function fetchUserProfile(username) {
+    setLoadingProfile(true);
+    try {
+      const rows = await db.entities.Account.filter({ username });
+      if (rows && rows.length > 0) {
+        setViewedProfileUser(rows[0]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch profile:', err);
+    } finally {
+      setLoadingProfile(false);
+    }
+  }
+
   const filteredUsers = useMemo(() => {
     return userList.filter(u => u.username.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [userList, searchQuery]);
@@ -354,7 +388,10 @@ export default function SupportTab({ session, accent }) {
               return (
                 <div key={m.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                   <div className={`flex gap-3 max-w-[80%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div className="w-8 h-8 rounded-full overflow-hidden border border-[#333] bg-[#1a1a1a] shrink-0 mt-1">
+                    <div 
+                      className="w-8 h-8 rounded-full overflow-hidden border border-[#333] bg-[#1a1a1a] shrink-0 mt-1 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => fetchUserProfile(m.username)}
+                    >
                       {m.pfp ? (
                         <img src={m.pfp} alt="pfp" className="w-full h-full object-cover" />
                       ) : (
@@ -372,7 +409,7 @@ export default function SupportTab({ session, accent }) {
                         <span className="text-[8px] text-zinc-600">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                       <div
-                        className={`px-4 py-2.5 rounded-lg text-sm leading-relaxed ${isMe ? 'rounded-tr-sm' : 'rounded-tl-sm border border-[#333]'}`}
+                        className={`px-4 py-2.5 rounded-lg text-sm leading-relaxed relative group/msg ${isMe ? 'rounded-tr-sm' : 'rounded-tl-sm border border-[#333]'}`}
                         style={isMe ? { background: sentColor, color: sentText } : { background: '#1a1a1a', color: '#d4d4d8' }}
                       >
                         {m.content && <p className="whitespace-pre-wrap">{m.content}</p>}
@@ -382,6 +419,15 @@ export default function SupportTab({ session, accent }) {
                             alt="Shared"
                             className="max-w-full h-auto max-h-64 object-contain rounded-lg mt-2"
                           />
+                        )}
+                        
+                        {(session.is_admin || isMe) && (
+                          <button
+                            onClick={() => deleteMessage(m.id, m.owner_username, activeTab === 'global' ? GLOBAL_MSG_TYPE : SUPPORT_MSG_TYPE)}
+                            className={`absolute top-1/2 -translate-y-1/2 p-1.5 rounded bg-black/60 text-white opacity-0 group-hover/msg:opacity-100 transition-opacity hover:text-red-400 ${isMe ? '-left-10' : '-right-10'}`}
+                          >
+                            <Trash2 size={12} />
+                          </button>
                         )}
                       </div>
                     </div>
@@ -431,6 +477,93 @@ export default function SupportTab({ session, accent }) {
           </div>
         )}
       </div>
+
+      {/* Profile Modal */}
+      {viewedProfileUser && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div 
+            className="w-full max-w-[340px] bg-[#0b0b0d] rounded-2xl overflow-hidden shadow-2xl border border-white/5 relative"
+            style={{ '--profile-accent': viewedProfileUser.profile_accent || '#ef4444' }}
+          >
+            {/* Banner */}
+            <div className="h-28 w-full relative bg-zinc-800">
+              {viewedProfileUser.profile_banner ? (
+                <img src={viewedProfileUser.profile_banner} alt="banner" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full" style={{ background: viewedProfileUser.profile_accent || accent }} />
+              )}
+            </div>
+
+            {/* Avatar container */}
+            <div className="px-4 pb-4 relative">
+              <div className="absolute -top-12 left-4">
+                <div className="w-24 h-24 rounded-full bg-[#0b0b0d] p-1.5">
+                  <div className="w-full h-full rounded-full bg-[#1a1a1a] border border-white/10 overflow-hidden">
+                    {viewedProfileUser.profile_pic ? (
+                      <img src={viewedProfileUser.profile_pic} alt="pfp" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-700">
+                        {viewedProfileUser.username.substring(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Close button */}
+              <button 
+                onClick={() => setViewedProfileUser(null)}
+                className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="mt-14 space-y-4">
+                <div>
+                  <h2 className="text-white text-xl font-black tracking-tight flex items-center gap-2">
+                    {viewedProfileUser.username}
+                    {viewedProfileUser.is_admin && <Shield size={16} className="text-blue-400" />}
+                  </h2>
+                  <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-0.5">
+                    {viewedProfileUser.is_admin ? 'Staff Member' : 'Community Member'}
+                  </p>
+                </div>
+
+                {/* Badges */}
+                <div className="flex flex-wrap gap-1.5 pt-2 border-t border-white/5">
+                  {viewedProfileUser.is_admin && (
+                    <div title="Staff Member" className="w-6 h-6 rounded bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                      <Shield size={12} className="text-blue-400" />
+                    </div>
+                  )}
+                  {viewedProfileUser.internal_license && (
+                    <div title="Internal User" className="w-6 h-6 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                      <Globe size={12} className="text-purple-400" />
+                    </div>
+                  )}
+                  {viewedProfileUser.script_license && (
+                    <div title="Script User" className="w-6 h-6 rounded bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                      <Clock size={12} className="text-green-400" />
+                    </div>
+                  )}
+                  {viewedProfileUser.badges?.map((badge, i) => (
+                    <div key={i} className="w-6 h-6 rounded bg-zinc-800/50 flex items-center justify-center border border-white/5 overflow-hidden">
+                      <img src={badge} alt="badge" className="w-full h-full object-contain" />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-[#16161a] rounded-xl p-3 border border-white/5">
+                  <h4 className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2">About Me</h4>
+                  <p className="text-zinc-300 text-xs leading-relaxed">
+                    Joined on {new Date(viewedProfileUser.created_date).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

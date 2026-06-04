@@ -30,6 +30,21 @@
       "type": "string",
       "default": "#ef4444"
     },
+    "profile_accent": {
+      "type": "string",
+      "default": "#1a1a1a"
+    },
+    "profile_banner": {
+      "type": "string",
+      "description": "Custom profile banner image URL"
+    },
+    "badges": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of badge IDs or image URLs"
+    },
     "is_admin": {
       "type": "boolean",
       "default": false

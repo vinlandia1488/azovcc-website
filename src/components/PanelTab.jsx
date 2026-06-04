@@ -25,7 +25,7 @@ import {
   getDownloadItems,
   updateDownloadItem,
 } from '@/lib/downloads';
-import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, Shield, User, Search, Wrench, CalendarClock, StopCircle, ImagePlus, Music, SendHorizontal, MessageSquare } from 'lucide-react';
+import { Copy, Check, Key, Users, Plus, Eye, EyeOff, Download, Trash2, Save, Megaphone, Shuffle, FileText, ExternalLink, Shield, User, Search, Wrench, CalendarClock, StopCircle, ImagePlus, Music, SendHorizontal, MessageSquare, Award, X } from 'lucide-react';
 
 
 import UserDetailModal from '@/components/UserDetailModal';
@@ -112,6 +112,8 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
   const [keyType, setKeyType] = useState('script');
   const [feedPosts, setFeedPosts] = useState([]);
   const [newPost, setNewPost] = useState({ title: '', body: '', tag: 'NEWS', is_pinned: false, image_url: '' });
+  const [badges, setBadges] = useState([]);
+  const [newBadge, setNewBadge] = useState({ name: '', image_url: '', description: '' });
   const chatEndRef = useRef(null);
 
 
@@ -167,7 +169,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
   }
 
   async function loadData() {
-    const [keysResult, accountsResult, downloadsResult, announcementResult, spotifyResult, inviteSystemResult, chatsResult, invitesResult, feedResult] = await Promise.allSettled([
+    const [keysResult, accountsResult, downloadsResult, announcementResult, spotifyResult, inviteSystemResult, chatsResult, invitesResult, feedResult, badgesResult] = await Promise.allSettled([
       getLicenseKeys(),
       getEntityRows('Account'),
       getDownloadItems(),
@@ -177,11 +179,13 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
       getAllChats(),
       getAllInvitesAdmin(),
       getAllPosts(),
+      getEntityRows('Badge'),
     ]);
 
     setKeys(keysResult.status === 'fulfilled' ? (keysResult.value || []) : []);
     setAllInvites(invitesResult.status === 'fulfilled' ? (invitesResult.value || []) : []);
     setFeedPosts(feedResult.status === 'fulfilled' ? (feedResult.value || []) : []);
+    setBadges(badgesResult.status === 'fulfilled' ? (badgesResult.value || []) : []);
     
     setAccounts(
       accountsResult.status === 'fulfilled' && Array.isArray(accountsResult.value)
@@ -595,6 +599,46 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
     }
   }
 
+  async function handleBadgeImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
+      setNewBadge(prev => ({ ...prev, image_url: file_url }));
+    } catch (err) {
+      setPanelError('Badge image upload failed: ' + err.message);
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  async function handleCreateBadge() {
+    if (!newBadge.name.trim() || !newBadge.image_url) return;
+    setPanelWorking(true);
+    try {
+      await db.entities.Badge.create(newBadge);
+      setNewBadge({ name: '', image_url: '', description: '' });
+      await loadData();
+    } catch (err) {
+      setPanelError('Failed to create badge: ' + err.message);
+    } finally {
+      setPanelWorking(false);
+    }
+  }
+
+  async function handleDeleteBadge(id) {
+    setPanelWorking(true);
+    try {
+      await db.entities.Badge.delete(id);
+      await loadData();
+    } catch (err) {
+      setPanelError('Failed to delete badge: ' + err.message);
+    } finally {
+      setPanelWorking(false);
+    }
+  }
+
   async function handleAdminImageUpload(e) {
     const file = e.target.files?.[0];
     if (!file || !selectedChatId) return;
@@ -633,6 +677,7 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
           { id: 'keys', label: 'license keys', icon: Key },
           { id: 'users', label: 'users', icon: Users },
           { id: 'feed', label: 'feed', icon: FileText },
+          { id: 'badges', label: 'badges', icon: Award },
           { id: 'downloads', label: 'downloads', icon: Download },
           { id: 'invites', label: 'invites', icon: CalendarClock },
           { id: 'chats', label: 'chats', icon: MessageSquare },
@@ -768,6 +813,99 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
                     </div>
                     <button 
                       onClick={() => handleDeleteFeedPost(post.id)}
+                      className="p-2 text-zinc-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'badges' && (
+        <div className="space-y-6">
+          <div className="bg-[#111] border border-[#222] rounded-lg p-6 space-y-5">
+            <h3 className="text-white font-bold text-lg">Create Custom Badge</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider block mb-1.5">Badge Name</label>
+                  <input
+                    value={newBadge.name}
+                    onChange={e => setNewBadge(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Premium Member..."
+                    className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#444]"
+                  />
+                </div>
+                <div>
+                  <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider block mb-1.5">Description</label>
+                  <input
+                    value={newBadge.description}
+                    onChange={e => setNewBadge(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Special badge for cool people..."
+                    className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#444]"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider block mb-1.5">Badge Image/GIF</label>
+                {newBadge.image_url ? (
+                  <div className="relative group rounded-lg overflow-hidden border border-[#333] bg-black/40 h-24 flex items-center justify-center p-2">
+                    <img src={newBadge.image_url} alt="Badge Preview" className="h-full object-contain" />
+                    <button 
+                      onClick={() => setNewBadge(prev => ({ ...prev, image_url: '' }))}
+                      className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:bg-red-500 transition-colors"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-24 bg-[#1a1a1a] border border-dashed border-[#333] rounded-lg cursor-pointer hover:bg-zinc-800/40 transition">
+                    <ImagePlus size={20} className="text-zinc-600 mb-1" />
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase">Upload Icon</span>
+                    <input type="file" className="hidden" accept="image/*" onChange={handleBadgeImageUpload} />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={handleCreateBadge}
+              disabled={panelWorking || !newBadge.name.trim() || !newBadge.image_url}
+              className="w-full h-12 rounded-lg text-sm font-bold tracking-wider transition disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ background: accent, color: accentText }}
+            >
+              <Plus size={16} />
+              {panelWorking ? 'CREATING...' : 'CREATE BADGE'}
+            </button>
+          </div>
+
+          <div className="bg-[#111] border border-[#222] rounded-lg overflow-hidden">
+            <div className="p-4 border-b border-zinc-800/60 bg-zinc-900/20">
+              <h3 className="text-white text-sm font-bold tracking-wider">Available Badges</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+              {badges.length === 0 ? (
+                <div className="col-span-full py-10 text-center text-zinc-600 text-xs italic">No badges created yet.</div>
+              ) : (
+                badges.map(badge => (
+                  <div key={badge.id} className="bg-[#16161a] border border-[#222] rounded-xl p-4 flex items-center justify-between group">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center p-1.5">
+                        <img src={badge.image_url} alt={badge.name} className="w-full h-full object-contain" />
+                      </div>
+                      <div>
+                        <h4 className="text-white text-sm font-bold">{badge.name}</h4>
+                        <p className="text-zinc-500 text-[10px] truncate max-w-[120px]">{badge.description || 'No description'}</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteBadge(badge.id)}
                       className="p-2 text-zinc-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                     >
                       <Trash2 size={14} />
