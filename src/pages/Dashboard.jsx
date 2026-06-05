@@ -8,6 +8,7 @@ import { getAllPosts } from '@/lib/forum';
 import SettingsModal from '@/components/SettingsModal';
 import BrandingMark from '@/components/BrandingMark';
 import ForumSection from '@/components/ForumSection';
+import ForumHomePanel from '@/components/ForumHomePanel';
 import DashboardTab from '@/components/DashboardTab';
 import PanelTab from '@/components/PanelTab';
 import SupportTab from '@/components/SupportTab';
@@ -19,27 +20,6 @@ import { LogOut, Settings, Plus } from 'lucide-react';
 
 const db = getBackendDb();
 
-const FORUM_SECTIONS = [
-  {
-    category: 'ADDERALL',
-    rows: [
-      { id: 'updates-news', label: 'Updates & News', adminOnly: true },
-    ],
-  },
-  {
-    category: 'COMMUNITY & FORUMS',
-    rows: [
-      { id: 'media', label: 'Media', adminOnly: false },
-    ],
-  },
-  {
-    category: 'PURCHASE',
-    rows: [
-      { id: 'store-licenses', label: 'Store & Licenses', adminOnly: true },
-    ],
-  },
-];
-
 const NAV_TABS = [
   { id: 'home', label: 'Home' },
   { id: 'dashboard', label: 'Dashboard' },
@@ -47,9 +27,6 @@ const NAV_TABS = [
   { id: 'cloud-configs', label: 'Cloud Configs' },
   { id: 'chat', label: 'Chat' },
 ];
-
-const CATEGORY_HEADER = 'bg-[#121215] border border-[#1f1f26] border-t-[#2a2a2f] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] bg-gradient-to-b from-white/[0.03] to-transparent px-5 py-3 text-[10px] font-bold tracking-widest text-zinc-400 uppercase';
-const ROW_BASE = 'bg-[#0e0e11] border-x border-b border-[#1f1f26] shadow-[inset_0_1px_0_rgba(255,255,255,0.01)] p-5 flex items-center justify-between hover:bg-[#111115] transition-colors cursor-pointer group';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -249,110 +226,16 @@ export default function Dashboard() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="space-y-8"
             >
-              {/* Smaller Header */}
-              <div className="pt-2">
-                <h1 className="text-white font-black text-4xl tracking-tighter leading-none mb-1">
-                  adderall
-                </h1>
-              </div>
-
-              <AnimatePresence mode="wait">
-                {!showForumsMenu ? (
-                  /* Initial View: One "Forums" entry */
-                  <motion.div 
-                    key="forums-entry"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="space-y-6 max-w-2xl mx-auto md:mx-0"
-                  >
-                    <div className="bg-[#121215] border border-[#1f1f26] border-t-[#2a2a2f] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] bg-gradient-to-b from-white/[0.03] to-transparent px-5 py-2.5 text-[9px] font-bold tracking-[0.2em] text-zinc-500 uppercase rounded-t-sm">
-                      COMMUNITY
-                    </div>
-                    <div
-                      onClick={() => setShowForumsMenu(true)}
-                      className="bg-[#0e0e11] border-x border-b border-[#1f1f26] shadow-[inset_0_1px_0_rgba(255,255,255,0.01)] p-6 flex items-center justify-between hover:bg-[#111115] transition-all cursor-pointer group rounded-b-sm"
-                    >
-                      <div className="pr-4">
-                        <h3 className="text-zinc-200 font-black text-xl group-hover:text-white transition-all tracking-tight uppercase">
-                          Forums
-                        </h3>
-                        <p className="text-[9px] text-zinc-600 mt-1.5 font-bold uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">
-                          Join the discussion, see updates and media
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-6 min-w-[100px] justify-end">
-                        <div className="flex flex-col items-center">
-                          <span className="text-xl font-black text-zinc-300 leading-none">
-                            {Object.values(postCounts).reduce((a, b) => a + b, 0)}
-                          </span>
-                          <span className="text-[7px] font-bold text-zinc-500 tracking-widest mt-1 uppercase font-mono">Total Posts</span>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ) : (
-                  /* Categories View */
-                  <motion.div 
-                    key="forums-categories"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.2 }}
-                    className="space-y-6"
-                  >
-                    <button
-                      onClick={() => setShowForumsMenu(false)}
-                      className="text-zinc-600 hover:text-white text-[9px] font-bold uppercase tracking-[0.2em] flex items-center gap-2 mb-4 transition-colors group"
-                    >
-                      <span className="group-hover:-translate-x-0.5 transition-transform">←</span> Back
-                    </button>
-                    {FORUM_SECTIONS.map(cat => (
-                      <div key={cat.category} className="w-full">
-                        <div className="bg-[#121215] border border-[#1f1f26] border-t-[#2a2a2f] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] bg-gradient-to-b from-white/[0.03] to-transparent px-5 py-3 text-[10px] font-bold tracking-widest text-zinc-400 uppercase rounded-t-sm">
-                          {cat.category}
-                        </div>
-                        {cat.rows.map(row => {
-                          const locked = row.adminOnly && !session.is_admin;
-                          const latest = latestPreviews[row.id];
-                          return (
-                            <div
-                              key={row.id}
-                              onClick={() => !locked && setActiveSection(row)}
-                              className={`bg-[#0e0e11] border-x border-b border-[#1f1f26] shadow-[inset_0_1px_0_rgba(255,255,255,0.01)] p-5 flex items-center justify-between hover:bg-[#111115] transition-colors cursor-pointer group ${locked ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                            >
-                              <div className="pr-4">
-                                <h3 className="text-zinc-200 font-bold text-sm group-hover:text-white transition-colors">
-                                  {row.label}
-                                </h3>
-                                {latest ? (
-                                  <p className="text-[10px] text-zinc-600 truncate max-w-[300px] mt-1 italic opacity-60 group-hover:opacity-100 transition-opacity">
-                                    Latest: {latest.title}
-                                  </p>
-                                ) : (
-                                  <span className="text-[9px] text-zinc-700 uppercase font-mono tracking-wider mt-1 block">No updates yet</span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-8 min-w-[150px] justify-end">
-                                <div className="flex flex-col items-center">
-                                  <span className="text-base font-bold text-zinc-300 leading-none">{postCounts[row.id] ?? 0}</span>
-                                  <span className="text-[7px] font-bold text-zinc-500 tracking-wider mt-1 uppercase font-mono">Posts</span>
-                                </div>
-                                <span className="text-[9px] font-mono font-bold text-zinc-600 tracking-wider uppercase">
-                                  {postCounts[row.id] ? 'Active' : 'Empty'}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <ForumHomePanel
+                postCounts={postCounts}
+                latestPreviews={latestPreviews}
+                isAdmin={session.is_admin}
+                showForumsMenu={showForumsMenu}
+                onOpenForums={() => setShowForumsMenu(true)}
+                onCloseForums={() => setShowForumsMenu(false)}
+                onSelectSection={setActiveSection}
+              />
             </motion.div>
           )}
 
@@ -362,7 +245,7 @@ export default function Dashboard() {
               key={`section-${activeSection.id}`}
               section={activeSection}
               session={session}
-              onBack={() => setActiveSection(null)}
+              onBack={() => { setActiveSection(null); setShowForumsMenu(true); }}
             />
           )}
 

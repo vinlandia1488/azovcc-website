@@ -140,153 +140,121 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
            </button>
 
            {activeTab === 'profile' ? (
-             <div className="animate-in fade-in slide-in-from-bottom-2 duration-400 flex flex-col h-full">
-               <div className="flex gap-6 flex-1 min-h-0">
-                 {/* Left: Profile Preview */}
-                 <div className="w-96 flex-shrink-0">
-                    <div className="bg-[#0b0b0d] rounded-xl overflow-hidden shadow-2xl border border-[#222] relative">
-                        {/* Banner */}
-                        <div className="h-40 w-full relative bg-zinc-800 overflow-hidden">
-                          {profileBanner ? (
-                            <img src={profileBanner} alt="banner" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full" style={{ background: profileAccent }} />
-                          )}
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity z-10">
-                            <label className="flex flex-col items-center gap-2 cursor-pointer p-4">
-                              <ImagePlus size={18} className="text-white" />
-                              <span className="text-[8px] font-black text-white uppercase tracking-widest">Change Banner</span>
-                              <input type="file" className="hidden" accept="image/*" onChange={handleBannerUpload} disabled={saving} />
-                            </label>
-                          </div>
-                        </div>
+             <div className="animate-in fade-in slide-in-from-bottom-2 duration-400 flex flex-col h-full overflow-y-auto custom-scrollbar pr-2">
+               <div className="mb-6">
+                 <h3 className="text-white text-xl font-black tracking-tight">Profile</h3>
+                 <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">Customize how others see you</p>
+               </div>
 
-                        {/* Avatar container */}
-                        <div className="px-4 pb-6 relative bg-[#0b0b0d]">
-                          <div className="absolute -top-10 left-4 z-20">
-                            <div className="w-20 h-20 rounded-full bg-[#0b0b0d] p-1 shadow-2xl relative group/avatar">
-                              <div className="w-full h-full rounded-full bg-[#1a1a1a] border border-white/10 overflow-hidden shadow-inner">
-                                {profilePic ? (
-                                  <img src={profilePic} alt="PFP" className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-lg font-black text-zinc-700">
-                                    {session.username.substring(0, 5).toUpperCase()}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="absolute inset-1 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 rounded-full transition-all duration-300 z-30">
-                                <label className="cursor-pointer w-full h-full flex items-center justify-center">
-                                  <ImagePlus size={14} className="text-white" />
-                                  <input type="file" className="hidden" accept="image/*" onChange={handlePfpUpload} disabled={saving} />
-                                </label>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="mt-12 space-y-4">
-                            <div>
-                              <h2 className="text-white text-lg font-bold flex items-center gap-2 truncate">
-                                {session.username}
-                                {session.is_admin && <Shield size={14} className="text-blue-400 shrink-0" />}
-                              </h2>
-                              <p className="text-zinc-500 text-xs font-mono mt-0.5">#{session.unique_identifier || '0'}</p>
-                            </div>
-
-                            {/* Badges */}
-                            <div className="flex flex-wrap gap-2">
-                              {session.is_admin && (
-                                <div className="w-7 h-7 rounded bg-blue-500/10 flex items-center justify-center border border-blue-500/20" title="Staff Member">
-                                  <Shield size={12} className="text-blue-400" />
-                                </div>
-                              )}
-                              {session.internal_license && (
-                                <div className="w-7 h-7 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20" title="Internal User">
-                                  <Key size={12} className="text-purple-400" />
-                                </div>
-                              )}
-                              {session.script_license && (
-                                <div className="w-7 h-7 rounded bg-green-500/10 flex items-center justify-center border border-green-500/20" title="Script User">
-                                  <Code size={12} className="text-green-400" />
-                                </div>
-                              )}
-                              {session.badges?.map((badge, i) => (
-                                <div key={i} className="w-7 h-7 rounded bg-zinc-800/50 flex items-center justify-center border border-[#333] overflow-hidden" title="Verified Member">
-                                  <img src={badge} alt="badge" className="w-full h-full object-contain p-1" />
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Description Preview */}
-                            {profileDescription && (
-                              <div className="bg-[#1a1a1a] rounded-lg p-3 border border-[#333]">
-                                <p className="text-zinc-400 text-xs leading-relaxed">{profileDescription}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                    </div>
+               <div className="bg-[#111] border border-[#222] rounded-xl overflow-hidden mb-6">
+                 <div className="h-28 relative bg-zinc-800 group/banner">
+                   {profileBanner ? (
+                     <img src={profileBanner} alt="banner" className="w-full h-full object-cover" />
+                   ) : (
+                     <div className="w-full h-full" style={{ background: profileAccent }} />
+                   )}
+                   <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover/banner:opacity-100 transition-opacity cursor-pointer">
+                     <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white">
+                       <ImagePlus size={14} /> Change Banner
+                     </span>
+                     <input type="file" className="hidden" accept="image/*" onChange={handleBannerUpload} disabled={saving} />
+                   </label>
                  </div>
 
-                 {/* Right: Editable Sections */}
-                 <div className="flex-1 flex flex-col min-h-0">
-                    <div className="flex-1 overflow-y-auto pr-2 space-y-4">
-                      {/* User Profile Section */}
-                      <div className="bg-[#111] border border-[#222] rounded-xl p-5">
-                        <h3 className="text-white text-sm font-bold mb-4 flex items-center gap-2">
-                          <User size={16} className="text-zinc-500" />
-                          User Profile
-                        </h3>
-                        <div className="space-y-4">
-                          <div className="flex flex-col gap-2">
-                            <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">About Me</label>
-                            <textarea
-                              value={profileDescription}
-                              onChange={e => setProfileDescription(e.target.value)}
-                              placeholder="Tell us about yourself..."
-                              className="w-full bg-[#1a1a1a] border border-[#333] text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444] transition resize-none h-32"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                 <div className="px-5 pb-5 pt-3 flex gap-4 items-start">
+                   <div className="relative -mt-10 shrink-0 group/avatar">
+                     <div className="w-16 h-16 rounded-full border-2 border-[#111] bg-[#1a1a1a] overflow-hidden">
+                       {profilePic ? (
+                         <img src={profilePic} alt="PFP" className="w-full h-full object-cover" />
+                       ) : (
+                         <div className="w-full h-full flex items-center justify-center text-sm font-black text-zinc-600">
+                           {session.username.substring(0, 2).toUpperCase()}
+                         </div>
+                       )}
+                     </div>
+                     <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 rounded-full cursor-pointer transition-opacity">
+                       <ImagePlus size={14} className="text-white" />
+                       <input type="file" className="hidden" accept="image/*" onChange={handlePfpUpload} disabled={saving} />
+                     </label>
+                   </div>
 
-                      {/* Profile Customization Section */}
-                      <div className="bg-[#111] border border-[#222] rounded-xl p-5">
-                        <h3 className="text-white text-sm font-bold mb-4 flex items-center gap-2">
-                          <Palette size={16} className="text-zinc-500" />
-                          Profile Customization
-                        </h3>
-                        <div className="space-y-4">
-                           <div className="flex flex-col gap-2">
-                              <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Banner Accent</label>
-                              <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-2.5 group hover:border-[#333] transition-colors">
-                                 <div className="w-6 h-6 rounded-md relative overflow-hidden ring-1 ring-white/10 shadow-lg" style={{ background: profileAccent }}>
-                                   <input 
-                                     type="color" 
-                                     value={profileAccent} 
-                                     onChange={e => setProfileAccent(e.target.value)}
-                                     className="absolute inset-[-10px] w-24 h-24 cursor-pointer opacity-0"
-                                   />
-                                 </div>
-                                 <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold flex-1">{profileAccent}</span>
-                              </div>
-                           </div>
-                           <p className="text-[9px] text-zinc-600 leading-relaxed italic">
-                             This color is used when no banner image is uploaded and for profile accents.
-                           </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t border-[#222]">
-                      <button 
-                         onClick={() => saveSettings(false)}
-                         disabled={saving}
-                         className="w-full bg-white text-black font-black text-[10px] tracking-[0.2em] uppercase rounded-xl h-12 hover:bg-zinc-200 transition-all disabled:opacity-50 shadow-[0_0_30px_rgba(255,255,255,0.05)] active:scale-[0.98]"
-                      >
-                         {saving ? 'Updating Profile...' : 'Save Changes'}
-                      </button>
-                    </div>
+                   <div className="flex-1 min-w-0 pt-1">
+                     <h2 className="text-white text-base font-bold flex items-center gap-2 truncate">
+                       {session.username}
+                       {session.is_admin && <Shield size={13} className="text-blue-400 shrink-0" />}
+                     </h2>
+                     <p className="text-zinc-500 text-[11px] font-mono mt-0.5">#{session.unique_identifier || '0'}</p>
+                     <div className="flex flex-wrap gap-1.5 mt-2">
+                       {session.is_admin && (
+                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-[9px] text-blue-400 font-bold uppercase">
+                           <Shield size={10} /> Staff
+                         </span>
+                       )}
+                       {session.internal_license && (
+                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-[9px] text-purple-400 font-bold uppercase">
+                           <Key size={10} /> Internal
+                         </span>
+                       )}
+                       {session.script_license && (
+                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-500/10 border border-green-500/20 text-[9px] text-green-400 font-bold uppercase">
+                           <Code size={10} /> Script
+                         </span>
+                       )}
+                     </div>
+                   </div>
                  </div>
+
+                 {profileDescription && (
+                   <div className="px-5 pb-5 -mt-1">
+                     <p className="text-zinc-400 text-xs leading-relaxed bg-[#0a0a0a] border border-[#222] rounded-lg px-3 py-2.5">
+                       {profileDescription}
+                     </p>
+                   </div>
+                 )}
+               </div>
+
+               <div className="space-y-4">
+                 <div className="bg-[#111] border border-[#222] rounded-xl p-5">
+                   <h3 className="text-white text-sm font-bold mb-3 flex items-center gap-2">
+                     <User size={15} className="text-zinc-500" />
+                     About Me
+                   </h3>
+                   <textarea
+                     value={profileDescription}
+                     onChange={e => setProfileDescription(e.target.value)}
+                     placeholder="Tell us about yourself..."
+                     className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-3 text-sm placeholder-zinc-600 focus:outline-none focus:border-[#444] transition resize-none h-28"
+                   />
+                 </div>
+
+                 <div className="bg-[#111] border border-[#222] rounded-xl p-5">
+                   <h3 className="text-white text-sm font-bold mb-3 flex items-center gap-2">
+                     <Palette size={15} className="text-zinc-500" />
+                     Banner Accent
+                   </h3>
+                   <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
+                     <div className="w-8 h-8 rounded-md relative overflow-hidden ring-1 ring-white/10 shrink-0" style={{ background: profileAccent }}>
+                       <input
+                         type="color"
+                         value={profileAccent}
+                         onChange={e => setProfileAccent(e.target.value)}
+                         className="absolute inset-[-8px] w-20 h-20 cursor-pointer opacity-0"
+                       />
+                     </div>
+                     <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold">{profileAccent}</span>
+                   </div>
+                   <p className="text-[9px] text-zinc-600 mt-2">
+                     Used when no banner image is set.
+                   </p>
+                 </div>
+
+                 <button
+                   onClick={() => saveSettings(false)}
+                   disabled={saving}
+                   className="w-full bg-white text-black font-black text-[10px] tracking-[0.2em] uppercase rounded-xl h-11 hover:bg-zinc-200 transition-all disabled:opacity-50 active:scale-[0.98]"
+                 >
+                   {saving ? 'Saving...' : 'Save Changes'}
+                 </button>
                </div>
              </div>
            ) : (

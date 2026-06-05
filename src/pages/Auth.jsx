@@ -5,6 +5,7 @@ import { Eye, EyeOff, MessageSquare, CheckCircle2, User, Lock, Ticket, MessageCi
 
 import { motion, AnimatePresence } from 'framer-motion';
 import BrandingMark from '@/components/BrandingMark';
+import ForumHomePanel from '@/components/ForumHomePanel';
 import ALogo from '@/assets/alogo.png';
 import { validateInviteCode, useInviteCode, isInviteSystemEnabled, getChatMessages, sendChatMessage } from '@/lib/invites';
 import { getAllPosts } from '@/lib/forum';
@@ -42,6 +43,7 @@ export default function Auth() {
   const [latestPreviews, setLatestPreviews] = useState({});
   const [postCounts, setPostCounts] = useState({});
   const [selectedSection, setSelectedSection] = useState(null);
+  const [showForumsMenu, setShowForumsMenu] = useState(false);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -702,64 +704,17 @@ export default function Auth() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="space-y-8 w-full"
+              className="w-full"
             >
-              {/* Smaller Header */}
-              <div className="pt-2 text-center md:text-left">
-                <h1 className="text-white font-black text-4xl tracking-tighter leading-none mb-1">
-                  adderall
-                </h1>
-                <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
-                  updates, fixes and idk.
-                </p>
-              </div>
-
-              {/* Forum Categories */}
-              <div className="space-y-6 max-w-4xl">
-                {[
-                  { category: 'ADDERALL', rows: [{ id: 'updates-news', label: 'Updates & News' }] },
-                  { category: 'COMMUNITY', rows: [{ id: 'media', label: 'Media' }] },
-                  { category: 'PURCHASE', rows: [{ id: 'store-licenses', label: 'Store & Licenses' }] },
-                ].map(cat => (
-                  <div key={cat.category} className="w-full">
-                    <div className="bg-[#121215] border border-[#1f1f26] border-t-[#2a2a2f] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] bg-gradient-to-b from-white/[0.03] to-transparent px-5 py-3 text-[10px] font-bold tracking-widest text-zinc-400 uppercase rounded-t-sm">
-                      {cat.category}
-                    </div>
-                    {cat.rows.map(row => {
-                      const latest = latestPreviews[row.id];
-                      return (
-                        <div
-                          key={row.id}
-                          onClick={() => setSelectedSection(row)}
-                          className="bg-[#0e0e11] border-x border-b border-[#1f1f26] shadow-[inset_0_1px_0_rgba(255,255,255,0.01)] p-5 flex items-center justify-between hover:bg-[#111115] transition-colors cursor-pointer group"
-                        >
-                          <div className="pr-4">
-                            <h3 className="text-zinc-200 font-bold text-sm group-hover:text-white transition-colors">
-                              {row.label}
-                            </h3>
-                            {latest ? (
-                              <p className="text-[10px] text-zinc-600 truncate max-w-[300px] mt-1 italic opacity-60 group-hover:opacity-100 transition-opacity">
-                                Latest: {latest.title}
-                              </p>
-                            ) : (
-                              <span className="text-[9px] text-zinc-700 uppercase font-mono tracking-wider mt-1 block">No activity</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-8 min-w-[150px] justify-end">
-                            <div className="flex flex-col items-center">
-                              <span className="text-base font-bold text-zinc-300 leading-none">{postCounts[row.id] ?? 0}</span>
-                              <span className="text-[7px] font-bold text-zinc-500 tracking-wider mt-1 uppercase font-mono">Posts</span>
-                            </div>
-                            <span className="text-[9px] font-mono font-bold text-zinc-600 tracking-wider uppercase">
-                              {postCounts[row.id] ? 'Active' : 'Empty'}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
+              <ForumHomePanel
+                postCounts={postCounts}
+                latestPreviews={latestPreviews}
+                isAdmin={false}
+                showForumsMenu={showForumsMenu}
+                onOpenForums={() => setShowForumsMenu(true)}
+                onCloseForums={() => setShowForumsMenu(false)}
+                onSelectSection={setSelectedSection}
+              />
             </motion.div>
           )}
 
@@ -773,10 +728,10 @@ export default function Auth() {
               className="space-y-6 w-full max-w-4xl"
             >
               <button
-                onClick={() => setSelectedSection(null)}
+                onClick={() => { setSelectedSection(null); setShowForumsMenu(true); }}
                 className="text-zinc-500 hover:text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 mb-4 transition-colors"
               >
-                ← Back to Categories
+                ← Back to Forums
               </button>
               
               <div className="border-b border-[#1f1f26] pb-4">
