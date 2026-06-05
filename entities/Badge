@@ -3,18 +3,17 @@
   "type": "object",
   "properties": {
     "name": {
-      "type": "string"
+      "type": "string",
+      "description": "Badge display name"
     },
     "image_url": {
       "type": "string",
-      "description": "Image or GIF URL for the badge"
+      "description": "Badge image or GIF URL"
     },
     "description": {
-      "type": "string"
+      "type": "string",
+      "description": "Badge description"
     }
   },
-  "required": [
-    "name",
-    "image_url"
-  ]
+  "required": ["name", "image_url"]
 }

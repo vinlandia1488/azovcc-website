@@ -682,7 +682,6 @@ export default function PanelTab({ accent, session, onAnnouncementSaved, onActio
           { id: 'invites', label: 'invites', icon: CalendarClock },
           { id: 'chats', label: 'chats', icon: MessageSquare },
           { id: 'announcement', label: 'announcement', icon: Megaphone },
-          { id: 'configs', label: 'configs', icon: FileText },
           { id: 'music', label: 'music', icon: Music },
           { id: 'maintenance', label: 'maintenance', icon: Wrench },
         ].map(t => (
