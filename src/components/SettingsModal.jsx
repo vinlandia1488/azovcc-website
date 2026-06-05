@@ -42,6 +42,32 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const profileAccent = profileAccentType === 'gradient'
     ? `linear-gradient(${profileAccentAngle}deg, ${profileAccentColor1}, ${profileAccentColor2})`
     : profileAccentColor1;
+
+  // Profile accent — the thin strip shown at the bottom of the profile card (like Discord)
+  const [profileCardAccentType, setProfileCardAccentType] = useState(() =>
+    (session.profile_card_accent || '').includes('gradient') ? 'gradient' : 'solid'
+  );
+  const [profileCardAccentColor1, setProfileCardAccentColor1] = useState(() => {
+    const a = session.profile_card_accent || '#5865F2';
+    if (a.includes('gradient')) {
+      const m = a.match(/#[0-9a-fA-F]{6}/g);
+      return m?.[0] || '#5865F2';
+    }
+    return a;
+  });
+  const [profileCardAccentColor2, setProfileCardAccentColor2] = useState(() => {
+    const a = session.profile_card_accent || '#5865F2';
+    if (a.includes('gradient')) {
+      const m = a.match(/#[0-9a-fA-F]{6}/g);
+      return m?.[1] || '#eb459e';
+    }
+    return '#eb459e';
+  });
+  const [profileCardAccentAngle, setProfileCardAccentAngle] = useState(90);
+
+  const profileCardAccent = profileCardAccentType === 'gradient'
+    ? `linear-gradient(${profileCardAccentAngle}deg, ${profileCardAccentColor1}, ${profileCardAccentColor2})`
+    : profileCardAccentColor1;
   const [profileDescription, setProfileDescription] = useState(session.description || '');
 
   useEffect(() => {
@@ -76,6 +102,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
     try {
       const payload = {
         profile_accent: profileAccent,
+        profile_card_accent: profileCardAccent,
         profile_banner: profileBanner,
         profile_pic: profilePic,
         description: profileDescription
@@ -124,7 +151,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-      <div className="bg-[#111] border border-[#222] rounded-lg w-full max-w-4xl flex shadow-2xl min-h-[600px] overflow-hidden animate-in fade-in duration-200">
+      <div className="bg-[#111] border border-[#222] rounded-lg w-full max-w-4xl flex shadow-2xl h-[680px] max-h-[90vh] overflow-hidden animate-in fade-in duration-200">
         
         <div className="w-64 border-r border-[#333] flex flex-col p-6 bg-[#111]">
           <div className="mb-10 pl-2 mt-2">
@@ -157,13 +184,16 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
           </div>
         </div>
 
-        <div className="flex-1 bg-[#0a0a0a] relative flex flex-col p-10">
-           <button onClick={onClose} className="absolute top-8 right-8 text-zinc-500 hover:text-white transition-colors">
-              <X size={20} />
-           </button>
+        <div className="flex-1 bg-[#0a0a0a] relative flex flex-col overflow-hidden">
+           <div className="px-10 pt-10 pb-0 flex-shrink-0 flex items-start justify-between">
+             <div />
+             <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
+               <X size={20} />
+             </button>
+           </div>
 
            {activeTab === 'profile' ? (
-             <div className="animate-in fade-in slide-in-from-bottom-2 duration-400 flex flex-col h-full overflow-y-auto custom-scrollbar pr-2">
+             <div className="flex-1 overflow-y-auto custom-scrollbar px-10 pb-10 pt-4 animate-in fade-in slide-in-from-bottom-2 duration-400">
                <div className="mb-6">
                  <h3 className="text-white text-xl font-black tracking-tight">Profile</h3>
                  <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">Customize how others see you</p>
@@ -234,6 +264,9 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                      </p>
                    </div>
                  )}
+
+                 {/* Profile accent strip — bottom of card like Discord */}
+                 <div className="h-1.5 w-full" style={{ background: profileCardAccent }} />
                </div>
 
                <div className="space-y-4">
@@ -320,6 +353,62 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                    </p>
                  </div>
 
+                 {/* Profile Accent — thin strip at the bottom of the card */}
+                 <div className="bg-[#111] border border-[#222] rounded-xl p-5">
+                   <h3 className="text-white text-sm font-bold mb-3 flex items-center gap-2">
+                     <Palette size={15} className="text-zinc-500" />
+                     Profile Accent
+                   </h3>
+                   <p className="text-[9px] text-zinc-600 mb-4">Thin accent strip shown at the bottom of your profile card.</p>
+
+                   <div className="flex gap-1 mb-4 bg-[#0a0a0a] border border-[#222] rounded-lg p-1">
+                     {['solid', 'gradient'].map(t => (
+                       <button
+                         key={t}
+                         onClick={() => setProfileCardAccentType(t)}
+                         className={`flex-1 text-[9px] font-black uppercase tracking-widest py-1.5 rounded-md transition-all ${
+                           profileCardAccentType === t ? 'bg-white text-black' : 'text-zinc-500 hover:text-zinc-300'
+                         }`}
+                       >
+                         {t}
+                       </button>
+                     ))}
+                   </div>
+
+                   <div className="space-y-3">
+                     <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
+                       <div className="w-8 h-8 rounded-md relative overflow-hidden ring-1 ring-white/10 shrink-0" style={{ background: profileCardAccentColor1 }}>
+                         <input type="color" value={profileCardAccentColor1} onChange={e => setProfileCardAccentColor1(e.target.value)} className="absolute inset-[-8px] w-20 h-20 cursor-pointer opacity-0" />
+                       </div>
+                       <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold flex-1">{profileCardAccentColor1}</span>
+                       <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wider">{profileCardAccentType === 'gradient' ? 'Start' : 'Color'}</span>
+                     </div>
+
+                     {profileCardAccentType === 'gradient' && (
+                       <>
+                         <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
+                           <div className="w-8 h-8 rounded-md relative overflow-hidden ring-1 ring-white/10 shrink-0" style={{ background: profileCardAccentColor2 }}>
+                             <input type="color" value={profileCardAccentColor2} onChange={e => setProfileCardAccentColor2(e.target.value)} className="absolute inset-[-8px] w-20 h-20 cursor-pointer opacity-0" />
+                           </div>
+                           <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold flex-1">{profileCardAccentColor2}</span>
+                           <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wider">End</span>
+                         </div>
+
+                         <div className="bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
+                           <div className="flex justify-between items-center mb-2">
+                             <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Angle</span>
+                             <span className="text-[9px] font-mono text-zinc-300">{profileCardAccentAngle}°</span>
+                           </div>
+                           <input type="range" min="0" max="360" value={profileCardAccentAngle} onChange={e => setProfileCardAccentAngle(parseInt(e.target.value))} className="w-full custom-slider" />
+                         </div>
+                       </>
+                     )}
+
+                     {/* Live preview strip */}
+                     <div className="h-3 rounded-full ring-1 ring-white/5" style={{ background: profileCardAccent }} />
+                   </div>
+                 </div>
+
                  <button
                    onClick={() => saveSettings(false)}
                    disabled={saving}
@@ -330,7 +419,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                </div>
              </div>
            ) : (
-             <div className="space-y-8 animate-in fade-in slide-in-from-right-2 duration-400 max-h-[70vh] overflow-y-auto custom-scrollbar pr-4">
+             <div className="flex-1 overflow-y-auto custom-scrollbar px-10 pb-10 pt-4 space-y-8 animate-in fade-in slide-in-from-right-2 duration-400">
                 <div className="mb-2">
                   <h3 className="text-white text-xl font-black tracking-tight">Interface Effects</h3>
                   <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">Adjust your local visual experience</p>
