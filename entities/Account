@@ -33,11 +33,16 @@
     "profile_accent": {
       "type": "string",
       "default": "#1a1a1a",
-      "description": "Background color/gradient for the body area of the profile card below the banner"
+      "description": "Background gradient for the profile card body"
     },
     "profile_banner": {
       "type": "string",
       "description": "Custom profile banner image URL"
+    },
+    "profile_banner_position": {
+      "type": "string",
+      "default": "50% 50%",
+      "description": "CSS object-position for the banner image"
     },
     "profile_pic": {
       "type": "string",
@@ -52,21 +57,12 @@
       "type": "string",
       "description": "User about-me bio text"
     },
-    "profile_banner": {
-      "type": "string",
-      "description": "Custom profile banner image URL"
-    },
-    "profile_banner_position": {
-      "type": "string",
-      "default": "50% 50%",
-      "description": "CSS object-position for the banner image"
-    },
     "badges": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "List of badge IDs or image URLs"
+      "description": "List of badge image URLs"
     },
     "is_admin": {
       "type": "boolean",

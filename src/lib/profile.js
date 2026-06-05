@@ -4,7 +4,25 @@ const db = getBackendDb();
 
 export async function getProfileByUid(uid) {
   const rows = await db.entities.Account.filter({ unique_identifier: Number(uid) });
-  return rows?.[0] || null;
+  const dbProfile = rows?.[0] || null;
+  if (!dbProfile) return null;
+
+  // Merge localStorage overrides (for fields not yet in DB schema)
+  try {
+    const lsKey = `adderall_profile_${dbProfile.username}`;
+    const local = JSON.parse(localStorage.getItem(lsKey) || '{}');
+    return {
+      ...dbProfile,
+      profile_pic: local.profile_pic || dbProfile.profile_pic || '',
+      profile_pic_position: local.profile_pic_position || dbProfile.profile_pic_position || '50% 50%',
+      profile_banner: local.profile_banner || dbProfile.profile_banner || '',
+      profile_banner_position: local.profile_banner_position || dbProfile.profile_banner_position || '50% 50%',
+      profile_accent: local.profile_accent || dbProfile.profile_accent || '#111111',
+      description: local.description || dbProfile.description || '',
+    };
+  } catch {
+    return dbProfile;
+  }
 }
 
 export async function getPostsByAuthor(username) {

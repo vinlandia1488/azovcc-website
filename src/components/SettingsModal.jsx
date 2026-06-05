@@ -17,10 +17,30 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
-  const [profilePic, setProfilePic] = useState(session.profile_pic || '');
-  const [profileBanner, setProfileBanner] = useState(session.profile_banner || '');
-  const [picPosition, setPicPosition] = useState(session.profile_pic_position || '50% 50%');
-  const [bannerPosition, setBannerPosition] = useState(session.profile_banner_position || '50% 50%');
+  const [profilePic, setProfilePic] = useState(() => {
+    try {
+      const ls = JSON.parse(localStorage.getItem(`adderall_profile_${session?.username}`) || '{}');
+      return ls.profile_pic || session.profile_pic || '';
+    } catch { return session.profile_pic || ''; }
+  });
+  const [profileBanner, setProfileBanner] = useState(() => {
+    try {
+      const ls = JSON.parse(localStorage.getItem(`adderall_profile_${session?.username}`) || '{}');
+      return ls.profile_banner || session.profile_banner || '';
+    } catch { return session.profile_banner || ''; }
+  });
+  const [picPosition, setPicPosition] = useState(() => {
+    try {
+      const ls = JSON.parse(localStorage.getItem(`adderall_profile_${session?.username}`) || '{}');
+      return ls.profile_pic_position || session.profile_pic_position || '50% 50%';
+    } catch { return session.profile_pic_position || '50% 50%'; }
+  });
+  const [bannerPosition, setBannerPosition] = useState(() => {
+    try {
+      const ls = JSON.parse(localStorage.getItem(`adderall_profile_${session?.username}`) || '{}');
+      return ls.profile_banner_position || session.profile_banner_position || '50% 50%';
+    } catch { return session.profile_banner_position || '50% 50%'; }
+  });
 
   // Profile accent — gradient only (covers the full body area below the banner)
   const [profileCardAccentType] = useState('gradient');
@@ -53,7 +73,12 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
     ? `linear-gradient(${profileCardAccentAngle}deg, ${profileCardAccentColor1}, ${profileCardAccentColor2})`
     : profileCardAccentColor1;
 
-  const [profileDescription, setProfileDescription] = useState(session.description || '');
+  const [profileDescription, setProfileDescription] = useState(() => {
+    try {
+      const ls = JSON.parse(localStorage.getItem(`adderall_profile_${session?.username}`) || '{}');
+      return ls.description || session.description || '';
+    } catch { return session.description || ''; }
+  });
 
   useEffect(() => {
     localStorage.setItem('adderal_preset', currentPreset);
@@ -95,18 +120,27 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
         description: profileDescription
       };
 
-      let accountId = session?.id;
+      // Always persist to localStorage immediately so profile page sees changes
+      const lsKey = `adderall_profile_${session?.username}`;
+      localStorage.setItem(lsKey, JSON.stringify({
+        profile_pic: profilePic,
+        profile_pic_position: picPosition,
+        profile_banner: profileBanner,
+        profile_banner_position: bannerPosition,
+        profile_accent: profileCardAccent,
+        description: profileDescription,
+      }));
 
+      // Also try to persist to DB
+      let accountId = session?.id;
       if (!accountId) {
         const rows = await db.entities.Account.filter({ username: session?.username });
         accountId = rows?.[0]?.id;
       }
 
-      if (!accountId) {
-        throw new Error('Could not find account ID. Please log out and back in.');
+      if (accountId) {
+        await db.entities.Account.update(accountId, payload);
       }
-
-      await db.entities.Account.update(accountId, payload);
 
       const updates = { ...session, ...payload };
       setSession(updates);
