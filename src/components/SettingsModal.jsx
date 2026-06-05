@@ -18,7 +18,30 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
 
   const [profilePic, setProfilePic] = useState(session.profile_pic || '');
   const [profileBanner, setProfileBanner] = useState(session.profile_banner || '');
-  const [profileAccent, setProfileAccent] = useState(session.profile_accent || '#1a1a1a');
+  const [profileAccentType, setProfileAccentType] = useState(() =>
+    (session.profile_accent || '').includes('gradient') ? 'gradient' : 'solid'
+  );
+  const [profileAccentColor1, setProfileAccentColor1] = useState(() => {
+    const a = session.profile_accent || '#1a1a1a';
+    if (a.includes('gradient')) {
+      const m = a.match(/#[0-9a-fA-F]{6}/g);
+      return m?.[0] || '#1a1a1a';
+    }
+    return a;
+  });
+  const [profileAccentColor2, setProfileAccentColor2] = useState(() => {
+    const a = session.profile_accent || '#1a1a1a';
+    if (a.includes('gradient')) {
+      const m = a.match(/#[0-9a-fA-F]{6}/g);
+      return m?.[1] || '#444444';
+    }
+    return '#444444';
+  });
+  const [profileAccentAngle, setProfileAccentAngle] = useState(135);
+
+  const profileAccent = profileAccentType === 'gradient'
+    ? `linear-gradient(${profileAccentAngle}deg, ${profileAccentColor1}, ${profileAccentColor2})`
+    : profileAccentColor1;
   const [profileDescription, setProfileDescription] = useState(session.description || '');
 
   useEffect(() => {
@@ -232,17 +255,66 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                      <Palette size={15} className="text-zinc-500" />
                      Banner Accent
                    </h3>
-                   <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
-                     <div className="w-8 h-8 rounded-md relative overflow-hidden ring-1 ring-white/10 shrink-0" style={{ background: profileAccent }}>
-                       <input
-                         type="color"
-                         value={profileAccent}
-                         onChange={e => setProfileAccent(e.target.value)}
-                         className="absolute inset-[-8px] w-20 h-20 cursor-pointer opacity-0"
-                       />
-                     </div>
-                     <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold">{profileAccent}</span>
+
+                   {/* Solid / Gradient toggle */}
+                   <div className="flex gap-1 mb-4 bg-[#0a0a0a] border border-[#222] rounded-lg p-1">
+                     {['solid', 'gradient'].map(t => (
+                       <button
+                         key={t}
+                         onClick={() => setProfileAccentType(t)}
+                         className={`flex-1 text-[9px] font-black uppercase tracking-widest py-1.5 rounded-md transition-all ${
+                           profileAccentType === t
+                             ? 'bg-white text-black'
+                             : 'text-zinc-500 hover:text-zinc-300'
+                         }`}
+                       >
+                         {t}
+                       </button>
+                     ))}
                    </div>
+
+                   {/* Color pickers */}
+                   <div className="space-y-3">
+                     <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
+                       <div className="w-8 h-8 rounded-md relative overflow-hidden ring-1 ring-white/10 shrink-0" style={{ background: profileAccentColor1 }}>
+                         <input type="color" value={profileAccentColor1} onChange={e => setProfileAccentColor1(e.target.value)} className="absolute inset-[-8px] w-20 h-20 cursor-pointer opacity-0" />
+                       </div>
+                       <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold flex-1">{profileAccentColor1}</span>
+                       <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wider">{profileAccentType === 'gradient' ? 'Start' : 'Color'}</span>
+                     </div>
+
+                     {profileAccentType === 'gradient' && (
+                       <>
+                         <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
+                           <div className="w-8 h-8 rounded-md relative overflow-hidden ring-1 ring-white/10 shrink-0" style={{ background: profileAccentColor2 }}>
+                             <input type="color" value={profileAccentColor2} onChange={e => setProfileAccentColor2(e.target.value)} className="absolute inset-[-8px] w-20 h-20 cursor-pointer opacity-0" />
+                           </div>
+                           <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold flex-1">{profileAccentColor2}</span>
+                           <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wider">End</span>
+                         </div>
+
+                         <div className="bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
+                           <div className="flex justify-between items-center mb-2">
+                             <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Angle</span>
+                             <span className="text-[9px] font-mono text-zinc-300">{profileAccentAngle}°</span>
+                           </div>
+                           <input
+                             type="range" min="0" max="360"
+                             value={profileAccentAngle}
+                             onChange={e => setProfileAccentAngle(parseInt(e.target.value))}
+                             className="w-full custom-slider"
+                           />
+                         </div>
+
+                         {/* Live preview */}
+                         <div
+                           className="h-10 rounded-lg ring-1 ring-white/5"
+                           style={{ background: profileAccent }}
+                         />
+                       </>
+                     )}
+                   </div>
+
                    <p className="text-[9px] text-zinc-600 mt-2">
                      Used when no banner image is set.
                    </p>
