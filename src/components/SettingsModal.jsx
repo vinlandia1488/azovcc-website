@@ -95,27 +95,26 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
         description: profileDescription
       };
 
-      if (session?.id) {
-        await db.entities.Account.update(session.id, payload);
-      } else {
+      let accountId = session?.id;
+
+      if (!accountId) {
         const rows = await db.entities.Account.filter({ username: session?.username });
-        if (rows && rows[0]?.id) {
-          await db.entities.Account.update(rows[0].id, payload);
-        }
+        accountId = rows?.[0]?.id;
       }
 
-      const updates = { 
-        ...session,
-        ...payload
-      };
-      
+      if (!accountId) {
+        throw new Error('Could not find account ID. Please log out and back in.');
+      }
+
+      await db.entities.Account.update(accountId, payload);
+
+      const updates = { ...session, ...payload };
       setSession(updates);
-      
       if (onSaved) await onSaved(updates);
       if (shouldClose) onClose();
     } catch (err) {
       console.error('Failed to save settings:', err);
-      alert('Failed to save settings: ' + err.message);
+      setSaveError(err.message || 'Save failed');
     } finally {
       setSaving(false);
     }
@@ -355,6 +354,11 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                  >
                    {saving ? 'Saving...' : 'Save Changes'}
                  </button>
+                 {saveError && (
+                   <p className="text-red-400 text-[10px] bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 font-mono">
+                     {saveError}
+                   </p>
+                 )}
                </div>
              </div>
            ) : (
