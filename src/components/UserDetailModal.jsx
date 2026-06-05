@@ -19,24 +19,6 @@ function InfoRow({ label, value, icon: Icon, isSensitive = false, onCopy }) {
     if (onCopy) onCopy();
   };
 
-  async function toggleBadge(badgeImageUrl) {
-    setUpdating(true);
-    try {
-      const currentBadges = Array.isArray(u.badges) ? u.badges : [];
-      const isAssigned = currentBadges.includes(badgeImageUrl);
-      const nextBadges = isAssigned 
-        ? currentBadges.filter(b => b !== badgeImageUrl)
-        : [...currentBadges, badgeImageUrl];
-      
-      await db.entities.Account.update(u.id, { badges: nextBadges });
-      if (onUpdate) await onUpdate();
-    } catch (err) {
-      alert("Failed to update badges: " + err.message);
-    } finally {
-      setUpdating(false);
-    }
-  }
-
   return (
     <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-[#1a1a1e]/50 border border-zinc-800/50">
       <div className="flex items-center justify-between">
@@ -89,6 +71,23 @@ export default function UserDetailModal({ user, onClose, accent, onUpdate }) {
       setAllBadges(Array.isArray(rows) ? rows : []);
     } catch (e) {
       console.error('Failed to load badges', e);
+    }
+  }
+
+  async function toggleBadge(badgeImageUrl) {
+    setUpdating(true);
+    try {
+      const currentBadges = Array.isArray(u.badges) ? u.badges : [];
+      const isAssigned = currentBadges.includes(badgeImageUrl);
+      const nextBadges = isAssigned
+        ? currentBadges.filter(b => b !== badgeImageUrl)
+        : [...currentBadges, badgeImageUrl];
+      await db.entities.Account.update(u.id, { badges: nextBadges });
+      if (onUpdate) await onUpdate();
+    } catch (err) {
+      alert('Failed to update badges: ' + err.message);
+    } finally {
+      setUpdating(false);
     }
   }
 
