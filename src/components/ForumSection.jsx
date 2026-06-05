@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, X, ImagePlus, Send, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { getPostsBySection, createPost, deletePost, uploadImage } from '@/lib/forum';
 
 function timeAgo(dateStr) {
@@ -65,6 +66,7 @@ export default function ForumSection({ section, session, onBack }) {
         body: body.trim(),
         image_url: imageUrl,
         author: session.username,
+        author_uid: session.unique_identifier || 0,
         is_admin: session.is_admin || false,
       });
       setTitle(''); setBody(''); setImageUrl('');
@@ -279,7 +281,7 @@ export default function ForumSection({ section, session, onBack }) {
 
                     <div className="flex items-center gap-2 mt-4">
                       <span className="text-zinc-700 text-[9px] font-bold uppercase tracking-widest">
-                        BY <span className="text-zinc-500">@{post.author}</span>
+                        BY <Link to={`/profiles/${post.author_uid || ''}`} className="text-zinc-500 hover:text-white transition">@{post.author}</Link>
                       </span>
                     </div>
                   </div>

@@ -74,18 +74,8 @@ export default function Auth() {
     }
   }
 
-  // Interactive Turnstile Captcha State
-  const [captchaVerified, setCaptchaVerified] = useState(false);
-  const [captchaVerifying, setCaptchaVerifying] = useState(false);
-
-  const handleCaptchaClick = () => {
-    if (captchaVerified || captchaVerifying) return;
-    setCaptchaVerifying(true);
-    setTimeout(() => {
-      setCaptchaVerifying(false);
-      setCaptchaVerified(true);
-    }, 1000);
-  };
+  // Captcha removed — always passes
+  const captchaVerified = true;
 
   useEffect(() => {
     if (chatId) {
@@ -227,7 +217,7 @@ export default function Auth() {
       await validateInviteCode(inviteCode);
       setRegStep('choice');
       // Reset captcha for the final registration form
-      setCaptchaVerified(false);
+      // captcha removed
     } catch (err) {
       setError(err.message);
     } finally {
@@ -291,34 +281,8 @@ export default function Auth() {
     }
   }
 
-  // Turnstile CAPTCHA Component Markup
-  const renderCaptcha = () => (
-    <div className="bg-[#141416] border border-[#222] p-3 flex items-center justify-between mt-4 rounded-none select-none">
-      <div className="flex items-center gap-3">
-        <div 
-          type="button"
-          onClick={handleCaptchaClick}
-          className={`w-5 h-5 border rounded-none flex items-center justify-center cursor-pointer transition-all ${
-            captchaVerified ? 'bg-green-600 border-green-600' : 'border-[#3f3f46] bg-[#09090b] hover:border-zinc-500'
-          }`}
-        >
-          {captchaVerifying && <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-          {captchaVerified && (
-            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-white stroke-[3]">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          )}
-        </div>
-        <span className="text-[10px] text-zinc-300 font-mono tracking-wider">
-          {captchaVerifying ? "VERIFYING..." : captchaVerified ? "成功しました！" : "VERIFY YOU ARE HUMAN"}
-        </span>
-      </div>
-      <div className="flex flex-col items-end opacity-60">
-        <span className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest leading-none">Cloudflare</span>
-        <span className="text-[7px] text-zinc-500 underline leading-none mt-0.5 font-mono">プライバシー • ヘルプ</span>
-      </div>
-    </div>
-  );
+  // Turnstile CAPTCHA removed
+  const renderCaptcha = () => null;
 
   const renderRegisterSteps = () => {
     switch (regStep) {
@@ -639,7 +603,7 @@ export default function Auth() {
               onClick={() => {
                 setMode('login');
                 setActiveView('login');
-                setCaptchaVerified(false);
+                // captcha removed
                 setError('');
               }}
               className={`text-[10px] font-bold font-mono tracking-widest px-4 py-2 uppercase border transition-all rounded-none ${
@@ -655,7 +619,7 @@ export default function Auth() {
                 setMode('register');
                 setRegStep(inviteSystemEnabled ? 'invite' : 'register');
                 setActiveView('register');
-                setCaptchaVerified(false);
+                // captcha removed
                 setError('');
               }}
               className={`text-[10px] font-bold font-mono tracking-widest px-4 py-2 uppercase border transition-all rounded-none ${
@@ -875,7 +839,7 @@ export default function Auth() {
                       const newMode = mode === 'login' ? 'register' : 'login';
                       setMode(newMode); 
                       setError('');
-                      setCaptchaVerified(false);
+                      // captcha removed
                       if (newMode === 'register') {
                         setRegStep(inviteSystemEnabled ? 'invite' : 'register');
                         setActiveView('register');

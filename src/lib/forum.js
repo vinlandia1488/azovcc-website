@@ -70,18 +70,18 @@ export async function getAllPostCounts() {
   );
 }
 
-export async function createPost({ section, title, body, image_url, author, is_admin }) {
+export async function createPost({ section, title, body, image_url, author, author_uid, is_admin }) {
   return tryBackend(
     async () => {
       const db = getBackendDb();
-      return await db.entities.ForumPost.create({ section, title, body, image_url, author, is_admin });
+      return await db.entities.ForumPost.create({ section, title, body, image_url, author, author_uid: author_uid || 0, is_admin });
     },
     () => {
       const all = getLocalPosts();
       const post = {
         id: `local_${Date.now()}_${Math.random().toString(36).slice(2)}`,
         section, title, body: body || '', image_url: image_url || '',
-        author, is_admin: is_admin || false,
+        author, author_uid: author_uid || 0, is_admin: is_admin || false,
         created_at: new Date().toISOString(),
       };
       all.unshift(post);

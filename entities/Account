@@ -43,9 +43,23 @@
       "type": "string",
       "description": "Custom profile picture URL"
     },
+    "profile_pic_position": {
+      "type": "string",
+      "default": "50% 50%",
+      "description": "CSS object-position for the profile picture"
+    },
     "description": {
       "type": "string",
       "description": "User about-me bio text"
+    },
+    "profile_banner": {
+      "type": "string",
+      "description": "Custom profile banner image URL"
+    },
+    "profile_banner_position": {
+      "type": "string",
+      "default": "50% 50%",
+      "description": "CSS object-position for the banner image"
     },
     "badges": {
       "type": "array",

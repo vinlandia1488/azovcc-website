@@ -17,6 +17,7 @@ import CloudConfigsTab from '@/components/CloudConfigsTab';
 import SeasonalEffects from '@/components/SeasonalEffects';
 import MusicWidget from '@/components/MusicWidget';
 import { LogOut, Settings, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const db = getBackendDb();
 
@@ -159,6 +160,14 @@ export default function Dashboard() {
 
           {/* Right actions */}
           <div className="flex items-center gap-2">
+            {session.unique_identifier !== undefined && (
+              <Link
+                to={`/profiles/${session.unique_identifier}`}
+                className="text-[10px] font-bold font-mono tracking-widest px-4 py-2 uppercase border bg-[#121215] text-zinc-300 border-[#222] hover:bg-[#1a1a1f] hover:text-white transition-all rounded-none"
+              >
+                MY PROFILE
+              </Link>
+            )}
             {session.is_admin && (
               <button
                 onClick={() => { setActiveTab('panel'); setActiveSection(null); }}

@@ -1,0 +1,27 @@
+{
+  "name": "ProfileComment",
+  "type": "object",
+  "properties": {
+    "profile_uid": {
+      "type": "number",
+      "description": "The unique_identifier of the profile being commented on"
+    },
+    "author": {
+      "type": "string",
+      "description": "Username of the commenter"
+    },
+    "author_uid": {
+      "type": "number",
+      "description": "unique_identifier of the commenter"
+    },
+    "body": {
+      "type": "string",
+      "description": "Comment text"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["profile_uid", "author", "body"]
+}

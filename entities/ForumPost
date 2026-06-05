@@ -17,6 +17,10 @@
     "author": {
       "type": "string"
     },
+    "author_uid": {
+      "type": "number",
+      "description": "unique_identifier of the post author for profile links"
+    },
     "is_admin": {
       "type": "boolean"
     },

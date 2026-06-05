@@ -19,11 +19,11 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
 
   const [profilePic, setProfilePic] = useState(session.profile_pic || '');
   const [profileBanner, setProfileBanner] = useState(session.profile_banner || '');
+  const [picPosition, setPicPosition] = useState(session.profile_pic_position || '50% 50%');
+  const [bannerPosition, setBannerPosition] = useState(session.profile_banner_position || '50% 50%');
 
-  // Profile accent — covers the full body area below the banner
-  const [profileCardAccentType, setProfileCardAccentType] = useState(() =>
-    (session.profile_accent || '').includes('gradient') ? 'gradient' : 'solid'
-  );
+  // Profile accent — gradient only (covers the full body area below the banner)
+  const [profileCardAccentType] = useState('gradient');
   const [profileCardAccentColor1, setProfileCardAccentColor1] = useState(() => {
     const a = session.profile_accent || '#111111';
     if (a.includes('gradient')) {
@@ -89,7 +89,9 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
       const payload = {
         profile_accent: profileCardAccent,
         profile_banner: profileBanner,
+        profile_banner_position: bannerPosition,
         profile_pic: profilePic,
+        profile_pic_position: picPosition,
         description: profileDescription
       };
 
@@ -187,7 +189,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                <div className="bg-[#111] border border-[#222] rounded-xl overflow-hidden mb-6">
                  <div className="h-28 relative bg-zinc-800 group/banner">
                    {profileBanner ? (
-                     <img src={profileBanner} alt="banner" className="w-full h-full object-cover" />
+                     <img src={profileBanner} alt="banner" className="w-full h-full object-cover" style={{ objectPosition: bannerPosition }} />
                    ) : (
                      <div className="w-full h-full bg-zinc-800" />
                    )}
@@ -205,7 +207,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                      <div className="relative -mt-10 shrink-0 group/avatar">
                        <div className="w-16 h-16 rounded-full border-2 border-[#111] bg-[#1a1a1a] overflow-hidden">
                          {profilePic ? (
-                           <img src={profilePic} alt="PFP" className="w-full h-full object-cover" />
+                           <img src={profilePic} alt="PFP" className="w-full h-full object-cover" style={{ objectPosition: picPosition }} />
                          ) : (
                            <div className="w-full h-full flex items-center justify-center text-sm font-black text-zinc-600">
                              {session.username.substring(0, 2).toUpperCase()}
@@ -270,25 +272,51 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
 
                  {/* Profile Accent — covers the full body below the banner */}
                  <div className="bg-[#111] border border-[#222] rounded-xl p-5">
+                   <h3 className="text-white text-sm font-bold mb-1 flex items-center gap-2">
+                     <Palette size={15} className="text-zinc-500" />
+                     Image Position
+                   </h3>
+                   <p className="text-[9px] text-zinc-600 mb-4">Adjust how your profile picture and banner are cropped.</p>
+                   <div className="space-y-4">
+                     {profilePic && (
+                       <div>
+                         <div className="flex justify-between items-center mb-1">
+                           <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Picture Position X</span>
+                           <span className="text-[9px] font-mono text-zinc-300">{picPosition.split(' ')[0]}</span>
+                         </div>
+                         <input type="range" min="0" max="100" value={parseInt(picPosition.split(' ')[0])} onChange={e => setPicPosition(`${e.target.value}% ${picPosition.split(' ')[1]}`)} className="w-full custom-slider" />
+                         <div className="flex justify-between items-center mt-2 mb-1">
+                           <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Picture Position Y</span>
+                           <span className="text-[9px] font-mono text-zinc-300">{picPosition.split(' ')[1]}</span>
+                         </div>
+                         <input type="range" min="0" max="100" value={parseInt(picPosition.split(' ')[1])} onChange={e => setPicPosition(`${picPosition.split(' ')[0]} ${e.target.value}%`)} className="w-full custom-slider" />
+                       </div>
+                     )}
+                     {profileBanner && (
+                       <div>
+                         <div className="flex justify-between items-center mb-1">
+                           <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Banner Position X</span>
+                           <span className="text-[9px] font-mono text-zinc-300">{bannerPosition.split(' ')[0]}</span>
+                         </div>
+                         <input type="range" min="0" max="100" value={parseInt(bannerPosition.split(' ')[0])} onChange={e => setBannerPosition(`${e.target.value}% ${bannerPosition.split(' ')[1]}`)} className="w-full custom-slider" />
+                         <div className="flex justify-between items-center mt-2 mb-1">
+                           <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Banner Position Y</span>
+                           <span className="text-[9px] font-mono text-zinc-300">{bannerPosition.split(' ')[1]}</span>
+                         </div>
+                         <input type="range" min="0" max="100" value={parseInt(bannerPosition.split(' ')[1])} onChange={e => setBannerPosition(`${bannerPosition.split(' ')[0]} ${e.target.value}%`)} className="w-full custom-slider" />
+                       </div>
+                     )}
+                     {!profilePic && !profileBanner && <p className="text-[9px] text-zinc-600 italic">Upload a picture or banner to adjust positioning.</p>}
+                   </div>
+                 </div>
+
+                 {/* Profile Accent — gradient only, covers the full body below the banner */}
+                 <div className="bg-[#111] border border-[#222] rounded-xl p-5">
                    <h3 className="text-white text-sm font-bold mb-3 flex items-center gap-2">
                      <Palette size={15} className="text-zinc-500" />
                      Profile Accent
                    </h3>
-                   <p className="text-[9px] text-zinc-600 mb-4">Background color for the profile card area below the banner.</p>
-
-                   <div className="flex gap-1 mb-4 bg-[#0a0a0a] border border-[#222] rounded-lg p-1">
-                     {['solid', 'gradient'].map(t => (
-                       <button
-                         key={t}
-                         onClick={() => setProfileCardAccentType(t)}
-                         className={`flex-1 text-[9px] font-black uppercase tracking-widest py-1.5 rounded-md transition-all ${
-                           profileCardAccentType === t ? 'bg-white text-black' : 'text-zinc-500 hover:text-zinc-300'
-                         }`}
-                       >
-                         {t}
-                       </button>
-                     ))}
-                   </div>
+                   <p className="text-[9px] text-zinc-600 mb-4">Background gradient for the profile card area below the banner.</p>
 
                    <div className="space-y-3">
                      <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
@@ -296,28 +324,24 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                          <input type="color" value={profileCardAccentColor1} onChange={e => setProfileCardAccentColor1(e.target.value)} className="absolute inset-[-8px] w-20 h-20 cursor-pointer opacity-0" />
                        </div>
                        <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold flex-1">{profileCardAccentColor1}</span>
-                       <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wider">{profileCardAccentType === 'gradient' ? 'Start' : 'Color'}</span>
+                       <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wider">Start</span>
                      </div>
 
-                     {profileCardAccentType === 'gradient' && (
-                       <>
-                         <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
-                           <div className="w-8 h-8 rounded-md relative overflow-hidden ring-1 ring-white/10 shrink-0" style={{ background: profileCardAccentColor2 }}>
-                             <input type="color" value={profileCardAccentColor2} onChange={e => setProfileCardAccentColor2(e.target.value)} className="absolute inset-[-8px] w-20 h-20 cursor-pointer opacity-0" />
-                           </div>
-                           <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold flex-1">{profileCardAccentColor2}</span>
-                           <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wider">End</span>
-                         </div>
+                     <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
+                       <div className="w-8 h-8 rounded-md relative overflow-hidden ring-1 ring-white/10 shrink-0" style={{ background: profileCardAccentColor2 }}>
+                         <input type="color" value={profileCardAccentColor2} onChange={e => setProfileCardAccentColor2(e.target.value)} className="absolute inset-[-8px] w-20 h-20 cursor-pointer opacity-0" />
+                       </div>
+                       <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold flex-1">{profileCardAccentColor2}</span>
+                       <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wider">End</span>
+                     </div>
 
-                         <div className="bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
-                           <div className="flex justify-between items-center mb-2">
-                             <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Angle</span>
-                             <span className="text-[9px] font-mono text-zinc-300">{profileCardAccentAngle}°</span>
-                           </div>
-                           <input type="range" min="0" max="360" value={profileCardAccentAngle} onChange={e => setProfileCardAccentAngle(parseInt(e.target.value))} className="w-full custom-slider" />
-                         </div>
-                       </>
-                     )}
+                     <div className="bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
+                       <div className="flex justify-between items-center mb-2">
+                         <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Angle</span>
+                         <span className="text-[9px] font-mono text-zinc-300">{profileCardAccentAngle}°</span>
+                       </div>
+                       <input type="range" min="0" max="360" value={profileCardAccentAngle} onChange={e => setProfileCardAccentAngle(parseInt(e.target.value))} className="w-full custom-slider" />
+                     </div>
 
                      {/* Live preview strip */}
                      <div className="h-3 rounded-full ring-1 ring-white/5" style={{ background: profileCardAccent }} />

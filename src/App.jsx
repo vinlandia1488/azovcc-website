@@ -11,6 +11,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import RawConfig from './pages/RawConfig';
+import ProfilePage from './pages/ProfilePage';
 import MaintenanceScreen from '@/components/MaintenanceScreen';
 import { getMaintenance } from '@/lib/app-settings';
 
@@ -82,6 +83,7 @@ const AuthenticatedApp = () => {
       <Route path="/register/chat/:chatId" element={<Auth />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/:username/configs" element={<RawConfig />} />
+      <Route path="/profiles/:uid" element={<ProfilePage />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

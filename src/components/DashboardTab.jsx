@@ -121,7 +121,7 @@ export default function DashboardTab({ session, onSettings, accent, announcement
               {displayUsername}
             </p>
           </div>
-          <div className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0 shadow-[0_0_6px_#4ade80]" />
+          <div className="w-2 h-2 rounded-full flex-shrink-0" />
         </div>
         <button
           onClick={onSettings}

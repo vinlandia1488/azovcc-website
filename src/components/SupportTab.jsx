@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { Send, ImagePlus, User, Shield, Clock, X, Globe, MessageSquare, Search, Trash2, Key, Code } from 'lucide-react';
 import { getBackendDb } from '@/lib/backend';
+import { Link } from 'react-router-dom';
 
 const db = getBackendDb();
 const SUPPORT_MSG_TYPE = "__SUPPORT_MSG__";
@@ -531,8 +532,17 @@ export default function SupportTab({ session, accent }) {
                       {viewedProfileUser.is_admin ? 'Staff Member' : 'Community Member'}
                     </p>
                   </div>
-                  <div className="bg-[#1a1a1a] px-2.5 py-1 rounded-lg border border-[#333] shrink-0">
-                    <span className="text-[10px] font-mono text-zinc-400">#{viewedProfileUser.unique_identifier || '0'}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="bg-[#1a1a1a] px-2.5 py-1 rounded-lg border border-[#333]">
+                      <span className="text-[10px] font-mono text-zinc-400">#{viewedProfileUser.unique_identifier || '0'}</span>
+                    </div>
+                    <Link
+                      to={`/profiles/${viewedProfileUser.unique_identifier}`}
+                      onClick={() => setViewedProfileUser(null)}
+                      className="bg-white text-black text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg hover:bg-zinc-200 transition"
+                    >
+                      View Profile
+                    </Link>
                   </div>
                 </div>
 
@@ -573,13 +583,6 @@ export default function SupportTab({ session, accent }) {
                     <h4 className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1">Member Since</h4>
                     <p className="text-white text-xs font-bold tracking-tight">
                       {new Date(viewedProfileUser.created_date || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </p>
-                  </div>
-                  <div className="bg-[#16161a] rounded-[1rem] p-4 border border-white/5 shadow-inner">
-                    <h4 className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1">Status</h4>
-                    <p className="text-white text-xs font-bold tracking-tight flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-green-500" />
-                      Online
                     </p>
                   </div>
                 </div>
