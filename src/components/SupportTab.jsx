@@ -489,9 +489,9 @@ export default function SupportTab({ session, accent }) {
               {viewedProfileUser.profile_banner ? (
                 <img src={viewedProfileUser.profile_banner} alt="banner" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full" style={{ background: viewedProfileUser.profile_accent || '#1a1a1a' }} />
+                <div className="w-full h-full bg-zinc-900" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent opacity-80" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
             </div>
 
             {/* Close button */}
@@ -503,10 +503,10 @@ export default function SupportTab({ session, accent }) {
             </button>
 
             {/* Content */}
-            <div className="px-6 pb-6 relative bg-[#0a0a0a]">
+            <div className="px-6 pb-6 relative" style={{ background: viewedProfileUser.profile_accent || '#0a0a0a' }}>
               {/* Avatar */}
               <div className="relative -mt-12 mb-4">
-                <div className="w-20 h-20 rounded-xl bg-[#0a0a0a] p-1.5 shadow-xl border border-[#333]">
+                <div className="w-20 h-20 rounded-xl p-1.5 shadow-xl border border-[#333]" style={{ background: viewedProfileUser.profile_accent || '#0a0a0a' }}>
                   <div className="w-full h-full rounded-lg bg-[#1a1a1a] overflow-hidden">
                     {viewedProfileUser.profile_pic ? (
                       <img src={viewedProfileUser.profile_pic} alt="pfp" className="w-full h-full object-cover" />

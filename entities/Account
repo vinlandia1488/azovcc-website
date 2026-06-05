@@ -32,11 +32,20 @@
     },
     "profile_accent": {
       "type": "string",
-      "default": "#1a1a1a"
+      "default": "#1a1a1a",
+      "description": "Background color/gradient for the body area of the profile card below the banner"
     },
     "profile_banner": {
       "type": "string",
       "description": "Custom profile banner image URL"
+    },
+    "profile_pic": {
+      "type": "string",
+      "description": "Custom profile picture URL"
+    },
+    "description": {
+      "type": "string",
+      "description": "User about-me bio text"
     },
     "badges": {
       "type": "array",

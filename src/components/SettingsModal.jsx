@@ -15,59 +15,44 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
   const [effectAmount, setEffectAmount] = useState(() => parseInt(localStorage.getItem('adderal_effectAmount') || '30'));
   const [effectSpeed, setEffectSpeed] = useState(() => parseInt(localStorage.getItem('adderal_effectSpeed') || '5'));
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const [profilePic, setProfilePic] = useState(session.profile_pic || '');
   const [profileBanner, setProfileBanner] = useState(session.profile_banner || '');
-  const [profileAccentType, setProfileAccentType] = useState(() =>
+
+  // Profile accent — covers the full body area below the banner
+  const [profileCardAccentType, setProfileCardAccentType] = useState(() =>
     (session.profile_accent || '').includes('gradient') ? 'gradient' : 'solid'
   );
-  const [profileAccentColor1, setProfileAccentColor1] = useState(() => {
-    const a = session.profile_accent || '#1a1a1a';
-    if (a.includes('gradient')) {
-      const m = a.match(/#[0-9a-fA-F]{6}/g);
-      return m?.[0] || '#1a1a1a';
-    }
-    return a;
-  });
-  const [profileAccentColor2, setProfileAccentColor2] = useState(() => {
-    const a = session.profile_accent || '#1a1a1a';
-    if (a.includes('gradient')) {
-      const m = a.match(/#[0-9a-fA-F]{6}/g);
-      return m?.[1] || '#444444';
-    }
-    return '#444444';
-  });
-  const [profileAccentAngle, setProfileAccentAngle] = useState(135);
-
-  const profileAccent = profileAccentType === 'gradient'
-    ? `linear-gradient(${profileAccentAngle}deg, ${profileAccentColor1}, ${profileAccentColor2})`
-    : profileAccentColor1;
-
-  // Profile accent — the thin strip shown at the bottom of the profile card (like Discord)
-  const [profileCardAccentType, setProfileCardAccentType] = useState(() =>
-    (session.profile_card_accent || '').includes('gradient') ? 'gradient' : 'solid'
-  );
   const [profileCardAccentColor1, setProfileCardAccentColor1] = useState(() => {
-    const a = session.profile_card_accent || '#5865F2';
+    const a = session.profile_accent || '#111111';
     if (a.includes('gradient')) {
       const m = a.match(/#[0-9a-fA-F]{6}/g);
-      return m?.[0] || '#5865F2';
+      return m?.[0] || '#111111';
     }
     return a;
   });
   const [profileCardAccentColor2, setProfileCardAccentColor2] = useState(() => {
-    const a = session.profile_card_accent || '#5865F2';
+    const a = session.profile_accent || '#111111';
     if (a.includes('gradient')) {
       const m = a.match(/#[0-9a-fA-F]{6}/g);
-      return m?.[1] || '#eb459e';
+      return m?.[1] || '#1a1a2e';
     }
-    return '#eb459e';
+    return '#1a1a2e';
   });
-  const [profileCardAccentAngle, setProfileCardAccentAngle] = useState(90);
+  const [profileCardAccentAngle, setProfileCardAccentAngle] = useState(() => {
+    const a = session.profile_accent || '';
+    if (a.includes('gradient')) {
+      const m = a.match(/(\d+)deg/);
+      return m ? parseInt(m[1]) : 135;
+    }
+    return 135;
+  });
 
   const profileCardAccent = profileCardAccentType === 'gradient'
     ? `linear-gradient(${profileCardAccentAngle}deg, ${profileCardAccentColor1}, ${profileCardAccentColor2})`
     : profileCardAccentColor1;
+
   const [profileDescription, setProfileDescription] = useState(session.description || '');
 
   useEffect(() => {
@@ -99,10 +84,10 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
 
   async function saveSettings(shouldClose = true) {
     setSaving(true);
+    setSaveError('');
     try {
       const payload = {
-        profile_accent: profileAccent,
-        profile_card_accent: profileCardAccent,
+        profile_accent: profileCardAccent,
         profile_banner: profileBanner,
         profile_pic: profilePic,
         description: profileDescription
@@ -204,7 +189,7 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                    {profileBanner ? (
                      <img src={profileBanner} alt="banner" className="w-full h-full object-cover" />
                    ) : (
-                     <div className="w-full h-full" style={{ background: profileAccent }} />
+                     <div className="w-full h-full bg-zinc-800" />
                    )}
                    <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover/banner:opacity-100 transition-opacity cursor-pointer">
                      <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white">
@@ -214,59 +199,59 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                    </label>
                  </div>
 
-                 <div className="px-5 pb-5 pt-3 flex gap-4 items-start">
-                   <div className="relative -mt-10 shrink-0 group/avatar">
-                     <div className="w-16 h-16 rounded-full border-2 border-[#111] bg-[#1a1a1a] overflow-hidden">
-                       {profilePic ? (
-                         <img src={profilePic} alt="PFP" className="w-full h-full object-cover" />
-                       ) : (
-                         <div className="w-full h-full flex items-center justify-center text-sm font-black text-zinc-600">
-                           {session.username.substring(0, 2).toUpperCase()}
-                         </div>
-                       )}
+                 {/* Profile accent covers the full body below the banner */}
+                 <div style={{ background: profileCardAccent }}>
+                   <div className="px-5 pb-5 pt-3 flex gap-4 items-start">
+                     <div className="relative -mt-10 shrink-0 group/avatar">
+                       <div className="w-16 h-16 rounded-full border-2 border-[#111] bg-[#1a1a1a] overflow-hidden">
+                         {profilePic ? (
+                           <img src={profilePic} alt="PFP" className="w-full h-full object-cover" />
+                         ) : (
+                           <div className="w-full h-full flex items-center justify-center text-sm font-black text-zinc-600">
+                             {session.username.substring(0, 2).toUpperCase()}
+                           </div>
+                         )}
+                       </div>
+                       <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 rounded-full cursor-pointer transition-opacity">
+                         <ImagePlus size={14} className="text-white" />
+                         <input type="file" className="hidden" accept="image/*" onChange={handlePfpUpload} disabled={saving} />
+                       </label>
                      </div>
-                     <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 rounded-full cursor-pointer transition-opacity">
-                       <ImagePlus size={14} className="text-white" />
-                       <input type="file" className="hidden" accept="image/*" onChange={handlePfpUpload} disabled={saving} />
-                     </label>
+
+                     <div className="flex-1 min-w-0 pt-1">
+                       <h2 className="text-white text-base font-bold flex items-center gap-2 truncate">
+                         {session.username}
+                         {session.is_admin && <Shield size={13} className="text-blue-400 shrink-0" />}
+                       </h2>
+                       <p className="text-zinc-400 text-[11px] font-mono mt-0.5">#{session.unique_identifier || '0'}</p>
+                       <div className="flex flex-wrap gap-1.5 mt-2">
+                         {session.is_admin && (
+                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-[9px] text-blue-400 font-bold uppercase">
+                             <Shield size={10} /> Staff
+                           </span>
+                         )}
+                         {session.internal_license && (
+                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-[9px] text-purple-400 font-bold uppercase">
+                             <Key size={10} /> Internal
+                           </span>
+                         )}
+                         {session.script_license && (
+                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-500/10 border border-green-500/20 text-[9px] text-green-400 font-bold uppercase">
+                             <Code size={10} /> Script
+                           </span>
+                         )}
+                       </div>
+                     </div>
                    </div>
 
-                   <div className="flex-1 min-w-0 pt-1">
-                     <h2 className="text-white text-base font-bold flex items-center gap-2 truncate">
-                       {session.username}
-                       {session.is_admin && <Shield size={13} className="text-blue-400 shrink-0" />}
-                     </h2>
-                     <p className="text-zinc-500 text-[11px] font-mono mt-0.5">#{session.unique_identifier || '0'}</p>
-                     <div className="flex flex-wrap gap-1.5 mt-2">
-                       {session.is_admin && (
-                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-[9px] text-blue-400 font-bold uppercase">
-                           <Shield size={10} /> Staff
-                         </span>
-                       )}
-                       {session.internal_license && (
-                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-[9px] text-purple-400 font-bold uppercase">
-                           <Key size={10} /> Internal
-                         </span>
-                       )}
-                       {session.script_license && (
-                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-500/10 border border-green-500/20 text-[9px] text-green-400 font-bold uppercase">
-                           <Code size={10} /> Script
-                         </span>
-                       )}
+                   {profileDescription && (
+                     <div className="px-5 pb-5 -mt-1">
+                       <p className="text-zinc-300 text-xs leading-relaxed bg-black/20 border border-white/5 rounded-lg px-3 py-2.5">
+                         {profileDescription}
+                       </p>
                      </div>
-                   </div>
+                   )}
                  </div>
-
-                 {profileDescription && (
-                   <div className="px-5 pb-5 -mt-1">
-                     <p className="text-zinc-400 text-xs leading-relaxed bg-[#0a0a0a] border border-[#222] rounded-lg px-3 py-2.5">
-                       {profileDescription}
-                     </p>
-                   </div>
-                 )}
-
-                 {/* Profile accent strip — bottom of card like Discord */}
-                 <div className="h-1.5 w-full" style={{ background: profileCardAccent }} />
                </div>
 
                <div className="space-y-4">
@@ -283,83 +268,13 @@ export default function SettingsModal({ session, onClose, onSaved, onLogout }) {
                    />
                  </div>
 
-                 <div className="bg-[#111] border border-[#222] rounded-xl p-5">
-                   <h3 className="text-white text-sm font-bold mb-3 flex items-center gap-2">
-                     <Palette size={15} className="text-zinc-500" />
-                     Banner Accent
-                   </h3>
-
-                   {/* Solid / Gradient toggle */}
-                   <div className="flex gap-1 mb-4 bg-[#0a0a0a] border border-[#222] rounded-lg p-1">
-                     {['solid', 'gradient'].map(t => (
-                       <button
-                         key={t}
-                         onClick={() => setProfileAccentType(t)}
-                         className={`flex-1 text-[9px] font-black uppercase tracking-widest py-1.5 rounded-md transition-all ${
-                           profileAccentType === t
-                             ? 'bg-white text-black'
-                             : 'text-zinc-500 hover:text-zinc-300'
-                         }`}
-                       >
-                         {t}
-                       </button>
-                     ))}
-                   </div>
-
-                   {/* Color pickers */}
-                   <div className="space-y-3">
-                     <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
-                       <div className="w-8 h-8 rounded-md relative overflow-hidden ring-1 ring-white/10 shrink-0" style={{ background: profileAccentColor1 }}>
-                         <input type="color" value={profileAccentColor1} onChange={e => setProfileAccentColor1(e.target.value)} className="absolute inset-[-8px] w-20 h-20 cursor-pointer opacity-0" />
-                       </div>
-                       <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold flex-1">{profileAccentColor1}</span>
-                       <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wider">{profileAccentType === 'gradient' ? 'Start' : 'Color'}</span>
-                     </div>
-
-                     {profileAccentType === 'gradient' && (
-                       <>
-                         <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
-                           <div className="w-8 h-8 rounded-md relative overflow-hidden ring-1 ring-white/10 shrink-0" style={{ background: profileAccentColor2 }}>
-                             <input type="color" value={profileAccentColor2} onChange={e => setProfileAccentColor2(e.target.value)} className="absolute inset-[-8px] w-20 h-20 cursor-pointer opacity-0" />
-                           </div>
-                           <span className="text-zinc-300 text-xs font-mono uppercase tracking-widest font-bold flex-1">{profileAccentColor2}</span>
-                           <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wider">End</span>
-                         </div>
-
-                         <div className="bg-[#0a0a0a] border border-[#222] rounded-lg px-4 py-3">
-                           <div className="flex justify-between items-center mb-2">
-                             <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Angle</span>
-                             <span className="text-[9px] font-mono text-zinc-300">{profileAccentAngle}°</span>
-                           </div>
-                           <input
-                             type="range" min="0" max="360"
-                             value={profileAccentAngle}
-                             onChange={e => setProfileAccentAngle(parseInt(e.target.value))}
-                             className="w-full custom-slider"
-                           />
-                         </div>
-
-                         {/* Live preview */}
-                         <div
-                           className="h-10 rounded-lg ring-1 ring-white/5"
-                           style={{ background: profileAccent }}
-                         />
-                       </>
-                     )}
-                   </div>
-
-                   <p className="text-[9px] text-zinc-600 mt-2">
-                     Used when no banner image is set.
-                   </p>
-                 </div>
-
-                 {/* Profile Accent — thin strip at the bottom of the card */}
+                 {/* Profile Accent — covers the full body below the banner */}
                  <div className="bg-[#111] border border-[#222] rounded-xl p-5">
                    <h3 className="text-white text-sm font-bold mb-3 flex items-center gap-2">
                      <Palette size={15} className="text-zinc-500" />
                      Profile Accent
                    </h3>
-                   <p className="text-[9px] text-zinc-600 mb-4">Thin accent strip shown at the bottom of your profile card.</p>
+                   <p className="text-[9px] text-zinc-600 mb-4">Background color for the profile card area below the banner.</p>
 
                    <div className="flex gap-1 mb-4 bg-[#0a0a0a] border border-[#222] rounded-lg p-1">
                      {['solid', 'gradient'].map(t => (
